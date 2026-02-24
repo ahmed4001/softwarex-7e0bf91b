@@ -9,13 +9,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Package, Star, Wand2, Loader2, CheckCircle2,
-  AlertCircle, Download, Trash2, Eye, ChevronDown, ChevronUp,
+  AlertCircle, Download, Trash2, ChevronDown, ChevronUp,
+  Zap, Globe, Building2, Calendar, DollarSign, Layers,
+  ThumbsUp, ThumbsDown, BrainCircuit, ArrowRight,
 } from "lucide-react";
 
+// ─── Types ─────────────────────────────────────────────
 type GeneratedProduct = {
   name: string;
   slug: string;
@@ -64,6 +68,46 @@ type GeneratedReview = {
   selected?: boolean;
 };
 
+// ─── Stat Pill Component ───────────────────────────────
+function StatPill({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/50">
+      <Icon className="h-3.5 w-3.5 text-primary" />
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold">{value}</span>
+    </div>
+  );
+}
+
+// ─── Rating Stars ──────────────────────────────────────
+function RatingStars({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          className={`h-3.5 w-3.5 ${s <= Math.round(rating) ? "text-[hsl(var(--star))] fill-[hsl(var(--star))]" : "text-border"}`}
+        />
+      ))}
+      <span className="ml-1 text-xs font-semibold">{rating}</span>
+    </div>
+  );
+}
+
+// ─── Animated Counter ──────────────────────────────────
+function AnimatedNumber({ value }: { value: number }) {
+  return (
+    <motion.span
+      key={value}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="font-bold text-2xl"
+    >
+      {value}
+    </motion.span>
+  );
+}
+
 // ─── Generate Products Tab ─────────────────────────────
 function GenerateProductsTab() {
   const { toast } = useToast();
@@ -111,29 +155,14 @@ function GenerateProductsTab() {
     for (const p of selected) {
       const { error } = await supabase.from("products").upsert(
         {
-          name: p.name,
-          slug: p.slug,
-          tagline: p.tagline,
-          description: p.description,
-          website_url: p.website_url,
-          logo_url: p.logo_url,
-          category_id: p.category_id,
-          pricing_model: p.pricing_model as any,
-          starting_price: p.starting_price,
-          avg_rating: p.avg_rating,
-          total_reviews: p.total_reviews,
-          founded_year: p.founded_year,
-          headquarters: p.headquarters,
-          company_size: p.company_size,
-          employee_count: p.employee_count,
-          features: p.features,
-          integrations: p.integrations,
-          pros_summary: p.pros_summary,
-          cons_summary: p.cons_summary,
-          seo_title: p.seo_title,
-          seo_description: p.seo_description,
-          is_verified: true,
-          is_active: true,
+          name: p.name, slug: p.slug, tagline: p.tagline, description: p.description,
+          website_url: p.website_url, logo_url: p.logo_url, category_id: p.category_id,
+          pricing_model: p.pricing_model as any, starting_price: p.starting_price,
+          avg_rating: p.avg_rating, total_reviews: p.total_reviews, founded_year: p.founded_year,
+          headquarters: p.headquarters, company_size: p.company_size, employee_count: p.employee_count,
+          features: p.features, integrations: p.integrations, pros_summary: p.pros_summary,
+          cons_summary: p.cons_summary, seo_title: p.seo_title, seo_description: p.seo_description,
+          is_verified: true, is_active: true,
         },
         { onConflict: "slug" }
       );
@@ -152,99 +181,306 @@ function GenerateProductsTab() {
     setProducts((prev) => prev.map((p, i) => (i === idx ? { ...p, selected: !p.selected } : p)));
   };
 
+  const selectedCount = products.filter((p) => p.selected).length;
+
   return (
     <div className="space-y-6">
-      <Card className="p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Number of products</Label>
-            <Input type="number" min="1" max="20" value={count} onChange={(e) => setCount(e.target.value)} />
-          </div>
-          <div className="flex items-end">
-            <Button onClick={() => generateMutation.mutate()} disabled={!selectedCategory || generateMutation.isPending} className="w-full">
-              {generateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Generate Products
-            </Button>
+      {/* Generator Card */}
+      <Card className="overflow-hidden border-0 shadow-lg">
+        <div className="bg-gradient-to-br from-primary/10 via-accent/30 to-transparent p-1">
+          <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <BrainCircuit className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Generate from Category</h3>
+                <p className="text-xs text-muted-foreground">AI discovers real software products and populates all fields</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              <div className="md:col-span-5 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-11 bg-background/50">
+                    <SelectValue placeholder="Choose a category..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-3 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Count</Label>
+                <Input type="number" min="1" max="20" value={count} onChange={(e) => setCount(e.target.value)} className="h-11 bg-background/50" />
+              </div>
+              <div className="md:col-span-4">
+                <Button
+                  onClick={() => generateMutation.mutate()}
+                  disabled={!selectedCategory || generateMutation.isPending}
+                  className="w-full h-11 font-semibold shadow-md"
+                  size="lg"
+                >
+                  {generateMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate {count} Products
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
 
+      {/* Loading State */}
+      <AnimatePresence>
+        {generateMutation.isPending && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <Card className="p-8 border-dashed border-2 border-primary/20">
+              <div className="flex flex-col items-center gap-4">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center"
+                >
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </motion.div>
+                <div className="text-center">
+                  <p className="font-semibold">AI is generating products...</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Discovering real software products with accurate data
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="h-2 w-2 rounded-full bg-primary"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Results */}
       <AnimatePresence>
         {products.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            {/* Results Header */}
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{products.length} Products Generated</h3>
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{products.length} Products Ready</h3>
+                  <p className="text-xs text-muted-foreground">{selectedCount} selected for import</p>
+                </div>
+              </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setProducts((prev) => prev.map((p) => ({ ...p, selected: true })))}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setProducts((prev) => prev.map((p) => ({ ...p, selected: true })))}
+                  className="text-xs"
+                >
                   Select All
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setProducts([])}>
-                  <Trash2 className="h-4 w-4 mr-1" /> Clear
+                <Button variant="ghost" size="sm" onClick={() => setProducts([])} className="text-xs text-destructive hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Discard
                 </Button>
-                <Button size="sm" onClick={handleImport} disabled={importing || !products.some((p) => p.selected)}>
-                  {importing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
-                  Import {products.filter((p) => p.selected).length} Selected
+                <Button
+                  size="sm"
+                  onClick={handleImport}
+                  disabled={importing || selectedCount === 0}
+                  className="shadow-sm"
+                >
+                  {importing ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-1.5" />
+                  )}
+                  Import {selectedCount}
                 </Button>
               </div>
             </div>
 
-            {importing && <Progress value={importProgress} className="h-2" />}
+            {importing && (
+              <div className="space-y-1.5">
+                <Progress value={importProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-right">{importProgress}% complete</p>
+              </div>
+            )}
 
-            <div className="space-y-2">
+            {/* Product Cards */}
+            <div className="space-y-3">
               {products.map((p, idx) => (
-                <Card key={idx} className={`p-4 transition-all ${p.selected ? "border-primary/40 bg-primary/5" : "opacity-60"}`}>
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" checked={p.selected} onChange={() => toggleProduct(idx)} className="mt-1.5 h-4 w-4 accent-primary" />
-                    {p.logo_url && <img src={p.logo_url} alt="" className="h-10 w-10 rounded-lg object-contain bg-muted p-1 flex-shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{p.name}</span>
-                        <Badge variant="secondary" className="text-xs">{p.pricing_model}</Badge>
-                        <Badge variant="outline" className="text-xs">⭐ {p.avg_rating}</Badge>
-                        {p.website_url && (
-                          <a href={p.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary">
-                            {new URL(p.website_url).hostname}
-                          </a>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{p.tagline}</p>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}>
-                      {expandedIdx === idx ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <AnimatePresence>
-                    {expandedIdx === idx && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                        <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-2 gap-4 text-sm">
-                          <div><span className="text-muted-foreground">HQ:</span> {p.headquarters}</div>
-                          <div><span className="text-muted-foreground">Founded:</span> {p.founded_year}</div>
-                          <div><span className="text-muted-foreground">Company size:</span> {p.company_size}</div>
-                          <div><span className="text-muted-foreground">Price:</span> {p.starting_price ? `$${p.starting_price}/mo` : "Free"}</div>
-                          <div className="col-span-2"><span className="text-muted-foreground">Features:</span> {p.features?.join(", ")}</div>
-                          <div className="col-span-2"><span className="text-muted-foreground">Pros:</span> {p.pros_summary}</div>
-                          <div className="col-span-2"><span className="text-muted-foreground">Cons:</span> {p.cons_summary}</div>
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <Card className={`overflow-hidden transition-all duration-200 ${p.selected ? "border-primary/30 shadow-sm" : "opacity-50 border-border/50"}`}>
+                    <div className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          checked={p.selected}
+                          onCheckedChange={() => toggleProduct(idx)}
+                          className="mt-1"
+                        />
+                        <div className="h-12 w-12 rounded-xl bg-muted/50 border border-border/50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {p.logo_url ? (
+                            <img src={p.logo_url} alt="" className="h-10 w-10 object-contain" />
+                          ) : (
+                            <Package className="h-5 w-5 text-muted-foreground" />
+                          )}
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Card>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-[15px]">{p.name}</span>
+                            <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wider">
+                              {p.pricing_model}
+                            </Badge>
+                            <RatingStars rating={p.avg_rating} />
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{p.tagline}</p>
+                          <div className="flex items-center gap-3 mt-2 flex-wrap">
+                            {p.website_url && (
+                              <a href={p.website_url} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-primary hover:underline">
+                                <Globe className="h-3 w-3" />
+                                {new URL(p.website_url).hostname}
+                              </a>
+                            )}
+                            {p.headquarters && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Building2 className="h-3 w-3" /> {p.headquarters}
+                              </span>
+                            )}
+                            {p.founded_year && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" /> {p.founded_year}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="flex-shrink-0 h-8 w-8"
+                          onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                        >
+                          {expandedIdx === idx ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {expandedIdx === idx && (
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: "auto" }}
+                          exit={{ height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 pt-0">
+                            <div className="border-t border-border/50 pt-4 space-y-4">
+                              {/* Stats row */}
+                              <div className="flex flex-wrap gap-2">
+                                <StatPill icon={DollarSign} label="Price" value={p.starting_price ? `$${p.starting_price}/mo` : "Free"} />
+                                <StatPill icon={Building2} label="Size" value={p.company_size} />
+                                <StatPill icon={Star} label="Reviews" value={String(p.total_reviews)} />
+                              </div>
+
+                              {/* Features */}
+                              {p.features?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Features</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {p.features.map((f, i) => (
+                                      <Badge key={i} variant="outline" className="text-[11px] font-normal bg-muted/30">
+                                        {f}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Pros & Cons */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {p.pros_summary && (
+                                  <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                      <ThumbsUp className="h-3.5 w-3.5 text-primary" />
+                                      <span className="text-xs font-semibold text-primary">Pros</span>
+                                    </div>
+                                    <p className="text-xs text-foreground/80 leading-relaxed">{p.pros_summary}</p>
+                                  </div>
+                                )}
+                                {p.cons_summary && (
+                                  <div className="rounded-lg bg-destructive/5 border border-destructive/10 p-3">
+                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                      <ThumbsDown className="h-3.5 w-3.5 text-destructive" />
+                                      <span className="text-xs font-semibold text-destructive">Cons</span>
+                                    </div>
+                                    <p className="text-xs text-foreground/80 leading-relaxed">{p.cons_summary}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Empty state */}
+      {products.length === 0 && !generateMutation.isPending && (
+        <Card className="p-12 border-dashed border-2">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center">
+              <Package className="h-7 w-7 text-muted-foreground/50" />
+            </div>
+            <div>
+              <p className="font-medium text-muted-foreground">No products generated yet</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">
+                Select a category above and click generate to discover real software products
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -305,8 +541,6 @@ function GenerateReviewsTab() {
     setImportProgress(0);
     let imported = 0;
 
-    // We need a dummy user_id for AI-generated reviews. Use a system user approach.
-    // For now we'll use the current user's ID
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast({ title: "Must be logged in", variant: "destructive" }); setImporting(false); return; }
 
@@ -343,72 +577,181 @@ function GenerateReviewsTab() {
     setReviews([]);
   };
 
+  const selectedCount = reviews.filter((r) => r.selected).length;
+
   return (
     <div className="space-y-6">
-      <Card className="p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Product</Label>
-            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-              <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Number of reviews</Label>
-            <Input type="number" min="1" max="20" value={reviewCount} onChange={(e) => setReviewCount(e.target.value)} />
-          </div>
-          <div className="flex items-end">
-            <Button onClick={() => generateMutation.mutate()} disabled={!selectedProduct || generateMutation.isPending} className="w-full">
-              {generateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Star className="h-4 w-4 mr-2" />}
-              Generate Reviews
-            </Button>
+      {/* Generator Card */}
+      <Card className="overflow-hidden border-0 shadow-lg">
+        <div className="bg-gradient-to-br from-[hsl(var(--star))]/10 via-accent/20 to-transparent p-1">
+          <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-xl bg-[hsl(var(--star))]/10 flex items-center justify-center">
+                <Star className="h-5 w-5 text-[hsl(var(--star))]" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Generate Reviews</h3>
+                <p className="text-xs text-muted-foreground">AI creates realistic, varied reviews for any product</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              <div className="md:col-span-5 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Product</Label>
+                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                  <SelectTrigger className="h-11 bg-background/50">
+                    <SelectValue placeholder="Choose a product..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-3 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Count</Label>
+                <Input type="number" min="1" max="20" value={reviewCount} onChange={(e) => setReviewCount(e.target.value)} className="h-11 bg-background/50" />
+              </div>
+              <div className="md:col-span-4">
+                <Button
+                  onClick={() => generateMutation.mutate()}
+                  disabled={!selectedProduct || generateMutation.isPending}
+                  className="w-full h-11 font-semibold shadow-md"
+                  size="lg"
+                >
+                  {generateMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating...</>
+                  ) : (
+                    <><Star className="h-4 w-4 mr-2" /> Generate {reviewCount} Reviews</>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
 
-      {reviews.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{reviews.length} Reviews Generated</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setReviews([])}>
-                <Trash2 className="h-4 w-4 mr-1" /> Clear
-              </Button>
-              <Button size="sm" onClick={handleImport} disabled={importing}>
-                {importing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
-                Import {reviews.filter((r) => r.selected).length}
-              </Button>
-            </div>
-          </div>
-          {importing && <Progress value={importProgress} className="h-2" />}
-          <div className="space-y-2">
-            {reviews.map((r, idx) => (
-              <Card key={idx} className={`p-4 ${r.selected ? "border-primary/40 bg-primary/5" : "opacity-60"}`}>
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={r.selected}
-                    onChange={() => setReviews((prev) => prev.map((rv, i) => (i === idx ? { ...rv, selected: !rv.selected } : rv)))}
-                    className="mt-1 h-4 w-4 accent-primary"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{r.title}</span>
-                      <Badge variant="outline">{"⭐".repeat(r.overall_rating)}</Badge>
-                      <span className="text-xs text-muted-foreground">{r.reviewer_role} · {r.industry}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.body}</p>
-                  </div>
+      {/* Loading */}
+      <AnimatePresence>
+        {generateMutation.isPending && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Card className="p-8 border-dashed border-2 border-[hsl(var(--star))]/20">
+              <div className="flex flex-col items-center gap-4">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="h-12 w-12 rounded-full bg-[hsl(var(--star))]/10 flex items-center justify-center"
+                >
+                  <Star className="h-6 w-6 text-[hsl(var(--star))]" />
+                </motion.div>
+                <p className="font-semibold">Generating realistic reviews...</p>
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div key={i} className="h-2 w-2 rounded-full bg-[hsl(var(--star))]"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }}
+                    />
+                  ))}
                 </div>
-              </Card>
-            ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reviews list */}
+      <AnimatePresence>
+        {reviews.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-[hsl(var(--star))]/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{reviews.length} Reviews Ready</h3>
+                  <p className="text-xs text-muted-foreground">{selectedCount} selected</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={() => setReviews([])}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Discard
+                </Button>
+                <Button size="sm" onClick={handleImport} disabled={importing || selectedCount === 0} className="shadow-sm">
+                  {importing ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Download className="h-4 w-4 mr-1.5" />}
+                  Import {selectedCount}
+                </Button>
+              </div>
+            </div>
+
+            {importing && (
+              <div className="space-y-1.5">
+                <Progress value={importProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-right">{importProgress}%</p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {reviews.map((r, idx) => (
+                <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}>
+                  <Card className={`p-4 transition-all duration-200 ${r.selected ? "border-primary/30 shadow-sm" : "opacity-50"}`}>
+                    <div className="flex items-start gap-4">
+                      <Checkbox
+                        checked={r.selected}
+                        onCheckedChange={() => setReviews((prev) => prev.map((rv, i) => (i === idx ? { ...rv, selected: !rv.selected } : rv)))}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-medium text-sm">{r.title}</span>
+                          <RatingStars rating={r.overall_rating} />
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                          <span className="font-medium">{r.reviewer_role}</span>
+                          <span>·</span>
+                          <span>{r.industry}</span>
+                          <span>·</span>
+                          <span>{r.company_size}</span>
+                          <span>·</span>
+                          <span>{r.usage_duration}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{r.body}</p>
+                        <div className="flex gap-4 mt-2">
+                          <div className="flex items-center gap-1 text-xs">
+                            <Zap className="h-3 w-3 text-primary" />
+                            <span>Ease: {r.ease_of_use}/5</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs">
+                            <DollarSign className="h-3 w-3 text-primary" />
+                            <span>Value: {r.value_for_money}/5</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs">
+                            <Layers className="h-3 w-3 text-primary" />
+                            <span>Features: {r.features_rating}/5</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Empty state */}
+      {reviews.length === 0 && !generateMutation.isPending && (
+        <Card className="p-12 border-dashed border-2">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center">
+              <Star className="h-7 w-7 text-muted-foreground/50" />
+            </div>
+            <p className="font-medium text-muted-foreground">No reviews generated yet</p>
+            <p className="text-sm text-muted-foreground/70">Select a product and generate realistic reviews</p>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -438,6 +781,8 @@ function EnrichProductsTab() {
   const needsEnrichment = products.filter(
     (p) => !p.description || !p.features || (Array.isArray(p.features) && p.features.length === 0) || !p.tagline
   );
+  const enrichedCount = products.length - needsEnrichment.length;
+  const enrichPercent = products.length > 0 ? Math.round((enrichedCount / products.length) * 100) : 0;
 
   const enrichSingle = async (product: any) => {
     setEnriching(product.id);
@@ -447,13 +792,9 @@ function EnrichProductsTab() {
           action: "enrich_product",
           payload: {
             product: {
-              name: product.name,
-              category: (product as any).categories?.name || "Software",
-              website_url: product.website_url,
-              description: product.description,
-              features: product.features,
-              tagline: product.tagline,
-              pricing_model: product.pricing_model,
+              name: product.name, category: (product as any).categories?.name || "Software",
+              website_url: product.website_url, description: product.description,
+              features: product.features, tagline: product.tagline, pricing_model: product.pricing_model,
             },
           },
         },
@@ -463,24 +804,13 @@ function EnrichProductsTab() {
 
       const enrichment = data.enrichment;
       const updatePayload: any = {};
-      if (enrichment.description) updatePayload.description = enrichment.description;
-      if (enrichment.tagline) updatePayload.tagline = enrichment.tagline;
-      if (enrichment.features) updatePayload.features = enrichment.features;
-      if (enrichment.integrations) updatePayload.integrations = enrichment.integrations;
-      if (enrichment.pros_summary) updatePayload.pros_summary = enrichment.pros_summary;
-      if (enrichment.cons_summary) updatePayload.cons_summary = enrichment.cons_summary;
-      if (enrichment.logo_url) updatePayload.logo_url = enrichment.logo_url;
-      if (enrichment.seo_title) updatePayload.seo_title = enrichment.seo_title;
-      if (enrichment.seo_description) updatePayload.seo_description = enrichment.seo_description;
-      if (enrichment.founded_year) updatePayload.founded_year = enrichment.founded_year;
-      if (enrichment.headquarters) updatePayload.headquarters = enrichment.headquarters;
-      if (enrichment.company_size) updatePayload.company_size = enrichment.company_size;
-      if (enrichment.pricing_model) updatePayload.pricing_model = enrichment.pricing_model;
-      if (enrichment.starting_price) updatePayload.starting_price = enrichment.starting_price;
+      const fields = ["description", "tagline", "features", "integrations", "pros_summary", "cons_summary",
+        "logo_url", "seo_title", "seo_description", "founded_year", "headquarters", "company_size", "pricing_model", "starting_price"];
+      for (const f of fields) { if (enrichment[f]) updatePayload[f] = enrichment[f]; }
 
       await supabase.from("products").update(updatePayload).eq("id", product.id);
       queryClient.invalidateQueries({ queryKey: ["admin-products-to-enrich"] });
-      toast({ title: "Enriched", description: `${product.name} updated successfully.` });
+      toast({ title: "Enriched", description: `${product.name} updated.` });
     } catch (e: any) {
       toast({ title: "Enrichment failed", description: e.message, variant: "destructive" });
     } finally {
@@ -501,22 +831,73 @@ function EnrichProductsTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-lg">{needsEnrichment.length} products need enrichment</h3>
-            <p className="text-sm text-muted-foreground">Missing descriptions, features, or taglines</p>
+      {/* Overview Card */}
+      <Card className="overflow-hidden border-0 shadow-lg">
+        <div className="bg-gradient-to-br from-accent/40 via-primary/5 to-transparent p-1">
+          <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Wand2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Data Enrichment</h3>
+                  <p className="text-xs text-muted-foreground">AI fills missing descriptions, features, taglines & more</p>
+                </div>
+              </div>
+              <Button
+                onClick={enrichAll}
+                disabled={bulkEnriching || needsEnrichment.length === 0}
+                className="shadow-md"
+              >
+                {bulkEnriching ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Enriching...</>
+                ) : (
+                  <><Wand2 className="h-4 w-4 mr-2" /> Enrich All ({needsEnrichment.length})</>
+                )}
+              </Button>
+            </div>
+
+            {/* Progress overview */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="text-center p-3 rounded-xl bg-muted/30">
+                <AnimatedNumber value={products.length} />
+                <p className="text-xs text-muted-foreground mt-1">Total Products</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-primary/5">
+                <AnimatedNumber value={enrichedCount} />
+                <p className="text-xs text-muted-foreground mt-1">Enriched</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-destructive/5">
+                <AnimatedNumber value={needsEnrichment.length} />
+                <p className="text-xs text-muted-foreground mt-1">Needs Work</p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Enrichment progress</span>
+                <span className="font-semibold">{enrichPercent}%</span>
+              </div>
+              <Progress value={enrichPercent} className="h-2.5" />
+            </div>
+
+            {bulkEnriching && (
+              <div className="mt-4 space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Batch progress</span>
+                  <span className="font-semibold">{enrichProgress}%</span>
+                </div>
+                <Progress value={enrichProgress} className="h-2" />
+              </div>
+            )}
           </div>
-          <Button onClick={enrichAll} disabled={bulkEnriching || needsEnrichment.length === 0}>
-            {bulkEnriching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
-            Enrich All ({needsEnrichment.length})
-          </Button>
         </div>
-        {bulkEnriching && <Progress value={enrichProgress} className="h-2 mb-4" />}
       </Card>
 
+      {/* Product list */}
       <div className="space-y-2">
-        {needsEnrichment.map((p) => {
+        {needsEnrichment.map((p, idx) => {
           const missing: string[] = [];
           if (!p.description) missing.push("description");
           if (!p.features || (Array.isArray(p.features) && p.features.length === 0)) missing.push("features");
@@ -524,42 +905,62 @@ function EnrichProductsTab() {
           if (!p.logo_url) missing.push("logo");
 
           return (
-            <Card key={p.id} className="p-4">
-              <div className="flex items-center gap-3">
-                {p.logo_url ? (
-                  <img src={p.logo_url} alt="" className="h-8 w-8 rounded-lg object-contain bg-muted p-0.5" />
-                ) : (
-                  <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    {p.name?.[0]}
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.02 }}
+            >
+              <Card className="p-4 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-muted/50 border border-border/50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {p.logo_url ? (
+                      <img src={p.logo_url} alt="" className="h-8 w-8 object-contain" />
+                    ) : (
+                      <span className="text-sm font-bold text-muted-foreground">{p.name?.[0]}</span>
+                    )}
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium">{p.name}</span>
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {missing.map((m) => (
-                      <Badge key={m} variant="outline" className="text-xs text-destructive border-destructive/30">
-                        <AlertCircle className="h-3 w-3 mr-1" /> {m}
-                      </Badge>
-                    ))}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm">{p.name}</span>
+                    <div className="flex gap-1.5 mt-1 flex-wrap">
+                      {missing.map((m) => (
+                        <Badge key={m} variant="outline" className="text-[10px] text-destructive/80 border-destructive/20 bg-destructive/5">
+                          <AlertCircle className="h-2.5 w-2.5 mr-0.5" /> {m}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => enrichSingle(p)}
+                    disabled={enriching === p.id || bulkEnriching}
+                    className="gap-1.5"
+                  >
+                    {enriching === p.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Wand2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Enrich</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => enrichSingle(p)}
-                  disabled={enriching === p.id || bulkEnriching}
-                >
-                  {enriching === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                </Button>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
           );
         })}
+
         {needsEnrichment.length === 0 && !isLoading && (
-          <Card className="p-8 text-center">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-primary mb-3" />
-            <p className="font-medium">All products are fully enriched!</p>
-            <p className="text-sm text-muted-foreground mt-1">No products need additional data.</p>
+          <Card className="p-12 border-dashed border-2">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <CheckCircle2 className="h-7 w-7 text-primary" />
+              </div>
+              <p className="font-semibold">All products fully enriched!</p>
+              <p className="text-sm text-muted-foreground">Every product has complete data. Nice work.</p>
+            </div>
           </Card>
         )}
       </div>
@@ -570,30 +971,72 @@ function EnrichProductsTab() {
 // ─── Main Page ─────────────────────────────────────────
 export default function AdminAIImportPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold">AI Product Data Generator</h1>
-        <p className="text-muted-foreground mt-1">
-          Generate, enrich, and import real software product data using AI + Clearbit logos
-        </p>
+    <div className="space-y-8 max-w-5xl">
+      {/* Page Header */}
+      <div className="flex items-start gap-4">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0"
+        >
+          <Sparkles className="h-6 w-6 text-primary" />
+        </motion.div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">AI Product Data Generator</h1>
+          <p className="text-muted-foreground mt-0.5 text-sm">
+            Generate, enrich, and import real software product data · Powered by AI + Clearbit logos
+          </p>
+        </div>
       </div>
 
+      {/* Source badges */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant="outline" className="gap-1.5 px-3 py-1 bg-card">
+          <BrainCircuit className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs">Lovable AI</span>
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 px-3 py-1 bg-card">
+          <Globe className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs">Clearbit Logos</span>
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 px-3 py-1 bg-card">
+          <Zap className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs">No API Key Required</span>
+        </Badge>
+      </div>
+
+      {/* Tabs */}
       <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="generate" className="flex items-center gap-1.5">
-            <Package className="h-4 w-4" /> Products
+        <TabsList className="bg-card border border-border/50 p-1 h-auto rounded-xl shadow-sm">
+          <TabsTrigger
+            value="generate"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:shadow-sm text-sm"
+          >
+            <Package className="h-4 w-4" /> Generate Products
           </TabsTrigger>
-          <TabsTrigger value="reviews" className="flex items-center gap-1.5">
-            <Star className="h-4 w-4" /> Reviews
+          <TabsTrigger
+            value="reviews"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:shadow-sm text-sm"
+          >
+            <Star className="h-4 w-4" /> Generate Reviews
           </TabsTrigger>
-          <TabsTrigger value="enrich" className="flex items-center gap-1.5">
-            <Wand2 className="h-4 w-4" /> Enrich
+          <TabsTrigger
+            value="enrich"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:shadow-sm text-sm"
+          >
+            <Wand2 className="h-4 w-4" /> Enrich Data
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="generate"><GenerateProductsTab /></TabsContent>
-        <TabsContent value="reviews"><GenerateReviewsTab /></TabsContent>
-        <TabsContent value="enrich"><EnrichProductsTab /></TabsContent>
+        <TabsContent value="generate" className="mt-6">
+          <GenerateProductsTab />
+        </TabsContent>
+        <TabsContent value="reviews" className="mt-6">
+          <GenerateReviewsTab />
+        </TabsContent>
+        <TabsContent value="enrich" className="mt-6">
+          <EnrichProductsTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
