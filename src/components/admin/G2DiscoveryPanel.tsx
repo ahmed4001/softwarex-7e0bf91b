@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   CheckCircle2, XCircle, SkipForward, Loader2, Search, Download,
-  ChevronRight, Globe, Star, ArrowRight,
+  ChevronRight, Globe, Star, ArrowRight, Sparkles, BarChart3,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -368,10 +368,56 @@ export default function G2DiscoveryPanel() {
     autoCancelRef.current = true;
   }, []);
 
+  // Enrich state
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichResults, setEnrichResults] = useState<ImportResult[]>([]);
+  const [enrichProgress, setEnrichProgress] = useState(0);
+  const [enrichCategory, setEnrichCategory] = useState<string | null>(null);
+
+  const enrichProducts = useCallback(async (catSlug?: string) => {
+    setIsEnriching(true);
+    setEnrichResults([]);
+    setEnrichProgress(0);
+    setEnrichCategory(catSlug || "all");
+
+    const batchSize = 5;
+    let totalProcessed = 0;
+    const maxBatches = 10;
+
+    for (let batch = 0; batch < maxBatches; batch++) {
+      setEnrichProgress(((batch + 1) / maxBatches) * 100);
+
+      const { data, error } = await invokeWithRetry({
+        action: "enrich",
+        category_slug: catSlug || undefined,
+      });
+
+      if (error) {
+        toast({ title: "Enrichment error", description: error.message || "Network error", variant: "destructive" });
+        break;
+      }
+
+      if (data?.results) {
+        setEnrichResults((prev) => [...prev, ...data.results]);
+        totalProcessed += data.results.length;
+        if (data.results.length === 0 || data.message === "No products need enrichment") break;
+      } else {
+        break;
+      }
+    }
+
+    setIsEnriching(false);
+    setEnrichProgress(100);
+    toast({ title: "Enrichment complete", description: `Processed ${totalProcessed} products.` });
+  }, [invokeWithRetry, toast]);
+
   const newProductsCount = discoveredProducts.filter((p) => !p.already_exists).length;
   const successCount = importResults.filter((r) => r.status === "success").length;
   const errorCount = importResults.filter((r) => r.status === "error").length;
   const autoProgress = categoryEntries.length > 0 ? (autoCategoryIndex / categoryEntries.length) * 100 : 0;
+  const enrichSuccessCount = enrichResults.filter((r) => r.status === "success").length;
+  const enrichErrorCount = enrichResults.filter((r) => r.status === "error").length;
+  const enrichSkippedCount = enrichResults.filter((r) => r.status === "skipped").length;
 
   return (
     <div className="space-y-6">
@@ -643,6 +689,96 @@ export default function G2DiscoveryPanel() {
           </CardContent>
         </Card>
       )}
+      {/* Enrich Products */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Enrich Products
+              </CardTitle>
+              <CardDescription>
+                Scrape detailed data (features, pros/cons, pricing, website URL) for products that were quick-imported with minimal data.
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => enrichProducts()}
+                disabled={isEnriching || isAutoRunning}
+              >
+                {isEnriching ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enriching...</>
+                ) : (
+                  <><Sparkles className="mr-2 h-4 w-4" /> Enrich All Products</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Per-category enrich buttons */}
+          <div className="flex flex-wrap gap-2">
+            {categoryEntries.slice(0, 20).map(([slug]) => (
+              <Button
+                key={slug}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                disabled={isEnriching || isAutoRunning}
+                onClick={() => enrichProducts(slug)}
+              >
+                {isEnriching && enrichCategory === slug ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1 h-3 w-3" />
+                )}
+                {CATEGORY_LABELS[slug] || slug}
+              </Button>
+            ))}
+          </div>
+
+          {/* Progress */}
+          {isEnriching && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Enrichment Progress</span>
+                <span className="font-medium">{Math.round(enrichProgress)}%</span>
+              </div>
+              <Progress value={enrichProgress} className="h-2" />
+            </div>
+          )}
+
+          {/* Results */}
+          {enrichResults.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  {enrichSuccessCount} enriched, {enrichSkippedCount} skipped, {enrichErrorCount} errors
+                </span>
+              </div>
+              <ScrollArea className="h-48">
+                <div className="space-y-1">
+                  {enrichResults.map((r, i) => (
+                    <div key={i} className="flex items-center justify-between py-1 px-2 rounded text-sm hover:bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        {r.status === "success" && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                        {r.status === "error" && <XCircle className="h-4 w-4 text-destructive" />}
+                        {r.status === "skipped" && <SkipForward className="h-4 w-4 text-amber-600" />}
+                        <span className="font-medium">{r.name}</span>
+                      </div>
+                      {r.reason && (
+                        <span className="text-xs text-muted-foreground max-w-48 truncate">{r.reason}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
