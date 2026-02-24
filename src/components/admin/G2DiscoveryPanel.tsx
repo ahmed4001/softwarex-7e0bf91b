@@ -163,6 +163,15 @@ export default function G2DiscoveryPanel() {
   const [importResults, setImportResults] = useState<ImportResult[]>([]);
   const [importProgress, setImportProgress] = useState(0);
 
+  // Auto-discover state
+  const [isAutoRunning, setIsAutoRunning] = useState(false);
+  const [autoCurrentCategory, setAutoCurrentCategory] = useState<string | null>(null);
+  const [autoCategoryIndex, setAutoCategoryIndex] = useState(0);
+  const [autoTotalImported, setAutoTotalImported] = useState(0);
+  const [autoTotalSkipped, setAutoTotalSkipped] = useState(0);
+  const [autoTotalErrors, setAutoTotalErrors] = useState(0);
+  const [autoCategoryResults, setAutoCategoryResults] = useState<Array<{ slug: string; imported: number; skipped: number; errors: number }>>([]); 
+
   const categoryEntries = Object.entries(G2_CATEGORY_MAP).sort((a, b) =>
     (CATEGORY_LABELS[a[0]] || a[0]).localeCompare(CATEGORY_LABELS[b[0]] || b[0])
   );
@@ -270,23 +279,150 @@ export default function G2DiscoveryPanel() {
     toast({ title: "Import complete", description: `Processed ${products.length} products.` });
   }, [selectedCategory, selectedProducts, discoveredProducts, toast]);
 
+  const autoDiscoverAll = useCallback(async () => {
+    setIsAutoRunning(true);
+    setAutoTotalImported(0);
+    setAutoTotalSkipped(0);
+    setAutoTotalErrors(0);
+    setAutoCategoryResults([]);
+
+    const allSlugs = categoryEntries.map(([slug]) => slug);
+
+    for (let i = 0; i < allSlugs.length; i++) {
+      const catSlug = allSlugs[i];
+      setAutoCategoryIndex(i + 1);
+      setAutoCurrentCategory(catSlug);
+
+      // Step 1: Discover products for this category
+      let discovered: DiscoveredProduct[] = [];
+      try {
+        const { data, error } = await supabase.functions.invoke("discover-products", {
+          body: { action: "discover", category_slug: catSlug, page: 1 },
+        });
+        if (!error && data?.products) {
+          discovered = data.products.filter((p: any) => !p.already_exists);
+        }
+      } catch {
+        // skip this category on discovery error
+      }
+
+      if (discovered.length === 0) {
+        setAutoCategoryResults((prev) => [...prev, { slug: catSlug, imported: 0, skipped: 0, errors: 0 }]);
+        continue;
+      }
+
+      // Step 2: Import new products in batches of 3
+      let catImported = 0;
+      let catSkipped = 0;
+      let catErrors = 0;
+      const batchSize = 3;
+      for (let j = 0; j < discovered.length; j += batchSize) {
+        const batch = discovered.slice(j, j + batchSize);
+        try {
+          const { data, error } = await supabase.functions.invoke("discover-products", {
+            body: { action: "import", category_slug: catSlug, import_products: batch },
+          });
+          if (!error && data?.results) {
+            for (const r of data.results) {
+              if (r.status === "success") catImported++;
+              else if (r.status === "skipped") catSkipped++;
+              else catErrors++;
+            }
+          } else {
+            catErrors += batch.length;
+          }
+        } catch {
+          catErrors += batch.length;
+        }
+      }
+
+      setAutoTotalImported((prev) => prev + catImported);
+      setAutoTotalSkipped((prev) => prev + catSkipped);
+      setAutoTotalErrors((prev) => prev + catErrors);
+      setAutoCategoryResults((prev) => [...prev, { slug: catSlug, imported: catImported, skipped: catSkipped, errors: catErrors }]);
+    }
+
+    setIsAutoRunning(false);
+    setAutoCurrentCategory(null);
+    toast({ title: "Auto-discovery complete", description: "All categories have been processed." });
+  }, [categoryEntries, toast]);
+
   const newProductsCount = discoveredProducts.filter((p) => !p.already_exists).length;
   const successCount = importResults.filter((r) => r.status === "success").length;
   const errorCount = importResults.filter((r) => r.status === "error").length;
+  const autoProgress = categoryEntries.length > 0 ? (autoCategoryIndex / categoryEntries.length) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      {/* Category selector */}
+      {/* Auto-discover all */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            G2 Product Discovery
-          </CardTitle>
-          <CardDescription>
-            Crawl G2 category pages to discover and import software products automatically.
-            Select a category to start discovering.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                G2 Product Discovery
+              </CardTitle>
+              <CardDescription>
+                Crawl G2 category pages to discover and import software products automatically.
+              </CardDescription>
+            </div>
+            <Button
+              size="lg"
+              onClick={autoDiscoverAll}
+              disabled={isAutoRunning || isDiscovering || isImporting}
+            >
+              {isAutoRunning ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Discovering {autoCategoryIndex}/{categoryEntries.length}...</>
+              ) : (
+                <><ArrowRight className="mr-2 h-4 w-4" /> Auto-Discover All ({categoryEntries.length} categories)</>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        {isAutoRunning && (
+          <CardContent className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Processing: <span className="font-medium text-foreground">{CATEGORY_LABELS[autoCurrentCategory || ""] || autoCurrentCategory}</span>
+              </span>
+              <span className="font-medium">{Math.round(autoProgress)}%</span>
+            </div>
+            <Progress value={autoProgress} className="h-2" />
+            <div className="flex gap-4 text-sm">
+              <span className="text-green-600 dark:text-green-400">{autoTotalImported} imported</span>
+              <span className="text-muted-foreground">{autoTotalSkipped} skipped</span>
+              <span className="text-destructive">{autoTotalErrors} errors</span>
+            </div>
+          </CardContent>
+        )}
+        {!isAutoRunning && autoCategoryResults.length > 0 && (
+          <CardContent>
+            <div className="text-sm mb-3 font-medium">
+              Completed: {autoTotalImported} imported, {autoTotalSkipped} skipped, {autoTotalErrors} errors
+            </div>
+            <ScrollArea className="h-48">
+              <div className="space-y-1">
+                {autoCategoryResults.map((r) => (
+                  <div key={r.slug} className="flex items-center justify-between py-1 px-2 rounded text-sm hover:bg-muted/50">
+                    <span className="font-medium">{CATEGORY_LABELS[r.slug] || r.slug}</span>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      <span className="text-green-600 dark:text-green-400">{r.imported} new</span>
+                      <span>{r.skipped} skipped</span>
+                      {r.errors > 0 && <span className="text-destructive">{r.errors} errors</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Category selector for manual discovery */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Or discover by category</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -294,9 +430,9 @@ export default function G2DiscoveryPanel() {
               <Button
                 key={slug}
                 size="sm"
-                variant={selectedCategory === slug ? "default" : "outline"}
+                variant={selectedCategory === slug ? "default" : autoCurrentCategory === slug ? "secondary" : "outline"}
                 onClick={() => handleSelectCategory(slug)}
-                disabled={isDiscovering || isImporting}
+                disabled={isDiscovering || isImporting || isAutoRunning}
                 className="text-xs"
               >
                 {CATEGORY_LABELS[slug] || slug}
