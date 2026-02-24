@@ -1,16 +1,24 @@
 import { Link, useLocation } from "react-router-dom";
 import { SearchBar } from "./SearchBar";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LayoutDashboard, Store } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Menu, X, LayoutDashboard, Store, ChevronDown, BookOpen, BarChart3, GitCompareArrows, Trophy } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
+const resourceLinks = [
+  { to: "/blog", label: "nav.blog", icon: BookOpen },
+  { to: "/compare", label: "nav.compare", icon: GitCompareArrows },
+  { to: "/leaderboard", label: "nav.leaderboard", icon: Trophy },
+];
+
 export function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const resourcesRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -18,16 +26,29 @@ export function PublicHeader() {
   const navLinks = [
     { to: "/", label: t("nav.home") },
     { to: "/categories", label: t("nav.categories") },
-    { to: "/compare", label: t("nav.compare") },
-    { to: "/leaderboard", label: t("nav.leaderboard") },
-    { to: "/blog", label: t("nav.blog") },
   ];
+
+  const isResourceActive = resourceLinks.some((l) => location.pathname.startsWith(l.to));
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (resourcesRef.current && !resourcesRef.current.contains(e.target as Node)) {
+        setResourcesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close dropdown on route change
+  useEffect(() => { setResourcesOpen(false); setMobileOpen(false); }, [location.pathname]);
 
   return (
     <header className={cn(
@@ -61,6 +82,41 @@ export function PublicHeader() {
               {l.label}
             </Link>
           ))}
+
+          {/* Resources dropdown */}
+          <div className="relative" ref={resourcesRef}>
+            <button
+              onClick={() => setResourcesOpen(!resourcesOpen)}
+              className={cn(
+                "flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                isResourceActive
+                  ? "text-primary bg-primary/8"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t("nav.resources", "Resources")}
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", resourcesOpen && "rotate-180")} />
+            </button>
+            {resourcesOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-52 rounded-xl border border-border bg-card shadow-lg p-1.5 animate-in fade-in-0 zoom-in-95">
+                {resourceLinks.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg transition-colors",
+                      location.pathname.startsWith(l.to)
+                        ? "text-primary bg-primary/8 font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    )}
+                  >
+                    <l.icon className="h-4 w-4" />
+                    {t(l.label)}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="hidden lg:block flex-1 max-w-sm">
@@ -115,6 +171,20 @@ export function PublicHeader() {
                 className="block px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted transition-colors"
               >
                 {l.label}
+              </Link>
+            ))}
+            <div className="px-3 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("nav.resources", "Resources")}
+            </div>
+            {resourceLinks.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted transition-colors"
+              >
+                <l.icon className="h-4 w-4" />
+                {t(l.label)}
               </Link>
             ))}
             {user ? (
