@@ -67,9 +67,9 @@ export function PublicHeader() {
               Sign In
             </Button>
           </Link>
-          <Link to="/submit-product">
+          <Link to="/register">
             <Button size="sm" className="bg-primary text-primary-foreground rounded-lg font-semibold px-4 text-sm">
-              Submit Product
+              Sign Up
             </Button>
           </Link>
           <button
