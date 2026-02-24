@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -170,7 +170,8 @@ export default function G2DiscoveryPanel() {
   const [autoTotalImported, setAutoTotalImported] = useState(0);
   const [autoTotalSkipped, setAutoTotalSkipped] = useState(0);
   const [autoTotalErrors, setAutoTotalErrors] = useState(0);
-  const [autoCategoryResults, setAutoCategoryResults] = useState<Array<{ slug: string; imported: number; skipped: number; errors: number }>>([]); 
+  const [autoCategoryResults, setAutoCategoryResults] = useState<Array<{ slug: string; imported: number; skipped: number; errors: number }>>([]);
+  const autoCancelRef = useRef(false);
 
   const categoryEntries = Object.entries(G2_CATEGORY_MAP).sort((a, b) =>
     (CATEGORY_LABELS[a[0]] || a[0]).localeCompare(CATEGORY_LABELS[b[0]] || b[0])
@@ -280,6 +281,7 @@ export default function G2DiscoveryPanel() {
   }, [selectedCategory, selectedProducts, discoveredProducts, toast]);
 
   const autoDiscoverAll = useCallback(async () => {
+    autoCancelRef.current = false;
     setIsAutoRunning(true);
     setAutoTotalImported(0);
     setAutoTotalSkipped(0);
@@ -289,14 +291,17 @@ export default function G2DiscoveryPanel() {
     const allSlugs = categoryEntries.map(([slug]) => slug);
 
     for (let i = 0; i < allSlugs.length; i++) {
+      if (autoCancelRef.current) break;
+
       const catSlug = allSlugs[i];
       setAutoCategoryIndex(i + 1);
       setAutoCurrentCategory(catSlug);
 
       // Step 1: Discover products across multiple pages
       let discovered: DiscoveredProduct[] = [];
-      const maxPages = 10; // up to 10 pages per category
+      const maxPages = 10;
       for (let page = 1; page <= maxPages; page++) {
+        if (autoCancelRef.current) break;
         try {
           const { data, error } = await supabase.functions.invoke("discover-products", {
             body: { action: "discover", category_slug: catSlug, page },
@@ -305,12 +310,13 @@ export default function G2DiscoveryPanel() {
             const newOnes = data.products.filter((p: any) => !p.already_exists);
             discovered.push(...newOnes);
           }
-          // Stop if no more pages
           if (!data?.has_next_page) break;
         } catch {
-          break; // stop paging on error
+          break;
         }
       }
+
+      if (autoCancelRef.current) break;
 
       if (discovered.length === 0) {
         setAutoCategoryResults((prev) => [...prev, { slug: catSlug, imported: 0, skipped: 0, errors: 0 }]);
@@ -323,6 +329,7 @@ export default function G2DiscoveryPanel() {
       let catErrors = 0;
       const batchSize = 3;
       for (let j = 0; j < discovered.length; j += batchSize) {
+        if (autoCancelRef.current) break;
         const batch = discovered.slice(j, j + batchSize);
         try {
           const { data, error } = await supabase.functions.invoke("discover-products", {
@@ -350,8 +357,13 @@ export default function G2DiscoveryPanel() {
 
     setIsAutoRunning(false);
     setAutoCurrentCategory(null);
-    toast({ title: "Auto-discovery complete", description: "All categories have been processed." });
+    const wasCancelled = autoCancelRef.current;
+    toast({ title: wasCancelled ? "Auto-discovery stopped" : "Auto-discovery complete", description: wasCancelled ? "Stopped by user." : "All categories have been processed." });
   }, [categoryEntries, toast]);
+
+  const cancelAutoDiscover = useCallback(() => {
+    autoCancelRef.current = true;
+  }, []);
 
   const newProductsCount = discoveredProducts.filter((p) => !p.already_exists).length;
   const successCount = importResults.filter((r) => r.status === "success").length;
@@ -373,17 +385,24 @@ export default function G2DiscoveryPanel() {
                 Crawl G2 category pages to discover and import software products automatically.
               </CardDescription>
             </div>
-            <Button
-              size="lg"
-              onClick={autoDiscoverAll}
-              disabled={isAutoRunning || isDiscovering || isImporting}
-            >
-              {isAutoRunning ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Discovering {autoCategoryIndex}/{categoryEntries.length}...</>
-              ) : (
-                <><ArrowRight className="mr-2 h-4 w-4" /> Auto-Discover All ({categoryEntries.length} categories)</>
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                onClick={autoDiscoverAll}
+                disabled={isAutoRunning || isDiscovering || isImporting}
+              >
+                {isAutoRunning ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Discovering {autoCategoryIndex}/{categoryEntries.length}...</>
+                ) : (
+                  <><ArrowRight className="mr-2 h-4 w-4" /> Auto-Discover All ({categoryEntries.length} categories)</>
+                )}
+              </Button>
+              {isAutoRunning && (
+                <Button size="lg" variant="destructive" onClick={cancelAutoDiscover}>
+                  <XCircle className="mr-2 h-4 w-4" /> Stop
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
         </CardHeader>
         {isAutoRunning && (
