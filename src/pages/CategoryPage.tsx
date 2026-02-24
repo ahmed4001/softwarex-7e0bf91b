@@ -5,12 +5,11 @@ import { SeoHead } from "@/components/SeoHead";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { PaginationControls } from "@/components/PaginationControls";
 
 const PAGE_SIZE = 20;
 
@@ -147,48 +146,7 @@ export default function CategoryPage() {
               )}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-xl"
-                  disabled={page === 0}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {Array.from({ length: totalPages }).map((_, i) => {
-                  // Show max 7 page buttons with ellipsis
-                  if (totalPages <= 7 || i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 1) {
-                    return (
-                      <Button
-                        key={i}
-                        variant={i === page ? "default" : "outline"}
-                        size="icon"
-                        className="rounded-xl h-9 w-9 text-sm"
-                        onClick={() => setPage(i)}
-                      >
-                        {i + 1}
-                      </Button>
-                    );
-                  }
-                  if (i === 1 && page > 3) return <span key={i} className="text-muted-foreground px-1">…</span>;
-                  if (i === totalPages - 2 && page < totalPages - 4) return <span key={i} className="text-muted-foreground px-1">…</span>;
-                  return null;
-                })}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-xl"
-                  disabled={page >= totalPages - 1}
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-10" />
           </div>
         </div>
       </div>
