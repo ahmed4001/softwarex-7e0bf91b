@@ -1,0 +1,258 @@
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { seedProducts, popularComparisons, type SeedProduct } from "@/lib/seed-products";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, XCircle, SkipForward, Loader2, Play, Zap, BarChart3 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface ScrapeResult {
+  name: string;
+  status: "success" | "error" | "skipped";
+  reason?: string;
+}
+
+const BATCH_SIZE = 3;
+
+export default function AdminSeedPage() {
+  const { toast } = useToast();
+  const [isRunning, setIsRunning] = useState(false);
+  const [isCreatingComparisons, setIsCreatingComparisons] = useState(false);
+  const [results, setResults] = useState<ScrapeResult[]>([]);
+  const [currentBatch, setCurrentBatch] = useState(0);
+  const [totalBatches, setTotalBatches] = useState(0);
+  const [currentProduct, setCurrentProduct] = useState("");
+
+  const totalProducts = seedProducts.length;
+  const successCount = results.filter((r) => r.status === "success").length;
+  const errorCount = results.filter((r) => r.status === "error").length;
+  const skippedCount = results.filter((r) => r.status === "skipped").length;
+  const progress = totalBatches > 0 ? (currentBatch / totalBatches) * 100 : 0;
+
+  const startScraping = useCallback(async () => {
+    setIsRunning(true);
+    setResults([]);
+    setCurrentBatch(0);
+
+    const batches: SeedProduct[][] = [];
+    for (let i = 0; i < seedProducts.length; i += BATCH_SIZE) {
+      batches.push(seedProducts.slice(i, i + BATCH_SIZE));
+    }
+    setTotalBatches(batches.length);
+
+    for (let i = 0; i < batches.length; i++) {
+      setCurrentBatch(i + 1);
+      const batch = batches[i];
+      setCurrentProduct(batch.map((p) => p.name).join(", "));
+
+      try {
+        const { data, error } = await supabase.functions.invoke("scrape-products", {
+          body: { products: batch },
+        });
+
+        if (error) {
+          const errorResults = batch.map((p) => ({
+            name: p.name,
+            status: "error" as const,
+            reason: error.message,
+          }));
+          setResults((prev) => [...prev, ...errorResults]);
+        } else if (data?.results) {
+          setResults((prev) => [...prev, ...data.results]);
+        }
+      } catch (err) {
+        const errorResults = batch.map((p) => ({
+          name: p.name,
+          status: "error" as const,
+          reason: err instanceof Error ? err.message : "Network error",
+        }));
+        setResults((prev) => [...prev, ...errorResults]);
+      }
+    }
+
+    setIsRunning(false);
+    setCurrentProduct("");
+    toast({ title: "Scraping complete", description: "All products have been processed." });
+  }, [toast]);
+
+  const createComparisons = useCallback(async () => {
+    setIsCreatingComparisons(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-products", {
+        body: { action: "create_comparisons", products: popularComparisons, comparisons: popularComparisons },
+      });
+
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        const successCount = data?.results?.filter((r: any) => r.status === "success").length || 0;
+        toast({ title: "Comparisons created", description: `${successCount} comparisons added.` });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to create comparisons", variant: "destructive" });
+    }
+    setIsCreatingComparisons(false);
+  }, [toast]);
+
+  // Group products by category for display
+  const categorySlugs = [...new Set(seedProducts.map((p) => p.category_slug))];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-display font-bold text-foreground">Seed Products Database</h1>
+        <p className="text-muted-foreground mt-1">
+          Scrape real product data from websites and G2 reviews using Firecrawl.
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-foreground">{totalProducts}</div>
+            <div className="text-sm text-muted-foreground">Total Products</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-green-600">{successCount}</div>
+            <div className="text-sm text-muted-foreground">Scraped</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-amber-600">{skippedCount}</div>
+            <div className="text-sm text-muted-foreground">Skipped</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-destructive">{errorCount}</div>
+            <div className="text-sm text-muted-foreground">Errors</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-wrap gap-4">
+        <Button onClick={startScraping} disabled={isRunning} size="lg">
+          {isRunning ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Scraping... Batch {currentBatch}/{totalBatches}
+            </>
+          ) : (
+            <>
+              <Play className="mr-2 h-4 w-4" />
+              Start Scraping ({totalProducts} products)
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={createComparisons}
+          disabled={isCreatingComparisons || isRunning}
+          variant="secondary"
+          size="lg"
+        >
+          {isCreatingComparisons ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <Zap className="mr-2 h-4 w-4" />
+              Create Comparisons ({popularComparisons.length})
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Progress */}
+      {isRunning && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+            {currentProduct && (
+              <p className="text-sm text-muted-foreground">
+                Currently processing: <span className="font-medium text-foreground">{currentProduct}</span>
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Results */}
+      {results.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Results
+            </CardTitle>
+            <CardDescription>
+              {successCount} scraped, {skippedCount} skipped, {errorCount} errors
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-96 overflow-y-auto space-y-1">
+              {results.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2">
+                    {r.status === "success" && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                    {r.status === "error" && <XCircle className="h-4 w-4 text-destructive" />}
+                    {r.status === "skipped" && <SkipForward className="h-4 w-4 text-amber-600" />}
+                    <span className="font-medium">{r.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={r.status === "success" ? "default" : r.status === "skipped" ? "secondary" : "destructive"}
+                      className="text-xs"
+                    >
+                      {r.status}
+                    </Badge>
+                    {r.reason && (
+                      <span className="text-xs text-muted-foreground max-w-48 truncate">{r.reason}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Product catalog preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Product Catalog ({totalProducts} products across {categorySlugs.length} categories)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {categorySlugs.map((slug) => {
+              const catProducts = seedProducts.filter((p) => p.category_slug === slug);
+              return (
+                <div key={slug} className="border rounded-lg p-3">
+                  <div className="font-medium text-sm text-foreground mb-1">{slug}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {catProducts.map((p) => p.name).join(", ")}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
