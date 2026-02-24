@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// G2 category slug mapping — maps our category slugs to G2 category paths
 const G2_CATEGORY_MAP: Record<string, string> = {
   "project-management": "project-management",
   "crm": "crm",
@@ -67,11 +66,78 @@ const G2_CATEGORY_MAP: Record<string, string> = {
   "proposal": "proposal",
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  "project-management": "Project Management",
+  "crm": "CRM",
+  "communication": "Team Communication",
+  "ecommerce": "E-Commerce",
+  "analytics": "Analytics",
+  "marketing": "Marketing Automation",
+  "help-desk": "Help Desk",
+  "hr": "HR Management",
+  "accounting": "Accounting",
+  "seo": "SEO",
+  "social-media": "Social Media Management",
+  "cms": "Content Management",
+  "development": "Developer Tools",
+  "security": "Cybersecurity",
+  "collaboration": "Collaboration",
+  "lms": "Learning Management",
+  "time-tracking": "Time Tracking",
+  "video-conferencing": "Video Conferencing",
+  "email-marketing": "Email Marketing",
+  "live-chat": "Live Chat",
+  "no-code": "No-Code Development",
+  "ai-writing": "AI Writing",
+  "ai-chatbots": "AI Chatbots",
+  "ai-code": "AI Code Generation",
+  "ai-image-generators": "AI Image Generation",
+  "cloud-hosting": "Cloud Hosting",
+  "database-management": "Database Management",
+  "ci-cd": "CI/CD",
+  "bug-tracking": "Bug Tracking",
+  "api-management": "API Management",
+  "erp": "ERP",
+  "payroll": "Payroll",
+  "recruitment": "Recruitment",
+  "employee-engagement": "Employee Engagement",
+  "expense-management": "Expense Management",
+  "contract-management": "Contract Management",
+  "e-signature": "E-Signature",
+  "document-management": "Document Management",
+  "survey": "Survey",
+  "webinar": "Webinar",
+  "graphic-design": "Graphic Design",
+  "data-visualization": "Data Visualization",
+  "business-intelligence": "Business Intelligence",
+  "inventory-management": "Inventory Management",
+  "invoicing": "Invoicing",
+  "lead-generation": "Lead Generation",
+  "sales-engagement": "Sales Engagement",
+  "sales-intelligence": "Sales Intelligence",
+  "customer-success": "Customer Success",
+  "password-management": "Password Management",
+  "antivirus": "Antivirus",
+  "vpn": "VPN",
+  "backup": "Backup",
+  "supply-chain": "Supply Chain",
+  "tax": "Tax",
+  "text-to-speech": "Text to Speech",
+  "proposal": "Proposal",
+};
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 interface DiscoveredProduct {
   name: string;
   slug: string;
   g2_url: string;
   g2_slug: string;
+  rating?: number;
+  review_count?: number;
+  description?: string;
   website_url?: string;
 }
 
@@ -82,12 +148,7 @@ Deno.serve(async (req) => {
 
   try {
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-    if (!FIRECRAWL_API_KEY) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Firecrawl not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -95,9 +156,11 @@ Deno.serve(async (req) => {
 
     const { action, category_slug, g2_category, page, import_products, quick_import } = await req.json();
 
-    // Action: discover — crawl a G2 category page and extract products
+    // ========== ACTION: DISCOVER ==========
     if (action === "discover") {
       const g2Cat = g2_category || G2_CATEGORY_MAP[category_slug];
+      const categoryLabel = CATEGORY_LABELS[category_slug] || category_slug;
+
       if (!g2Cat) {
         return new Response(
           JSON.stringify({ success: false, error: `No G2 mapping for category '${category_slug}'` }),
@@ -106,72 +169,160 @@ Deno.serve(async (req) => {
       }
 
       const pageNum = page || 1;
-      const g2Url = `https://www.g2.com/categories/${g2Cat}?page=${pageNum}`;
-      console.log(`Discovering products from: ${g2Url}`);
 
-      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: g2Url,
-          formats: [
-            {
-              type: "json",
-              schema: {
-                type: "object",
-                properties: {
-                  products: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string", description: "Product name" },
-                        g2_slug: { type: "string", description: "The G2 product slug from the URL (e.g., 'asana' from /products/asana/reviews)" },
-                        rating: { type: "number", description: "Average rating on G2" },
-                        review_count: { type: "number", description: "Number of reviews" },
-                        description: { type: "string", description: "Short product description" },
-                      },
-                    },
-                    description: "List of all software products listed on this G2 category page",
-                  },
-                  total_products: { type: "number", description: "Total number of products in this category on G2" },
-                  has_next_page: { type: "boolean", description: "Whether there are more pages of results" },
-                },
-              },
+      // Strategy: Use Firecrawl search to find G2 products, then use AI to parse
+      let products: DiscoveredProduct[] = [];
+
+      if (FIRECRAWL_API_KEY) {
+        try {
+          // Use Firecrawl search to find products on G2 for this category
+          const searchQuery = `site:g2.com/products best ${categoryLabel} software`;
+          console.log(`Searching Firecrawl for: ${searchQuery}`);
+
+          const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
             },
-          ],
-          onlyMainContent: true,
-          waitFor: 5000,
-        }),
-      });
+            body: JSON.stringify({
+              query: searchQuery,
+              limit: 20,
+              scrapeOptions: { formats: ["markdown"] },
+            }),
+          });
 
-      const scrapeData = await scrapeRes.json();
-      const extracted = scrapeData?.data?.json || scrapeData?.json || {};
-      const products: DiscoveredProduct[] = (extracted.products || []).map((p: any) => ({
-        name: p.name,
-        slug: slugify(p.name),
-        g2_slug: p.g2_slug || slugify(p.name),
-        g2_url: `https://www.g2.com/products/${p.g2_slug || slugify(p.name)}/reviews`,
-        rating: p.rating,
-        review_count: p.review_count,
-        description: p.description,
-      }));
+          const searchData = await searchRes.json();
+          console.log(`Firecrawl search returned ${searchData?.data?.length || 0} results`);
 
-      // Check which products already exist
-      const slugs = products.map((p: DiscoveredProduct) => p.slug);
-      const { data: existing } = await supabase
-        .from("products")
-        .select("slug")
-        .in("slug", slugs);
-      const existingSlugs = new Set((existing || []).map((e: any) => e.slug));
+          if (searchData?.data && Array.isArray(searchData.data)) {
+            for (const result of searchData.data) {
+              const url = result.url || "";
+              // Extract product slugs from G2 URLs like g2.com/products/slack/reviews
+              const g2Match = url.match(/g2\.com\/products\/([^\/]+)/);
+              if (g2Match) {
+                const g2Slug = g2Match[1];
+                // Skip "alternatives" and "competitors" comparison pages
+                if (url.includes("/competitors") || url.includes("/compare")) continue;
+                
+                // Clean the product name from G2 title patterns
+                let name = result.title || g2Slug;
+                name = name
+                  .replace(/^Top \d+\s+/i, "")
+                  .replace(/\s+Alternatives?\s*(&|and)?\s*Competitors?\s*(in\s+\d+)?\s*-?\s*G2\s*$/i, "")
+                  .replace(/\s+Competitors?\s*\d*\s*-?\s*G2\s*$/i, "")
+                  .replace(/\s+Reviews?\s*\d*\s*-?\s*G2\s*$/i, "")
+                  .replace(/\s*\|\s*G2\s*$/i, "")
+                  .replace(/\s*-\s*G2\s*$/i, "")
+                  .trim();
+                
+                if (!name || name.length < 2) name = g2Slug;
+                
+                // Skip if we already have this product in the list
+                if (products.some(p => p.g2_slug === g2Slug)) continue;
+                
+                products.push({
+                  name,
+                  slug: slugify(name),
+                  g2_slug: g2Slug,
+                  g2_url: `https://www.g2.com/products/${g2Slug}/reviews`,
+                  description: result.description || "",
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Firecrawl search error:", e);
+        }
+      }
 
-      const newProducts = products.map((p: any) => ({
-        ...p,
-        already_exists: existingSlugs.has(p.slug),
-      }));
+      // Fallback/supplement: Use Lovable AI to generate known product names for this category
+      if (products.length < 10 && LOVABLE_API_KEY) {
+        try {
+          const offset = (pageNum - 1) * 20;
+          console.log(`Using AI to discover ${categoryLabel} products (offset ${offset})`);
+
+          const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash-lite",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a software industry expert. Return ONLY valid JSON, no markdown formatting.",
+                },
+                {
+                  role: "user",
+                  content: `List 20 real, well-known ${categoryLabel} software products (skip the first ${offset}). For each, provide:
+- name: exact product name
+- g2_slug: the G2.com URL slug (e.g., "slack" for g2.com/products/slack)
+- rating: approximate G2 rating (1-5, one decimal)
+- review_count: approximate number of G2 reviews
+- description: one-sentence description
+- website_url: official website URL
+
+Return as JSON: { "products": [...] }`,
+                },
+              ],
+              temperature: 0.3,
+            }),
+          });
+
+          const aiData = await aiRes.json();
+          const content = aiData?.choices?.[0]?.message?.content || "";
+          
+          // Parse JSON from AI response (handle markdown code blocks)
+          let parsed: any = {};
+          try {
+            const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+            parsed = JSON.parse(jsonMatch[1]?.trim() || content.trim());
+          } catch (e) {
+            console.warn("Failed to parse AI response:", content.substring(0, 200));
+          }
+
+          if (parsed.products && Array.isArray(parsed.products)) {
+            for (const p of parsed.products) {
+              if (!p.name) continue;
+              const slug = slugify(p.name);
+              if (products.some(ep => ep.slug === slug)) continue;
+              
+              products.push({
+                name: p.name,
+                slug,
+                g2_slug: p.g2_slug || slug,
+                g2_url: `https://www.g2.com/products/${p.g2_slug || slug}/reviews`,
+                rating: p.rating,
+                review_count: p.review_count,
+                description: p.description,
+                website_url: p.website_url,
+              });
+            }
+          }
+        } catch (e) {
+          console.error("AI discovery error:", e);
+        }
+      }
+
+      // Check which products already exist in DB
+      if (products.length > 0) {
+        const slugs = products.map(p => p.slug);
+        const { data: existing } = await supabase
+          .from("products")
+          .select("slug")
+          .in("slug", slugs);
+        const existingSlugs = new Set((existing || []).map((e: any) => e.slug));
+
+        products = products.map(p => ({
+          ...p,
+          already_exists: existingSlugs.has(p.slug),
+        }));
+      }
+
+      console.log(`Discovered ${products.length} products for ${categoryLabel}`);
 
       return new Response(
         JSON.stringify({
@@ -179,15 +330,15 @@ Deno.serve(async (req) => {
           category_slug,
           g2_category: g2Cat,
           page: pageNum,
-          products: newProducts,
-          total_products: extracted.total_products || products.length,
-          has_next_page: extracted.has_next_page ?? products.length >= 20,
+          products,
+          total_products: products.length,
+          has_next_page: pageNum === 1 && products.length >= 15,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Action: import — take discovered products and insert them (quick mode skips per-product scraping)
+    // ========== ACTION: IMPORT ==========
     if (action === "import") {
       if (!import_products || !Array.isArray(import_products) || import_products.length === 0) {
         return new Response(
@@ -228,7 +379,7 @@ Deno.serve(async (req) => {
           let websiteUrl = product.website_url || null;
           let g2Data: any = {};
 
-          // Only scrape individual G2 product pages in non-quick mode
+          // In non-quick mode, try to scrape more details from the product's G2 page
           if (!quick_import && FIRECRAWL_API_KEY) {
             try {
               const controller = new AbortController();
@@ -243,40 +394,60 @@ Deno.serve(async (req) => {
                 signal: controller.signal,
                 body: JSON.stringify({
                   url: product.g2_url,
-                  formats: [
-                    {
-                      type: "json",
-                      schema: {
-                        type: "object",
-                        properties: {
-                          website_url: { type: "string", description: "The official website URL of the product" },
-                          avg_rating: { type: "number", description: "Overall average rating out of 5" },
-                          total_reviews: { type: "number", description: "Total number of reviews" },
-                          description: { type: "string", description: "Product description (2-3 sentences)" },
-                          tagline: { type: "string", description: "Product tagline or one-liner" },
-                          pricing_model: { type: "string", enum: ["free", "freemium", "paid", "subscription", "one-time"] },
-                          features: { type: "array", items: { type: "string" }, description: "Key features (up to 8)" },
-                        },
-                      },
-                    },
-                  ],
+                  formats: ["markdown"],
                   onlyMainContent: true,
                   waitFor: 3000,
                 }),
               });
               clearTimeout(timeout);
               const g2Result = await g2Res.json();
-              g2Data = g2Result?.data?.json || g2Result?.json || {};
+              const markdown = g2Result?.data?.markdown || g2Result?.markdown || "";
+
+              // Use AI to extract structured data from the markdown
+              if (markdown && LOVABLE_API_KEY) {
+                const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model: "google/gemini-2.5-flash-lite",
+                    messages: [
+                      { role: "system", content: "Extract product data from this G2 page content. Return ONLY valid JSON." },
+                      { role: "user", content: `Extract from this G2 product page:\n\n${markdown.substring(0, 4000)}\n\nReturn JSON: { "website_url": "...", "description": "...", "tagline": "...", "pricing_model": "free|freemium|paid|subscription|one-time", "features": ["..."], "avg_rating": N, "total_reviews": N, "pros_summary": "...", "cons_summary": "..." }` },
+                    ],
+                    temperature: 0.1,
+                  }),
+                });
+                const aiData = await aiRes.json();
+                const content = aiData?.choices?.[0]?.message?.content || "";
+                try {
+                  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+                  g2Data = JSON.parse(jsonMatch[1]?.trim() || content.trim());
+                } catch {}
+              }
+
               if (!websiteUrl && g2Data.website_url) websiteUrl = g2Data.website_url;
             } catch (e) {
-              console.warn(`Scrape timeout/error for ${product.name}, using discovered data`);
+              console.warn(`Scrape error for ${product.name}, using discovered data`);
             }
+          }
+
+          // Auto-fetch logo URL via Clearbit if we have a website
+          let logoUrl: string | null = null;
+          if (websiteUrl) {
+            try {
+              const domain = new URL(websiteUrl).hostname;
+              logoUrl = `https://logo.clearbit.com/${domain}`;
+            } catch {}
           }
 
           const productRecord = {
             name: product.name,
             slug: product.slug,
             website_url: websiteUrl,
+            logo_url: logoUrl,
             category_id: category.id,
             tagline: g2Data.tagline || product.description || `${product.name} software solution`,
             description: g2Data.description || product.description || `${product.name} is a software product.`,
@@ -305,7 +476,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Only delay in non-quick mode
         if (!quick_import) {
           await new Promise((r) => setTimeout(r, 1000));
         }
@@ -317,8 +487,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Action: enrich — scrape detailed data for products missing website_url or features
+    // ========== ACTION: ENRICH ==========
     if (action === "enrich") {
+      if (!FIRECRAWL_API_KEY) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Firecrawl not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       let query = supabase
         .from("products")
         .select("id, name, slug, website_url, features")
@@ -334,7 +511,7 @@ Deno.serve(async (req) => {
         if (cat) query = query.eq("category_id", cat.id);
       }
 
-      const { data: products } = await query.limit(import_products?.length || 50);
+      const { data: products } = await query.limit(50);
 
       const toEnrich = (products || []).filter(
         (p: any) => !p.website_url || !p.features || (Array.isArray(p.features) && p.features.length === 0)
@@ -351,7 +528,6 @@ Deno.serve(async (req) => {
 
       for (const product of toEnrich) {
         try {
-          // Try scraping the G2 product page for detailed data
           const g2Url = `https://www.g2.com/products/${product.slug}/reviews`;
           let enrichedData: any = {};
 
@@ -368,39 +544,44 @@ Deno.serve(async (req) => {
               signal: controller.signal,
               body: JSON.stringify({
                 url: g2Url,
-                formats: [
-                  {
-                    type: "json",
-                    schema: {
-                      type: "object",
-                      properties: {
-                        website_url: { type: "string", description: "Official website URL" },
-                        description: { type: "string", description: "Product description (2-3 sentences)" },
-                        tagline: { type: "string", description: "Product tagline" },
-                        pricing_model: { type: "string", enum: ["free", "freemium", "paid", "subscription", "one-time"] },
-                        features: { type: "array", items: { type: "string" }, description: "Key features (up to 8)" },
-                        avg_rating: { type: "number", description: "Average rating out of 5" },
-                        total_reviews: { type: "number", description: "Total number of reviews" },
-                        pros_summary: { type: "string", description: "Summary of what users like (2-3 sentences)" },
-                        cons_summary: { type: "string", description: "Summary of common complaints (2-3 sentences)" },
-                      },
-                    },
-                  },
-                ],
+                formats: ["markdown"],
                 onlyMainContent: true,
                 waitFor: 3000,
               }),
             });
             clearTimeout(timeout);
             const result = await res.json();
-            enrichedData = result?.data?.json || result?.json || {};
+            const markdown = result?.data?.markdown || result?.markdown || "";
+
+            if (markdown && LOVABLE_API_KEY) {
+              const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "google/gemini-2.5-flash-lite",
+                  messages: [
+                    { role: "system", content: "Extract product data. Return ONLY valid JSON." },
+                    { role: "user", content: `Extract from this G2 page:\n\n${markdown.substring(0, 4000)}\n\nReturn JSON: { "website_url": "...", "description": "...", "tagline": "...", "pricing_model": "free|freemium|paid|subscription|one-time", "features": ["..."], "avg_rating": N, "total_reviews": N, "pros_summary": "...", "cons_summary": "..." }` },
+                  ],
+                  temperature: 0.1,
+                }),
+              });
+              const aiData = await aiRes.json();
+              const content = aiData?.choices?.[0]?.message?.content || "";
+              try {
+                const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+                enrichedData = JSON.parse(jsonMatch[1]?.trim() || content.trim());
+              } catch {}
+            }
           } catch (e) {
             console.warn(`Enrich scrape failed for ${product.name}:`, e);
             results.push({ name: product.name, status: "error", reason: "Scrape timeout" });
             continue;
           }
 
-          // Build update payload — only update fields that are currently empty
           const updates: any = {};
           if (!product.website_url && enrichedData.website_url) updates.website_url = enrichedData.website_url;
           if (enrichedData.description) updates.description = enrichedData.description;
@@ -427,13 +608,17 @@ Deno.serve(async (req) => {
           if (updateError) {
             results.push({ name: product.name, status: "error", reason: updateError.message });
           } else {
-            results.push({ name: product.name, status: "success", fields: Object.keys(updates) });
+            results.push({ name: product.name, status: "success" });
           }
-        } catch (e) {
-          results.push({ name: product.name, status: "error", reason: e instanceof Error ? e.message : "Unknown" });
-        }
 
-        await new Promise((r) => setTimeout(r, 1500));
+          await new Promise((r) => setTimeout(r, 500));
+        } catch (e) {
+          results.push({
+            name: product.name,
+            status: "error",
+            reason: e instanceof Error ? e.message : "Unknown error",
+          });
+        }
       }
 
       return new Response(
@@ -442,33 +627,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Action: list_g2_categories — return the mapping for the UI
-    if (action === "list_g2_categories") {
-      return new Response(
-        JSON.stringify({ success: true, categories: G2_CATEGORY_MAP }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     return new Response(
-      JSON.stringify({ success: false, error: "Unknown action. Use 'discover', 'import', 'enrich', or 'list_g2_categories'" }),
+      JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Error in discover-products:", error);
+  } catch (err) {
+    console.error("Error:", err);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
