@@ -8,7 +8,8 @@ const corsHeaders = {
 };
 
 const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_MODELS = ["gemini-2.0-flash-lite", "gemini-2.0-flash"];
 
 // Call Lovable AI gateway first, fallback to direct Google Gemini on 402/429
 async function aiCall(prompt: string, maxTokens = 4000): Promise<string> {
@@ -72,39 +73,46 @@ async function callLovableAI(prompt: string, maxTokens: number, apiKey: string):
 
 async function callGeminiDirect(prompt: string, maxTokens: number, apiKey: string): Promise<string> {
   const systemInstruction = "You are a data generation assistant. You ONLY return valid JSON arrays or objects. No markdown, no explanation, no code fences. Just raw JSON.";
-  const maxRetries = 5;
+  const maxRetriesPerModel = 3;
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: maxTokens,
-          temperature: 0.7,
-        },
-      }),
-    });
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < maxRetriesPerModel; attempt++) {
+      const response = await fetch(`${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature: 0.5,
+          },
+        }),
+      });
 
-    if (response.status === 429) {
-      const waitMs = Math.min(2000 * Math.pow(2, attempt), 30000) + Math.random() * 1000;
-      console.log(`Gemini rate limited (attempt ${attempt + 1}/${maxRetries}), waiting ${Math.round(waitMs)}ms...`);
-      await response.text(); // consume body
-      await new Promise((r) => setTimeout(r, waitMs));
-      continue;
+      if (response.status === 429) {
+        const retryAfterHeader = response.headers.get("retry-after");
+        const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : 0;
+        const backoffMs = Math.min(3000 * Math.pow(2, attempt), 45000);
+        const waitMs = Math.max(retryAfterMs, backoffMs) + Math.random() * 1500;
+        console.log(`Gemini rate limited on ${model} (attempt ${attempt + 1}/${maxRetriesPerModel}), waiting ${Math.round(waitMs)}ms...`);
+        await response.text();
+        await new Promise((r) => setTimeout(r, waitMs));
+        continue;
+      }
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Gemini API error:", response.status, errText);
+        throw new Error(`Google Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      return cleanJson(text);
     }
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Gemini API error:", response.status, errText);
-      throw new Error(`Google Gemini API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    return cleanJson(text);
+    console.log(`Gemini model ${model} exhausted retries, trying fallback model...`);
   }
 
   throw new Error("Google Gemini rate limit exceeded after multiple retries. Please wait a minute and try again.");
@@ -240,7 +248,7 @@ Return ONLY a valid JSON object with improved/filled fields. Include:
 - seo_title, seo_description
 Only return fields that need updating. Use real accurate data.`;
 
-      const result = await aiCall(prompt, 4000);
+      const result = await aiCall(prompt, 2200);
       const enrichment = JSON.parse(result);
 
       const websiteUrl = enrichment.website_url || product.website_url;
