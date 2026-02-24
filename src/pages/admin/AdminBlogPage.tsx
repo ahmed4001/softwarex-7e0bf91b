@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Eye, FileText, Globe, PenLine, TrendingUp,
-  Search, ExternalLink, History, Copy, CheckCircle2,
+  Search, ExternalLink, History, Copy, CheckCircle2, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -16,14 +16,20 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type StatusFilter = "all" | "published" | "draft" | "scheduled" | "archived";
 
 export default function AdminBlogPage() {
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["admin-blog"],
@@ -81,6 +87,44 @@ export default function AdminBlogPage() {
     navigator.clipboard.writeText(`/blog/${slug}`);
     toast({ title: "Slug copied" });
   };
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      const ids = Array.from(selected);
+      const payload: any = { status: newStatus };
+      if (newStatus === "published") payload.published_at = new Date().toISOString();
+      const { error } = await supabase.from("blog_posts").update(payload).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, newStatus) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-blog"] });
+      toast({ title: `${selected.size} post(s) ${newStatus === "published" ? "published" : "unpublished"}` });
+      setSelected(new Set());
+    },
+    onError: (err: any) => {
+      toast({ title: "Bulk update failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(selected);
+      const { error } = await supabase.from("blog_posts").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-blog"] });
+      toast({ title: `${selected.size} post(s) deleted` });
+      setSelected(new Set());
+      setDeleteDialogOpen(false);
+    },
+    onError: (err: any) => {
+      toast({ title: "Bulk delete failed", description: err.message, variant: "destructive" });
+      setDeleteDialogOpen(false);
+    },
+  });
+
+  const isBulkLoading = bulkStatusMutation.isPending || bulkDeleteMutation.isPending;
 
   const statusTabs: { label: string; value: StatusFilter; count: number }[] = [
     { label: "All", value: "all", count: stats.total },
@@ -166,6 +210,46 @@ export default function AdminBlogPage() {
             />
           </div>
         </div>
+
+        {/* Bulk actions bar */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+            <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+            <div className="h-4 w-px bg-border" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={isBulkLoading}
+              onClick={() => bulkStatusMutation.mutate("published")}
+            >
+              {bulkStatusMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
+              Publish
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={isBulkLoading}
+              onClick={() => bulkStatusMutation.mutate("draft")}
+            >
+              <PenLine className="h-3.5 w-3.5" /> Unpublish
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+              disabled={isBulkLoading}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              {bulkDeleteMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Delete
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="ml-auto">
+              Clear selection
+            </Button>
+          </div>
+        )}
 
         {/* Table */}
         <div className="product-card overflow-hidden p-0">
@@ -253,6 +337,26 @@ export default function AdminBlogPage() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selected.size} post(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The selected blog posts will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => bulkDeleteMutation.mutate()}
+            >
+              {bulkDeleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
