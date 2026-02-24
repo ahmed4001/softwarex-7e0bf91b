@@ -7,9 +7,69 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, CheckCircle, Globe, Calendar, Users, Building2, Sparkles, ArrowLeft } from "lucide-react";
+import { ExternalLink, CheckCircle, Globe, Calendar, Users, Building2, Sparkles, ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+
+function ScreenshotGallery({ screenshots, productName }: { screenshots: string[]; productName: string }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  if (!screenshots.length) return null;
+
+  const prev = () => setActiveIndex((i) => (i - 1 + screenshots.length) % screenshots.length);
+  const next = () => setActiveIndex((i) => (i + 1) % screenshots.length);
+
+  return (
+    <div className="glass-card p-8">
+      <h2 className="text-xl font-display font-bold mb-4">Screenshots</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {screenshots.map((url, i) => (
+          <button
+            key={i}
+            onClick={() => { setActiveIndex(i); setLightboxOpen(true); }}
+            className="group relative aspect-video rounded-xl overflow-hidden border border-border/50 bg-muted/30 hover:ring-2 hover:ring-primary/40 transition-all"
+          >
+            <img
+              src={url as string}
+              alt={`${productName} screenshot ${i + 1}`}
+              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors" />
+          </button>
+        ))}
+      </div>
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-background/95 backdrop-blur-xl border-border/50 overflow-hidden">
+          <div className="relative">
+            <img
+              src={screenshots[activeIndex] as string}
+              alt={`${productName} screenshot ${activeIndex + 1}`}
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+            {screenshots.length > 1 && (
+              <>
+                <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 border border-border flex items-center justify-center hover:bg-background transition-colors">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 border border-border flex items-center justify-center hover:bg-background transition-colors">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background/80 border border-border text-xs font-medium">
+              {activeIndex + 1} / {screenshots.length}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -159,6 +219,10 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             )}
+            {(() => {
+              const screenshots = Array.isArray(product.screenshots) ? product.screenshots.filter((s): s is string => typeof s === "string" && s.length > 0) : [];
+              return <ScreenshotGallery screenshots={screenshots} productName={product.name} />;
+            })()}
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-5">
