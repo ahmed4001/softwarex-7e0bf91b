@@ -938,6 +938,8 @@ function EnrichProductsTab() {
   const [enrichProgress, setEnrichProgress] = useState(0);
   const [bulkEnriching, setBulkEnriching] = useState(false);
   const [resumeIndex, setResumeIndex] = useState(0);
+  const [retryStatus, setRetryStatus] = useState<{ productName: string; attempt: number; maxAttempts: number; countdown: number } | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bulkCancelRef = useRef(false);
   const queryClient = useQueryClient();
 
@@ -999,12 +1001,14 @@ function EnrichProductsTab() {
 
           if (isRateLimited && attempt < maxAttempts) {
             const waitMs = 15000 * attempt;
-            toast({
-              title: "Rate limited — retrying",
-              description: `Waiting ${Math.round(waitMs / 1000)}s before retry ${attempt + 1}/${maxAttempts}.`,
-              variant: "destructive",
-            });
+            const totalSec = Math.round(waitMs / 1000);
+            setRetryStatus({ productName: product.name, attempt: attempt + 1, maxAttempts, countdown: totalSec });
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            countdownRef.current = setInterval(() => {
+              setRetryStatus((prev) => prev ? { ...prev, countdown: Math.max(prev.countdown - 1, 0) } : null);
+            }, 1000);
             await sleep(waitMs);
+            if (countdownRef.current) clearInterval(countdownRef.current);
             continue;
           }
 
@@ -1022,6 +1026,8 @@ function EnrichProductsTab() {
       return { ok: false, rateLimited: true };
     } finally {
       setEnriching(null);
+      setRetryStatus(null);
+      if (countdownRef.current) clearInterval(countdownRef.current);
     }
   };
 
@@ -1142,6 +1148,19 @@ function EnrichProductsTab() {
                   <span className="font-semibold">{enrichProgress}%</span>
                 </div>
                 <Progress value={enrichProgress} className="h-2" />
+              </div>
+            )}
+
+            {retryStatus && (
+              <div className="mt-4 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm animate-in fade-in">
+                <RefreshCw className="h-4 w-4 text-destructive animate-spin" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">Retrying: {retryStatus.productName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Attempt {retryStatus.attempt}/{retryStatus.maxAttempts} — waiting {retryStatus.countdown}s
+                  </p>
+                </div>
+                <span className="tabular-nums font-mono text-lg font-bold text-destructive">{retryStatus.countdown}s</span>
               </div>
             )}
           </div>
