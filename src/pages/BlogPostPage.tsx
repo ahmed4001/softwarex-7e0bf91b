@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { CalendarDays, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function BlogPostPage() {
   const { slug } = useParams();
+  const { t } = useTranslation();
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["blog-post", slug],
@@ -16,15 +18,15 @@ export default function BlogPostPage() {
     enabled: !!slug,
   });
 
-  if (isLoading) return <div className="container py-16 text-center text-muted-foreground">Loading...</div>;
-  if (!post) return <div className="container py-16 text-center text-muted-foreground">Post not found.</div>;
+  if (isLoading) return <div className="container py-16 text-center text-muted-foreground">{t("common.loading")}</div>;
+  if (!post) return <div className="container py-16 text-center text-muted-foreground">{t("blog.postNotFound")}</div>;
 
   return (
     <>
       <SeoHead title={post.seo_title || post.title} description={post.seo_description || post.excerpt || ""} />
       <article className="container py-12 max-w-3xl">
         <Link to="/blog" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-4 w-4" /> Back to Blog
+          <ArrowLeft className="h-4 w-4" /> {t("blog.backToBlog")}
         </Link>
 
         {post.category && <span className="text-xs font-semibold text-primary uppercase">{post.category}</span>}
@@ -32,7 +34,7 @@ export default function BlogPostPage() {
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
           <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" />{post.published_at ? new Date(post.published_at).toLocaleDateString() : ""}</span>
-          {post.reading_time && <span>{post.reading_time} min read</span>}
+          {post.reading_time && <span>{t("blog.minRead", { count: post.reading_time })}</span>}
         </div>
 
         {post.featured_image && (

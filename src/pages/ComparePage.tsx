@@ -11,6 +11,7 @@ import { X, Plus, Check, Minus, ArrowRight, Calculator, BarChart3, Layers, Crown
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const MAX_PRODUCTS = 4;
 
@@ -22,6 +23,7 @@ export default function ComparePage() {
   const [showSearch, setShowSearch] = useState(false);
   const [teamSize, setTeamSize] = useState([10]);
   const [months, setMonths] = useState([12]);
+  const { t } = useTranslation();
 
   const { data: products } = useQuery({
     queryKey: ["compare-products", productIds],
@@ -67,7 +69,6 @@ export default function ComparePage() {
 
   const removeProduct = (id: string) => setProductIds(productIds.filter((pid) => pid !== id));
 
-  // Collect all unique features across selected products
   const allFeatures = useMemo(() => {
     if (!products) return [];
     const featureSet = new Set<string>();
@@ -78,7 +79,6 @@ export default function ComparePage() {
     return [...featureSet].sort();
   }, [products]);
 
-  // Find the best product
   const bestProduct = useMemo(() => {
     if (!products || products.length === 0) return null;
     return products.reduce((best, p) => (Number(p.avg_rating) > Number(best.avg_rating) ? p : best));
@@ -86,26 +86,18 @@ export default function ComparePage() {
 
   return (
     <>
-      <SeoHead title="Compare Software Side-by-Side — SoftwareHub" description="Compare up to 4 software products side-by-side. Feature matrix, pricing calculator, and rating breakdown." />
+      <SeoHead title={t("comparePage.title")} description={t("comparePage.subtitle", { max: MAX_PRODUCTS })} />
 
       <div className="container py-8 max-w-6xl">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground mb-2">Compare Software Side-by-Side</h1>
-          <p className="text-muted-foreground">Select up to {MAX_PRODUCTS} products to compare features, pricing, and ratings.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground mb-2">{t("comparePage.title")}</h1>
+          <p className="text-muted-foreground">{t("comparePage.subtitle", { max: MAX_PRODUCTS })}</p>
         </motion.div>
 
-        {/* Product Selector */}
         <div className="glass-card p-6 mb-8">
           <div className="flex flex-wrap items-center gap-3">
             {products?.map((p) => (
-              <motion.div
-                key={p.id}
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2 pr-2"
-              >
+              <motion.div key={p.id} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2 pr-2">
                 <div className="h-8 w-8 rounded-lg bg-card flex items-center justify-center overflow-hidden">
                   {p.logo_url ? <img src={p.logo_url} alt="" className="h-full w-full object-cover" /> : <span className="text-xs font-bold text-primary">{p.name.charAt(0)}</span>}
                 </div>
@@ -118,39 +110,19 @@ export default function ComparePage() {
 
             {productIds.length < MAX_PRODUCTS && (
               <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSearch(!showSearch)}
-                  className="gap-1.5 rounded-xl border-dashed"
-                >
-                  <Plus className="h-4 w-4" /> Add Product
+                <Button variant="outline" size="sm" onClick={() => setShowSearch(!showSearch)} className="gap-1.5 rounded-xl border-dashed">
+                  <Plus className="h-4 w-4" /> {t("comparePage.addProduct")}
                 </Button>
 
                 <AnimatePresence>
                   {showSearch && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      className="absolute top-full left-0 mt-2 w-72 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden"
-                    >
+                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} className="absolute top-full left-0 mt-2 w-72 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden">
                       <div className="p-3 border-b border-border">
-                        <Input
-                          placeholder="Search products..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          autoFocus
-                          className="text-sm"
-                        />
+                        <Input placeholder={t("comparePage.searchProducts")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="text-sm" />
                       </div>
                       <div className="max-h-60 overflow-y-auto">
                         {filteredSearch.slice(0, 20).map((p) => (
-                          <button
-                            key={p.id}
-                            onClick={() => addProduct(p.id)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
-                          >
+                          <button key={p.id} onClick={() => addProduct(p.id)} className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors">
                             <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                               {p.logo_url ? <img src={p.logo_url} alt="" className="h-full w-full object-cover" /> : <span className="text-xs font-bold text-primary">{p.name.charAt(0)}</span>}
                             </div>
@@ -161,7 +133,7 @@ export default function ComparePage() {
                           </button>
                         ))}
                         {filteredSearch.length === 0 && (
-                          <p className="text-xs text-muted-foreground text-center py-4">No products found</p>
+                          <p className="text-xs text-muted-foreground text-center py-4">{t("comparePage.noProductsFound")}</p>
                         )}
                       </div>
                     </motion.div>
@@ -172,23 +144,16 @@ export default function ComparePage() {
           </div>
         </div>
 
-        {/* Comparison Content */}
         {products && products.length >= 2 ? (
           <div className="space-y-8">
-            {/* Overview Cards */}
             <section>
-              <SectionLabel icon={<BarChart3 className="h-4 w-4" />} label="Overview" />
+              <SectionLabel icon={<BarChart3 className="h-4 w-4" />} label={t("comparePage.overview")} />
               <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${products.length}, minmax(0, 1fr))` }}>
                 {products.map((p) => (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={cn("glass-card p-5 text-center relative", bestProduct?.id === p.id && "ring-2 ring-primary/30")}
-                  >
+                  <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cn("glass-card p-5 text-center relative", bestProduct?.id === p.id && "ring-2 ring-primary/30")}>
                     {bestProduct?.id === p.id && (
                       <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                        <Crown className="h-3 w-3" /> BEST RATED
+                        <Crown className="h-3 w-3" /> {t("comparePage.bestRated")}
                       </div>
                     )}
                     <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center overflow-hidden mx-auto mb-3">
@@ -200,10 +165,10 @@ export default function ComparePage() {
                       <StarRating rating={Number(p.avg_rating)} size="sm" />
                       <span className="text-sm font-bold">{Number(p.avg_rating).toFixed(1)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{p.total_reviews} reviews</p>
+                    <p className="text-xs text-muted-foreground">{p.total_reviews} {t("product.reviews").toLowerCase()}</p>
                     <Link to={`/product/${p.slug}`}>
                       <Button variant="ghost" size="sm" className="mt-3 text-xs gap-1">
-                        View Details <ArrowRight className="h-3 w-3" />
+                        {t("comparePage.viewDetails")} <ArrowRight className="h-3 w-3" />
                       </Button>
                     </Link>
                   </motion.div>
@@ -211,36 +176,35 @@ export default function ComparePage() {
               </div>
             </section>
 
-            {/* Comparison Table */}
             <section>
-              <SectionLabel icon={<Layers className="h-4 w-4" />} label="Detailed Comparison" />
+              <SectionLabel icon={<Layers className="h-4 w-4" />} label={t("comparePage.detailedComparison")} />
               <div className="glass-card overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48">Attribute</th>
+                      <th className="text-left py-3 px-5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48">{t("comparePage.attribute")}</th>
                       {products.map((p) => (
                         <th key={p.id} className="text-center py-3 px-4 text-sm font-semibold text-foreground">{p.name}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    <CompareRow label="Rating" products={products} render={(p) => (
+                    <CompareRow label={t("comparePage.rating")} products={products} render={(p) => (
                       <div className="flex items-center justify-center gap-1.5">
                         <StarRating rating={Number(p.avg_rating)} size="sm" />
                         <span className="font-bold text-sm">{Number(p.avg_rating).toFixed(1)}</span>
                       </div>
                     )} />
-                    <CompareRow label="Total Reviews" products={products} render={(p) => <span className="font-medium">{p.total_reviews || 0}</span>} />
-                    <CompareRow label="Pricing Model" products={products} render={(p) => <Badge variant="outline" className="capitalize">{p.pricing_model || "—"}</Badge>} />
-                    <CompareRow label="Starting Price" products={products} render={(p) => (
-                      <span className="font-bold">{p.starting_price ? `$${p.starting_price}/mo` : "—"}</span>
+                    <CompareRow label={t("comparePage.totalReviews")} products={products} render={(p) => <span className="font-medium">{p.total_reviews || 0}</span>} />
+                    <CompareRow label={t("comparePage.pricingModel")} products={products} render={(p) => <Badge variant="outline" className="capitalize">{p.pricing_model || "—"}</Badge>} />
+                    <CompareRow label={t("comparePage.startingPrice")} products={products} render={(p) => (
+                      <span className="font-bold">{p.starting_price ? `$${p.starting_price}${t("product.perMonth")}` : "—"}</span>
                     )} />
-                    <CompareRow label="Category" products={products} render={(p) => <span className="text-sm">{(p.categories as any)?.name || "—"}</span>} />
-                    <CompareRow label="Company Size" products={products} render={(p) => <span>{p.company_size || "—"}</span>} />
-                    <CompareRow label="Founded" products={products} render={(p) => <span>{p.founded_year || "—"}</span>} />
-                    <CompareRow label="Headquarters" products={products} render={(p) => <span>{p.headquarters || "—"}</span>} />
-                    <CompareRow label="Verified" products={products} render={(p) => (
+                    <CompareRow label={t("comparePage.category")} products={products} render={(p) => <span className="text-sm">{(p.categories as any)?.name || "—"}</span>} />
+                    <CompareRow label={t("comparePage.companySize")} products={products} render={(p) => <span>{p.company_size || "—"}</span>} />
+                    <CompareRow label={t("comparePage.founded")} products={products} render={(p) => <span>{p.founded_year || "—"}</span>} />
+                    <CompareRow label={t("comparePage.headquarters")} products={products} render={(p) => <span>{p.headquarters || "—"}</span>} />
+                    <CompareRow label={t("comparePage.verified")} products={products} render={(p) => (
                       p.is_verified ? <Check className="h-4 w-4 text-[hsl(var(--success))] mx-auto" /> : <Minus className="h-4 w-4 text-muted-foreground/30 mx-auto" />
                     )} />
                   </tbody>
@@ -248,15 +212,14 @@ export default function ComparePage() {
               </div>
             </section>
 
-            {/* Feature Matrix */}
             {allFeatures.length > 0 && (
               <section>
-                <SectionLabel icon={<Check className="h-4 w-4" />} label="Feature Matrix" />
+                <SectionLabel icon={<Check className="h-4 w-4" />} label={t("comparePage.featureMatrix")} />
                 <div className="glass-card overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="text-left py-3 px-5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48">Feature</th>
+                        <th className="text-left py-3 px-5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48">{t("comparePage.feature")}</th>
                         {products.map((p) => (
                           <th key={p.id} className="text-center py-3 px-4 text-sm font-semibold text-foreground">{p.name}</th>
                         ))}
@@ -288,23 +251,22 @@ export default function ComparePage() {
               </section>
             )}
 
-            {/* Pros & Cons */}
             {products.some((p) => p.pros_summary || p.cons_summary) && (
               <section>
-                <SectionLabel icon={<BarChart3 className="h-4 w-4" />} label="Pros & Cons" />
+                <SectionLabel icon={<BarChart3 className="h-4 w-4" />} label={t("comparePage.prosCons")} />
                 <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${products.length}, minmax(0, 1fr))` }}>
                   {products.map((p) => (
                     <div key={p.id} className="space-y-3">
                       <h4 className="font-semibold text-sm text-foreground text-center">{p.name}</h4>
                       {p.pros_summary && (
                         <div className="glass-card p-4 border-l-4 border-l-[hsl(var(--success))]">
-                          <p className="text-xs font-bold text-[hsl(var(--success))] uppercase mb-1">Pros</p>
+                          <p className="text-xs font-bold text-[hsl(var(--success))] uppercase mb-1">{t("product.pros")}</p>
                           <p className="text-sm text-muted-foreground leading-relaxed">{p.pros_summary}</p>
                         </div>
                       )}
                       {p.cons_summary && (
                         <div className="glass-card p-4 border-l-4 border-l-destructive">
-                          <p className="text-xs font-bold text-destructive uppercase mb-1">Cons</p>
+                          <p className="text-xs font-bold text-destructive uppercase mb-1">{t("product.cons")}</p>
                           <p className="text-sm text-muted-foreground leading-relaxed">{p.cons_summary}</p>
                         </div>
                       )}
@@ -314,17 +276,16 @@ export default function ComparePage() {
               </section>
             )}
 
-            {/* Pricing Calculator */}
             <section>
-              <SectionLabel icon={<Calculator className="h-4 w-4" />} label="Pricing Calculator" />
+              <SectionLabel icon={<Calculator className="h-4 w-4" />} label={t("comparePage.pricingCalculator")} />
               <div className="glass-card p-6">
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Team Size: {teamSize[0]} users</label>
+                    <label className="text-sm font-medium text-foreground mb-2 block">{t("comparePage.teamSize", { count: teamSize[0] })}</label>
                     <Slider value={teamSize} onValueChange={setTeamSize} min={1} max={500} step={1} />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Duration: {months[0]} months</label>
+                    <label className="text-sm font-medium text-foreground mb-2 block">{t("comparePage.duration", { count: months[0] })}</label>
                     <Slider value={months} onValueChange={setMonths} min={1} max={36} step={1} />
                   </div>
                 </div>
@@ -337,31 +298,23 @@ export default function ComparePage() {
                     const isCheapest = products.every((other) => (other.starting_price || 0) >= (p.starting_price || 0));
 
                     return (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={cn(
-                          "glass-card p-5 text-center",
-                          isCheapest && products.length > 1 && "ring-2 ring-primary/30"
-                        )}
-                      >
+                      <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cn("glass-card p-5 text-center", isCheapest && products.length > 1 && "ring-2 ring-primary/30")}>
                         {isCheapest && products.length > 1 && (
-                          <Badge className="mb-2 bg-primary/10 text-primary border-0 text-[10px]">Best Value</Badge>
+                          <Badge className="mb-2 bg-primary/10 text-primary border-0 text-[10px]">{t("comparePage.bestValue")}</Badge>
                         )}
                         <h4 className="font-bold text-foreground mb-3">{p.name}</h4>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between text-muted-foreground">
-                            <span>Per user/mo</span>
-                            <span className="font-semibold text-foreground">{monthlyPerUser ? `$${monthlyPerUser}` : "Free"}</span>
+                            <span>{t("comparePage.perUserMo")}</span>
+                            <span className="font-semibold text-foreground">{monthlyPerUser ? `$${monthlyPerUser}` : t("comparePage.free")}</span>
                           </div>
                           <div className="flex justify-between text-muted-foreground">
-                            <span>Monthly ({teamSize[0]} users)</span>
+                            <span>{t("comparePage.monthlyUsers", { count: teamSize[0] })}</span>
                             <span className="font-semibold text-foreground">${monthlyCost.toLocaleString()}</span>
                           </div>
                           <div className="h-px bg-border my-2" />
                           <div className="flex justify-between">
-                            <span className="font-medium text-foreground">Total ({months[0]}mo)</span>
+                            <span className="font-medium text-foreground">{t("comparePage.totalMonths", { count: months[0] })}</span>
                             <span className="text-lg font-extrabold text-primary">${totalCost.toLocaleString()}</span>
                           </div>
                         </div>
@@ -378,9 +331,9 @@ export default function ComparePage() {
               <Layers className="h-7 w-7 text-muted-foreground/30" />
             </div>
             <h2 className="text-lg font-bold text-foreground mb-1">
-              {products && products.length === 1 ? "Add one more product to compare" : "Select products to compare"}
+              {products && products.length === 1 ? t("comparePage.addOneMore") : t("comparePage.selectProducts")}
             </h2>
-            <p className="text-sm text-muted-foreground">Choose at least 2 products above to see a detailed side-by-side comparison.</p>
+            <p className="text-sm text-muted-foreground">{t("comparePage.selectHint")}</p>
           </motion.div>
         )}
       </div>

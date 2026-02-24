@@ -13,10 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bookmark, Star, Settings, User, LogOut, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login", { replace: true });
@@ -28,18 +30,18 @@ export default function DashboardPage() {
 
   return (
     <>
-      <SeoHead title="Dashboard — SoftwareHub" description="Manage your saved products, reviews, and profile settings." />
+      <SeoHead title={t("dashboard.title")} description={t("dashboard.subtitle")} />
       <main className="container py-10 max-w-5xl">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">My Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Manage your saved software, reviews, and account settings.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">{t("dashboard.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
         </motion.div>
 
         <Tabs defaultValue="saved" className="space-y-6">
           <TabsList className="bg-muted/50">
-            <TabsTrigger value="saved" className="gap-1.5"><Bookmark className="h-4 w-4" /> Saved</TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-1.5"><Star className="h-4 w-4" /> My Reviews</TabsTrigger>
-            <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> Profile</TabsTrigger>
+            <TabsTrigger value="saved" className="gap-1.5"><Bookmark className="h-4 w-4" /> {t("dashboard.saved")}</TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-1.5"><Star className="h-4 w-4" /> {t("dashboard.myReviews")}</TabsTrigger>
+            <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saved"><SavedProductsTab userId={user.id} /></TabsContent>
@@ -53,6 +55,7 @@ export default function DashboardPage() {
 
 function SavedProductsTab({ userId }: { userId: string }) {
   const { savedProductIds, isLoading: loadingSaved } = useSavedProducts();
+  const { t } = useTranslation();
 
   const { data: products, isLoading: loadingProducts } = useQuery({
     queryKey: ["saved-products-detail", savedProductIds],
@@ -83,8 +86,8 @@ function SavedProductsTab({ userId }: { userId: string }) {
         <div className="h-14 w-14 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
           <Bookmark className="h-6 w-6 text-muted-foreground/40" />
         </div>
-        <p className="text-muted-foreground font-medium">No saved products yet</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Click the bookmark icon on any product to save it here</p>
+        <p className="text-muted-foreground font-medium">{t("dashboard.noSavedProducts")}</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">{t("dashboard.noSavedHint")}</p>
       </div>
     );
   }
@@ -104,6 +107,7 @@ function SavedProductsTab({ userId }: { userId: string }) {
 }
 
 function MyReviewsTab({ userId }: { userId: string }) {
+  const { t } = useTranslation();
   const { data: reviews, isLoading } = useQuery({
     queryKey: ["my-reviews", userId],
     queryFn: async () => {
@@ -126,8 +130,8 @@ function MyReviewsTab({ userId }: { userId: string }) {
         <div className="h-14 w-14 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
           <Star className="h-6 w-6 text-muted-foreground/40" />
         </div>
-        <p className="text-muted-foreground font-medium">No reviews yet</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Share your experience with software you've used</p>
+        <p className="text-muted-foreground font-medium">{t("dashboard.noReviews")}</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">{t("dashboard.noReviewsHint")}</p>
       </div>
     );
   }
@@ -151,7 +155,7 @@ function MyReviewsTab({ userId }: { userId: string }) {
                   {r.status}
                 </span>
               </div>
-              <p className="text-sm text-foreground font-medium">{r.title || "Untitled Review"}</p>
+              <p className="text-sm text-foreground font-medium">{r.title || t("dashboard.untitledReview")}</p>
               <div className="flex items-center gap-1 mt-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className={`h-3 w-3 ${i < r.overall_rating ? 'text-[hsl(var(--star))] fill-[hsl(var(--star))]' : 'text-muted-foreground/20'}`} />
@@ -169,6 +173,7 @@ function MyReviewsTab({ userId }: { userId: string }) {
 
 function ProfileTab({ user, onSignOut }: { user: any; onSignOut: () => void }) {
   const [saving, setSaving] = useState(false);
+  const { t } = useTranslation();
 
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ["my-profile", user.id],
@@ -204,9 +209,9 @@ function ProfileTab({ user, onSignOut }: { user: any; onSignOut: () => void }) {
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
-      toast.error("Failed to update profile");
+      toast.error(t("dashboard.profileUpdateFailed"));
     } else {
-      toast.success("Profile updated!");
+      toast.success(t("dashboard.profileUpdated"));
       refetch();
     }
   };
@@ -230,37 +235,37 @@ function ProfileTab({ user, onSignOut }: { user: any; onSignOut: () => void }) {
 
         <div className="space-y-3">
           <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">Display Name</label>
+            <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.displayName")}</label>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">Bio</label>
-            <Input value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Tell us about yourself" />
+            <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.bio")}</label>
+            <Input value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder={t("dashboard.bioPlaceholder")} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Company</label>
+              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.company")}</label>
               <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Job Title</label>
+              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.jobTitle")}</label>
               <Input value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">Industry</label>
+            <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.industry")}</label>
             <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
           </div>
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          Save Changes
+          {t("dashboard.saveChanges")}
         </Button>
       </div>
 
       <Button variant="outline" onClick={onSignOut} className="w-full gap-2 text-destructive hover:text-destructive">
-        <LogOut className="h-4 w-4" /> Sign Out
+        <LogOut className="h-4 w-4" /> {t("auth.signOut")}
       </Button>
     </div>
   );
