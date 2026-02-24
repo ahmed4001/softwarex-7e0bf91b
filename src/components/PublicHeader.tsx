@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { to: "/", label: "Home" },
-  { to: "/category/all", label: "Categories" },
+  { to: "/categories", label: "Categories" },
   { to: "/compare", label: "Compare" },
   { to: "/blog", label: "Blog" },
+  { to: "/submit-product", label: "Submit Product" },
 ];
 
 export function PublicHeader() {

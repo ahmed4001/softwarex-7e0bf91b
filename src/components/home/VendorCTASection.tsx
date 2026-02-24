@@ -38,7 +38,7 @@ export function VendorCTASection() {
                 </li>
               ))}
             </ul>
-            <Link to="/register">
+            <Link to="/submit-product">
               <Button className="bg-primary text-primary-foreground rounded-xl font-semibold gap-2 h-11 px-6">
                 Submit Your Product <ArrowRight className="h-4 w-4" />
               </Button>
