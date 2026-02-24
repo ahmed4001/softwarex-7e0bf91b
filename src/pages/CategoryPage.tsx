@@ -92,7 +92,7 @@ export default function CategoryPage() {
             >
               <div>
                 <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                  {isAll ? "All Software" : `Best ${category?.name} Software`}
+                  {isAll ? "All Software" : category?.name?.endsWith("Software") ? `Best ${category.name}` : `Best ${category?.name} Software`}
                 </h1>
                 <p className="text-muted-foreground mt-1">{products?.length || 0} products found</p>
               </div>
