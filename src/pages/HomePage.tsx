@@ -190,8 +190,8 @@ export default function HomePage() {
 
       <main>
         <HeroSection />
-        <StatsSection stats={stats} />
         <TrustedBySection />
+        <StatsSection stats={stats} />
 
         {/* Most Popular Categories - G2 style */}
         <MostPopularCategoriesSection />
