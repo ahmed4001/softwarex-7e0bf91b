@@ -1,43 +1,113 @@
 
-# Fix Site-Wide Data Display Issues
 
-After browsing the populated site, three bugs were identified that need fixing.
+# Add AI-Generated Comparison Content
 
-## Issues Found
+Enrich the existing 1,204 comparison entries with detailed, AI-generated content and create dedicated VS pages for each.
 
-### 1. Product Detail Pages Are Broken (Critical)
-Every product page shows "Product not found." The query in `ProductDetailPage.tsx` uses `categories(name, slug)` without specifying which foreign key to use. Since `products` has two foreign keys to `categories` (`category_id` and `subcategory_id`), PostgREST returns a 300 ambiguity error.
+## What Changes
 
-**Fix:** Change the join to `categories!products_category_id_fkey(name, slug)`.
+### 1. Extend the comparisons table with new columns
 
-### 2. Category Page Title Doubles "Software"
-The heading reads "Best CRM Software Software" because the template is `Best {category.name} Software` and many category names already end in "Software."
+Add columns to store rich comparison content:
 
-**Fix:** Update the title logic in `CategoryPage.tsx` to check if the category name already ends with "Software" and skip appending it again.
+| Column | Type | Purpose |
+|--------|------|---------|
+| `slug` | text (unique) | URL-friendly slug, e.g. "salesforce-vs-hubspot-crm" |
+| `summary` | text | 2-3 paragraph overview of the comparison |
+| `winner_verdict` | text | Which product wins overall and why |
+| `winner_product_id` | uuid | The winning product's ID |
+| `category_id` | uuid | Category both products belong to |
+| `product_a_score` | numeric | Overall score for product A (1-10) |
+| `product_b_score` | numeric | Overall score for product B (1-10) |
+| `feature_scores` | jsonb | Per-feature scoring breakdown |
+| `pros_a` | jsonb | Array of pros for product A |
+| `cons_a` | jsonb | Array of cons for product A |
+| `pros_b` | jsonb | Array of pros for product B |
+| `cons_b` | jsonb | Array of cons for product B |
+| `best_for_a` | text | "Best for..." summary for product A |
+| `best_for_b` | text | "Best for..." summary for product B |
+| `seo_title` | text | SEO-optimized page title |
+| `seo_description` | text | Meta description |
 
-### 3. Product Ratings Showing 0.0 on Category Pages
-AI-imported products (e.g., HubSpot CRM, Pipedrive) show `0.0` ratings on the category page even though they have reviews. The `avg_rating` column is not being recalculated after bulk review generation.
+Also backfill slugs for all existing comparisons using a migration.
 
-**Fix:** Create a database migration that adds a trigger to automatically recalculate `avg_rating` and `total_reviews` on the `products` table whenever a review is inserted, updated, or deleted. Also run a one-time update to sync current values.
+### 2. Create AI content generation edge function
 
----
+A new `generate-comparison-content` edge function that:
+- Fetches comparisons that have no `summary` yet (in batches of 10)
+- For each, loads both products' data (name, tagline, description, features, pricing, ratings, pros/cons summaries)
+- Calls Lovable AI (gemini-3-flash-preview) with a structured prompt to generate all comparison fields
+- Uses tool calling to get structured JSON output
+- Saves the generated content back to the comparisons table
+- Processes in batches to avoid timeouts (configurable batch size)
+
+### 3. Create a dedicated VS comparison page
+
+New route: `/compare/:slug` (e.g., `/compare/salesforce-vs-hubspot-crm`)
+
+The page will display:
+- Hero section with both product logos, names, and overall scores
+- Winner verdict banner
+- Side-by-side feature score comparison (bar chart style)
+- Pros and cons cards for each product
+- "Best for" recommendations
+- Full summary narrative
+- Existing feature matrix from the current compare page
+- Pricing calculator
+- Links to individual product pages
+
+### 4. Update the existing compare page and homepage links
+
+- Add a "Browse Comparisons" section or listing to `/compare` that shows popular/recent comparisons
+- Update `PopularComparisonsSection` to link to actual comparison detail pages instead of just `/compare`
+- Add the new route to `App.tsx`
 
 ## Technical Details
 
-### File Changes
+### Database Migration
 
-**`src/pages/ProductDetailPage.tsx`** (line 19)
-- Change: `categories(name, slug)` to `categories!products_category_id_fkey(name, slug)`
+```sql
+ALTER TABLE comparisons
+  ADD COLUMN slug text UNIQUE,
+  ADD COLUMN summary text,
+  ADD COLUMN winner_verdict text,
+  ADD COLUMN winner_product_id uuid,
+  ADD COLUMN category_id uuid,
+  ADD COLUMN product_a_score numeric DEFAULT 0,
+  ADD COLUMN product_b_score numeric DEFAULT 0,
+  ADD COLUMN feature_scores jsonb DEFAULT '[]',
+  ADD COLUMN pros_a jsonb DEFAULT '[]',
+  ADD COLUMN cons_a jsonb DEFAULT '[]',
+  ADD COLUMN pros_b jsonb DEFAULT '[]',
+  ADD COLUMN cons_b jsonb DEFAULT '[]',
+  ADD COLUMN best_for_a text,
+  ADD COLUMN best_for_b text,
+  ADD COLUMN seo_title text,
+  ADD COLUMN seo_description text;
+```
 
-**`src/pages/CategoryPage.tsx`**
-- Update the page title to avoid doubling "Software" (e.g., use conditional logic: if `name.endsWith("Software")`, use `Best ${name}` instead of `Best ${name} Software`)
+Then backfill slugs from existing titles (e.g., "Salesforce vs HubSpot CRM" becomes "salesforce-vs-hubspot-crm").
 
-**Database Migration**
-- Create a function `update_product_rating()` that recalculates `avg_rating` and `total_reviews` from the `reviews` table for the affected product
-- Create triggers `AFTER INSERT OR UPDATE OR DELETE ON reviews` to call this function
-- Run a one-time update: `UPDATE products SET avg_rating = (SELECT AVG(rating) FROM reviews WHERE reviews.product_id = products.id AND reviews.status = 'approved'), total_reviews = (SELECT COUNT(*) FROM reviews WHERE reviews.product_id = products.id AND reviews.status = 'approved')`
+### New Files
 
-### Verification
-- Product detail pages will load correctly with category info
-- Category page titles will read properly (e.g., "Best CRM Software" not "Best CRM Software Software")
-- Product ratings will reflect actual review averages across the site
+- `supabase/functions/generate-comparison-content/index.ts` -- AI content generation
+- `src/pages/ComparisonDetailPage.tsx` -- dedicated VS page
+
+### Modified Files
+
+- `src/App.tsx` -- add `/compare/:slug` route
+- `src/components/home/PopularComparisonsSection.tsx` -- link to actual comparison pages
+- `supabase/config.toml` -- register new edge function
+
+### AI Prompt Strategy
+
+The edge function will use tool calling to extract structured output. The system prompt will instruct the model to act as a SaaS analyst producing a fair, data-driven comparison. Input includes both products' real data (features, pricing, ratings, reviews summary). Output is the structured comparison fields above.
+
+### Execution Plan
+
+1. Run the database migration to add columns and backfill slugs
+2. Deploy the `generate-comparison-content` edge function
+3. Call it to process all 1,204 comparisons (in batches of ~10, multiple invocations)
+4. Create the `ComparisonDetailPage.tsx` component
+5. Wire up routing and update homepage links
+
