@@ -3,6 +3,7 @@ import {
   BarChart3, Code, DollarSign, Globe, HeadphonesIcon, LayoutDashboard, 
   Mail, Megaphone, Shield, ShoppingCart, Users, Zap
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   "bar-chart": BarChart3, code: Code, dollar: DollarSign, globe: Globe,
@@ -16,24 +17,41 @@ interface CategoryCardProps {
   icon?: string;
   product_count: number;
   color?: string;
+  index?: number;
 }
 
-export function CategoryCard({ slug, name, icon, product_count, color }: CategoryCardProps) {
+export function CategoryCard({ slug, name, icon, product_count, color, index = 0 }: CategoryCardProps) {
   const IconComponent = iconMap[icon || ""] || LayoutDashboard;
+  const c = color || '#6366f1';
   
   return (
-    <Link
-      to={`/category/${slug}`}
-      className="product-card group flex flex-col items-center text-center p-6 hover:border-primary/30"
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <div
-        className="h-14 w-14 rounded-2xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
-        style={{ backgroundColor: `${color || '#4F46E5'}15` }}
+      <Link
+        to={`/category/${slug}`}
+        className="glass-card glow-border group flex flex-col items-center text-center p-7 relative overflow-hidden"
       >
-        <IconComponent className="h-7 w-7" style={{ color: color || '#4F46E5' }} />
-      </div>
-      <h3 className="font-semibold text-foreground mb-1">{name}</h3>
-      <p className="text-sm text-muted-foreground">{product_count} products</p>
-    </Link>
+        {/* Subtle background glow */}
+        <div 
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background: `radial-gradient(circle at center, ${c}08, transparent 70%)` }}
+        />
+        
+        <div
+          className="relative h-16 w-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+          style={{ 
+            backgroundColor: `${c}12`,
+            boxShadow: `0 0 0 0 ${c}00`,
+          }}
+        >
+          <IconComponent className="h-8 w-8 transition-colors duration-300" style={{ color: c }} />
+        </div>
+        <h3 className="font-display font-semibold text-foreground mb-1">{name}</h3>
+        <p className="text-sm text-muted-foreground">{product_count} products</p>
+      </Link>
+    </motion.div>
   );
 }
