@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Type, Image, MousePointerClick, Minus, MoveVertical,
   Trash2, GripVertical, Plus, Heading1, AlignLeft,
-  Columns2, ArrowUp, ArrowDown, Code, Save, FolderOpen, Loader2, Upload,
+  Columns2, ArrowUp, ArrowDown, Code, Save, FolderOpen, Loader2, Upload, ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -91,7 +91,12 @@ function blocksToFullHtml(blocks: EmailBlock[], bgColor: string, contentBg: stri
 }
 
 // ---------- Block editor panel ----------
-function BlockEditor({ block, onChange, onImageUpload }: { block: EmailBlock; onChange: (props: Record<string, string>) => void; onImageUpload?: (file: File) => Promise<string | null> }) {
+function BlockEditor({ block, onChange, onImageUpload, onOpenMediaLibrary }: {
+  block: EmailBlock;
+  onChange: (props: Record<string, string>) => void;
+  onImageUpload?: (file: File) => Promise<string | null>;
+  onOpenMediaLibrary?: (onSelect: (url: string) => void) => void;
+}) {
   const [uploading, setUploading] = useState(false);
   const { type, props: p } = block;
   const update = (key: string, val: string) => onChange({ ...p, [key]: val });
@@ -172,6 +177,15 @@ function BlockEditor({ block, onChange, onImageUpload }: { block: EmailBlock; on
                   onChange={handleFileSelect}
                   disabled={uploading}
                 />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 px-2"
+                onClick={() => onOpenMediaLibrary?.((url) => update("src", url))}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                <span className="text-xs">Library</span>
               </Button>
             </div>
           </div>
@@ -345,6 +359,58 @@ export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
     return urlData.publicUrl;
   }, []);
 
+  // Media library state
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const [mediaSelectCallback, setMediaSelectCallback] = useState<((url: string) => void) | null>(null);
+
+  // Fetch email-assets from storage + media_library table
+  const { data: mediaItems = [], isLoading: mediaLoading, refetch: refetchMedia } = useQuery({
+    queryKey: ["email-media-library"],
+    queryFn: async () => {
+      // Fetch from both sources in parallel
+      const [storageRes, dbRes] = await Promise.all([
+        supabase.storage.from("email-assets").list("", { limit: 100, sortBy: { column: "created_at", order: "desc" } }),
+        supabase.from("media_library").select("*").order("created_at", { ascending: false }).limit(100),
+      ]);
+
+      const items: { url: string; name: string; source: string; created_at: string }[] = [];
+
+      // Storage items
+      if (storageRes.data) {
+        for (const f of storageRes.data) {
+          if (f.name && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name)) {
+            const { data: urlData } = supabase.storage.from("email-assets").getPublicUrl(f.name);
+            items.push({ url: urlData.publicUrl, name: f.name, source: "email-assets", created_at: f.created_at || "" });
+          }
+        }
+      }
+
+      // Media library items
+      if (dbRes.data) {
+        for (const m of dbRes.data) {
+          if (m.url && m.mime_type?.startsWith("image/")) {
+            items.push({ url: m.url, name: m.original_name || m.filename, source: "media-library", created_at: m.created_at || "" });
+          }
+        }
+      }
+
+      return items;
+    },
+    enabled: mediaLibraryOpen,
+  });
+
+  const openMediaLibrary = useCallback((onSelect: (url: string) => void) => {
+    setMediaSelectCallback(() => onSelect);
+    setMediaLibraryOpen(true);
+    refetchMedia();
+  }, [refetchMedia]);
+
+  const selectMediaItem = (url: string) => {
+    mediaSelectCallback?.(url);
+    setMediaLibraryOpen(false);
+    setMediaSelectCallback(null);
+  };
+
   const syncHtml = useCallback((newBlocks: EmailBlock[]) => {
     setBlocks(newBlocks);
     onChange(blocksToFullHtml(newBlocks, emailBg, contentBg));
@@ -509,6 +575,7 @@ export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
                 block={selectedBlock}
                 onChange={(props) => updateBlockProps(selectedBlock.id, props)}
                 onImageUpload={handleImageUpload}
+                onOpenMediaLibrary={openMediaLibrary}
               />
             </div>
           ) : (
@@ -586,6 +653,48 @@ export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
                       </Button>
                     </div>
                   </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Media Library Dialog */}
+      <Dialog open={mediaLibraryOpen} onOpenChange={setMediaLibraryOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" /> Media Library
+            </DialogTitle>
+          </DialogHeader>
+          {mediaLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : mediaItems.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <ImageIcon className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No images found. Upload one using the Upload button in the image block.</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[450px]">
+              <div className="grid grid-cols-3 gap-3 p-1">
+                {mediaItems.map((item, i) => (
+                  <button
+                    key={`${item.source}-${i}`}
+                    onClick={() => selectMediaItem(item.url)}
+                    className="group relative rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all aspect-square bg-muted"
+                  >
+                    <img
+                      src={item.url}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-[10px] text-white truncate">{item.name}</p>
+                      <p className="text-[9px] text-white/60">{item.source}</p>
+                    </div>
+                  </button>
                 ))}
               </div>
             </ScrollArea>
