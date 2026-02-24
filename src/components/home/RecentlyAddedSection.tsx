@@ -12,7 +12,7 @@ export function RecentlyAddedSection() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, slug, name, tagline, logo_url, created_at, categories(name)")
+        .select("id, slug, name, tagline, logo_url, created_at, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(6);

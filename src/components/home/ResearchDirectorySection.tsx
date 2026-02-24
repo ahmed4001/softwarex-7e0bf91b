@@ -128,7 +128,7 @@ export function ResearchDirectorySection() {
 
         <div className="mt-10 text-center">
           <Link
-            to="/category/all"
+            to="/categories"
             className="text-sm font-semibold text-primary hover:underline"
           >
             All Categories →
