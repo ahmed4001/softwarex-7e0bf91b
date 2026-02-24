@@ -937,7 +937,15 @@ function EnrichProductsTab() {
   const [enriching, setEnriching] = useState<string | null>(null);
   const [enrichProgress, setEnrichProgress] = useState(0);
   const [bulkEnriching, setBulkEnriching] = useState(false);
-  const [resumeIndex, setResumeIndex] = useState(0);
+  const [resumeIndex, _setResumeIndex] = useState(() => {
+    const stored = localStorage.getItem("enrich-resume-index");
+    return stored ? parseInt(stored, 10) || 0 : 0;
+  });
+  const setResumeIndex = (v: number) => {
+    _setResumeIndex(v);
+    if (v > 0) localStorage.setItem("enrich-resume-index", String(v));
+    else localStorage.removeItem("enrich-resume-index");
+  };
   const [retryStatus, setRetryStatus] = useState<{ productName: string; attempt: number; maxAttempts: number; countdown: number } | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bulkCancelRef = useRef(false);
