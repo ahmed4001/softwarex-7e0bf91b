@@ -34,7 +34,7 @@ interface StatsSectionProps {
 
 export function StatsSection({ stats }: StatsSectionProps) {
   const items = [
-    { icon: Package, label: "Software Products Listed", value: 2847, suffix: "+" },
+    { icon: Package, label: "Software Products Listed", value: 82847, suffix: "+" },
     { icon: Star, label: "Verified User Reviews", value: 18430, suffix: "+" },
     { icon: BarChart3, label: "Software Categories", value: 124, suffix: "" },
     { icon: Users, label: "Active Professionals", value: 52000, suffix: "+" },
