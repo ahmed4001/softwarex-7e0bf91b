@@ -27,7 +27,7 @@ export function CTASection() {
               Join thousands of professionals using SoftwareHub to compare tools, read verified reviews, and make smarter software purchasing decisions — completely free.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/register">
+              <Link to="/categories">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-8 rounded-xl font-semibold gap-2">
                   Start Comparing Software <ArrowRight className="h-4 w-4" />
                 </Button>

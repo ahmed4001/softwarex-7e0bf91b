@@ -7,7 +7,7 @@ const footerSections = [
       { to: "/category/all", label: "Browse Software" },
       { to: "/blog", label: "Learning Hub" },
       { to: "/category/all", label: "Software Reviews" },
-      { to: "/register", label: "Add Your Product" },
+      
       { to: "/search", label: "Research Hub" },
       { to: "/compare", label: "Compare Software" },
       { to: "/category/all", label: "Best Software Companies" },
