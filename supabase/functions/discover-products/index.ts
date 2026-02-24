@@ -317,6 +317,131 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Action: enrich — scrape detailed data for products missing website_url or features
+    if (action === "enrich") {
+      let query = supabase
+        .from("products")
+        .select("id, name, slug, website_url, features")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (category_slug) {
+        const { data: cat } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("slug", category_slug)
+          .maybeSingle();
+        if (cat) query = query.eq("category_id", cat.id);
+      }
+
+      const { data: products } = await query.limit(import_products?.length || 50);
+
+      const toEnrich = (products || []).filter(
+        (p: any) => !p.website_url || !p.features || (Array.isArray(p.features) && p.features.length === 0)
+      );
+
+      if (toEnrich.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, results: [], message: "No products need enrichment" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const results: any[] = [];
+
+      for (const product of toEnrich) {
+        try {
+          // Try scraping the G2 product page for detailed data
+          const g2Url = `https://www.g2.com/products/${product.slug}/reviews`;
+          let enrichedData: any = {};
+
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 20000);
+
+            const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              signal: controller.signal,
+              body: JSON.stringify({
+                url: g2Url,
+                formats: [
+                  {
+                    type: "json",
+                    schema: {
+                      type: "object",
+                      properties: {
+                        website_url: { type: "string", description: "Official website URL" },
+                        description: { type: "string", description: "Product description (2-3 sentences)" },
+                        tagline: { type: "string", description: "Product tagline" },
+                        pricing_model: { type: "string", enum: ["free", "freemium", "paid", "subscription", "one-time"] },
+                        features: { type: "array", items: { type: "string" }, description: "Key features (up to 8)" },
+                        avg_rating: { type: "number", description: "Average rating out of 5" },
+                        total_reviews: { type: "number", description: "Total number of reviews" },
+                        pros_summary: { type: "string", description: "Summary of what users like (2-3 sentences)" },
+                        cons_summary: { type: "string", description: "Summary of common complaints (2-3 sentences)" },
+                      },
+                    },
+                  },
+                ],
+                onlyMainContent: true,
+                waitFor: 3000,
+              }),
+            });
+            clearTimeout(timeout);
+            const result = await res.json();
+            enrichedData = result?.data?.json || result?.json || {};
+          } catch (e) {
+            console.warn(`Enrich scrape failed for ${product.name}:`, e);
+            results.push({ name: product.name, status: "error", reason: "Scrape timeout" });
+            continue;
+          }
+
+          // Build update payload — only update fields that are currently empty
+          const updates: any = {};
+          if (!product.website_url && enrichedData.website_url) updates.website_url = enrichedData.website_url;
+          if (enrichedData.description) updates.description = enrichedData.description;
+          if (enrichedData.tagline) updates.tagline = enrichedData.tagline;
+          if (enrichedData.pricing_model) updates.pricing_model = enrichedData.pricing_model;
+          if (enrichedData.features?.length > 0 && (!product.features || (Array.isArray(product.features) && product.features.length === 0))) {
+            updates.features = enrichedData.features;
+          }
+          if (enrichedData.avg_rating) updates.avg_rating = Math.min(5, Math.max(0, Number(enrichedData.avg_rating)));
+          if (enrichedData.total_reviews) updates.total_reviews = Math.max(0, Number(enrichedData.total_reviews));
+          if (enrichedData.pros_summary) updates.pros_summary = enrichedData.pros_summary;
+          if (enrichedData.cons_summary) updates.cons_summary = enrichedData.cons_summary;
+
+          if (Object.keys(updates).length === 0) {
+            results.push({ name: product.name, status: "skipped", reason: "No new data found" });
+            continue;
+          }
+
+          const { error: updateError } = await supabase
+            .from("products")
+            .update(updates)
+            .eq("id", product.id);
+
+          if (updateError) {
+            results.push({ name: product.name, status: "error", reason: updateError.message });
+          } else {
+            results.push({ name: product.name, status: "success", fields: Object.keys(updates) });
+          }
+        } catch (e) {
+          results.push({ name: product.name, status: "error", reason: e instanceof Error ? e.message : "Unknown" });
+        }
+
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, results }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Action: list_g2_categories — return the mapping for the UI
     if (action === "list_g2_categories") {
       return new Response(
@@ -326,7 +451,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: false, error: "Unknown action. Use 'discover', 'import', or 'list_g2_categories'" }),
+      JSON.stringify({ success: false, error: "Unknown action. Use 'discover', 'import', 'enrich', or 'list_g2_categories'" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
