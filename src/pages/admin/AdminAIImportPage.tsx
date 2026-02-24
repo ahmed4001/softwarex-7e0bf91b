@@ -1256,6 +1256,218 @@ function UploadImagesTab() {
   );
 }
 
+// ─── Bulk Generate Tab ─────────────────────────────────
+function BulkGenerateTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const [totalInserted, setTotalInserted] = useState(0);
+  const [totalSkipped, setTotalSkipped] = useState(0);
+  const [totalErrors, setTotalErrors] = useState(0);
+  const [currentCategory, setCurrentCategory] = useState("");
+  const [categoryProgress, setCategoryProgress] = useState(0);
+  const [targetCount, setTargetCount] = useState("5000");
+  const cancelRef = useRef(false);
+  const [log, setLog] = useState<string[]>([]);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["admin-categories-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("id, name, slug").order("name");
+      return data || [];
+    },
+  });
+
+  const { data: productCount = 0, refetch: refetchCount } = useQuery({
+    queryKey: ["admin-product-count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("products").select("*", { count: "exact", head: true });
+      return count || 0;
+    },
+  });
+
+  const addLog = (msg: string) => setLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 100));
+
+  const startBulkGenerate = async () => {
+    cancelRef.current = false;
+    setIsRunning(true);
+    setTotalInserted(0);
+    setTotalSkipped(0);
+    setTotalErrors(0);
+    setLog([]);
+
+    const target = parseInt(targetCount);
+    const batchSize = 25;
+    const batchesPerCategory = Math.ceil(target / categories.length / batchSize);
+
+    addLog(`Starting bulk generation: target ${target} products across ${categories.length} categories`);
+
+    let totalDone = 0;
+
+    for (let catIdx = 0; catIdx < categories.length; catIdx++) {
+      if (cancelRef.current) break;
+
+      const cat = categories[catIdx];
+      setCurrentCategory(cat.name);
+      setCategoryProgress(Math.round(((catIdx + 1) / categories.length) * 100));
+      addLog(`Processing: ${cat.name} (${catIdx + 1}/${categories.length})`);
+
+      for (let batch = 0; batch < batchesPerCategory; batch++) {
+        if (cancelRef.current) break;
+        if (totalDone >= target) break;
+
+        try {
+          const { data, error } = await supabase.functions.invoke("bulk-generate-products", {
+            body: {
+              category_id: cat.id,
+              category_name: cat.name,
+              batch_size: batchSize,
+              offset: batch * batchSize,
+            },
+          });
+
+          if (error) {
+            addLog(`❌ Error in ${cat.name} batch ${batch + 1}: ${error.message}`);
+            setTotalErrors(prev => prev + batchSize);
+            continue;
+          }
+
+          if (data) {
+            setTotalInserted(prev => prev + (data.inserted || 0));
+            setTotalSkipped(prev => prev + (data.skipped || 0));
+            setTotalErrors(prev => prev + (data.errors || 0));
+            totalDone += data.inserted || 0;
+            addLog(`✅ ${cat.name}: +${data.inserted} inserted, ${data.skipped} skipped`);
+          }
+        } catch (e: any) {
+          addLog(`❌ Network error: ${e.message}`);
+          setTotalErrors(prev => prev + 1);
+        }
+
+        // Small delay between batches
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      if (totalDone >= target) {
+        addLog(`🎉 Target reached: ${totalDone} products generated!`);
+        break;
+      }
+    }
+
+    setIsRunning(false);
+    setCategoryProgress(100);
+    refetchCount();
+    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    toast({
+      title: cancelRef.current ? "Generation stopped" : "Bulk generation complete!",
+      description: `Added ${totalDone} products to the database.`,
+    });
+  };
+
+  const remaining = Math.max(0, parseInt(targetCount) - productCount);
+
+  return (
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 shadow-lg">
+        <div className="bg-gradient-to-br from-primary/10 via-accent/30 to-transparent p-1">
+          <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Bulk Product Generator</h3>
+                <p className="text-xs text-muted-foreground">
+                  Generate thousands of real software products using AI across all categories
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-5">
+              <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/50">
+                <AnimatedNumber value={productCount} />
+                <p className="text-xs text-muted-foreground mt-1">Current Products</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/50">
+                <AnimatedNumber value={totalInserted} />
+                <p className="text-xs text-muted-foreground mt-1">Added This Session</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/50">
+                <AnimatedNumber value={remaining} />
+                <p className="text-xs text-muted-foreground mt-1">Remaining to Target</p>
+              </div>
+            </div>
+
+            <div className="flex items-end gap-4">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Target Total Products</Label>
+                <Input
+                  type="number"
+                  value={targetCount}
+                  onChange={e => setTargetCount(e.target.value)}
+                  className="h-11 bg-background/50"
+                  disabled={isRunning}
+                />
+              </div>
+              {!isRunning ? (
+                <Button
+                  onClick={startBulkGenerate}
+                  disabled={categories.length === 0}
+                  className="h-11 px-8 font-semibold shadow-md"
+                  size="lg"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Generate {remaining.toLocaleString()} Products
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { cancelRef.current = true; }}
+                  variant="destructive"
+                  className="h-11 px-8"
+                  size="lg"
+                >
+                  Stop Generation
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {(isRunning || totalInserted > 0) && (
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Progress</h3>
+              {isRunning && currentCategory && (
+                <p className="text-sm text-muted-foreground">
+                  Processing: <span className="text-foreground font-medium">{currentCategory}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <StatPill icon={CheckCircle2} label="Inserted" value={totalInserted.toLocaleString()} />
+              <StatPill icon={AlertCircle} label="Skipped" value={totalSkipped.toLocaleString()} />
+            </div>
+          </div>
+          <Progress value={categoryProgress} className="h-2" />
+          <p className="text-xs text-muted-foreground text-right">{categoryProgress}% of categories processed</p>
+
+          {log.length > 0 && (
+            <div className="bg-muted/30 border border-border/50 rounded-lg p-3 max-h-48 overflow-auto">
+              <div className="space-y-1">
+                {log.map((entry, i) => (
+                  <p key={i} className="text-xs font-mono text-muted-foreground">{entry}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────
 export default function AdminAIImportPage() {
   return (
@@ -1298,8 +1510,14 @@ export default function AdminAIImportPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="generate" className="w-full">
+      <Tabs defaultValue="bulk" className="w-full">
         <TabsList className="bg-card border border-border/50 p-1 h-auto rounded-xl shadow-sm flex-wrap">
+          <TabsTrigger
+            value="bulk"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:shadow-sm text-sm"
+          >
+            <Zap className="h-4 w-4" /> Bulk Generate
+          </TabsTrigger>
           <TabsTrigger
             value="generate"
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:shadow-sm text-sm"
@@ -1332,6 +1550,9 @@ export default function AdminAIImportPage() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="bulk" className="mt-6">
+          <BulkGenerateTab />
+        </TabsContent>
         <TabsContent value="generate" className="mt-6">
           <GenerateProductsTab />
         </TabsContent>
