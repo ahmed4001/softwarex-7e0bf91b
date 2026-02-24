@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { RequireAuth } from "@/components/RequireAuth";
 import { useSavedProducts } from "@/hooks/useSavedProducts";
 import { SeoHead } from "@/components/SeoHead";
 import { ProductCard } from "@/components/ProductCard";
@@ -16,20 +16,11 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const { t } = useTranslation();
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate("/login", { replace: true });
-  }, [authLoading, user, navigate]);
-
-  if (authLoading || !user) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-  }
-
   return (
-    <>
+    <RequireAuth>
       <SeoHead title={t("dashboard.title")} description={t("dashboard.subtitle")} />
       <main className="container py-10 max-w-5xl">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -44,12 +35,12 @@ export default function DashboardPage() {
             <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="saved"><SavedProductsTab userId={user.id} /></TabsContent>
-          <TabsContent value="reviews"><MyReviewsTab userId={user.id} /></TabsContent>
-          <TabsContent value="profile"><ProfileTab user={user} onSignOut={signOut} /></TabsContent>
+          <TabsContent value="saved"><SavedProductsTab userId={user!.id} /></TabsContent>
+          <TabsContent value="reviews"><MyReviewsTab userId={user!.id} /></TabsContent>
+          <TabsContent value="profile"><ProfileTab user={user!} onSignOut={signOut} /></TabsContent>
         </Tabs>
       </main>
-    </>
+    </RequireAuth>
   );
 }
 
