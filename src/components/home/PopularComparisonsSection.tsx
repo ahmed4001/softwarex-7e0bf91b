@@ -2,17 +2,36 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeftRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-
-const comparisons = [
-  { a: "Slack", b: "Microsoft Teams", category: "Team Communication Software" },
-  { a: "Notion", b: "Confluence", category: "Knowledge Management Tools" },
-  { a: "HubSpot CRM", b: "Salesforce", category: "CRM Software" },
-  { a: "Figma", b: "Sketch", category: "UI/UX Design Tools" },
-  { a: "Jira", b: "Linear", category: "Project Management Software" },
-  { a: "Mailchimp", b: "SendGrid", category: "Email Marketing Platforms" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function PopularComparisonsSection() {
+  const { data: comparisons } = useQuery({
+    queryKey: ["popular-comparisons"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("comparisons")
+        .select("id, title, slug, product_ids, view_count, summary")
+        .eq("is_published", true)
+        .not("summary", "is", null)
+        .order("view_count", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+  });
+
+  // Fallback static data if no AI-enriched comparisons exist yet
+  const fallbackComparisons = [
+    { a: "Slack", b: "Microsoft Teams", category: "Team Communication Software" },
+    { a: "Notion", b: "Confluence", category: "Knowledge Management Tools" },
+    { a: "HubSpot CRM", b: "Salesforce", category: "CRM Software" },
+    { a: "Figma", b: "Sketch", category: "UI/UX Design Tools" },
+    { a: "Jira", b: "Linear", category: "Project Management Software" },
+    { a: "Mailchimp", b: "SendGrid", category: "Email Marketing Platforms" },
+  ];
+
+  const hasDynamic = comparisons && comparisons.length > 0;
+
   return (
     <section className="py-20" aria-labelledby="comparisons-heading">
       <div className="container">
@@ -35,32 +54,65 @@ export function PopularComparisonsSection() {
         </motion.div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {comparisons.map((c, i) => (
-            <motion.article
-              key={`${c.a}-${c.b}`}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Link
-                to="/compare"
-                className="glass-card p-5 flex items-center gap-4 group"
-                aria-label={`Compare ${c.a} vs ${c.b} — ${c.category}`}
-              >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="h-10 w-10 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <span className="text-xs font-bold text-primary">{c.a.charAt(0)}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">{c.a} vs {c.b}</p>
-                    <p className="text-xs text-muted-foreground">{c.category}</p>
-                  </div>
-                </div>
-                <ArrowLeftRight className="h-4 w-4 text-muted-foreground/30 flex-shrink-0" aria-hidden="true" />
-              </Link>
-            </motion.article>
-          ))}
+          {hasDynamic
+            ? comparisons.map((c, i) => {
+                const title = c.title || "Comparison";
+                const parts = title.split(" vs ");
+                const a = parts[0] || "";
+                const b = parts[1] || "";
+                return (
+                  <motion.article
+                    key={c.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <Link
+                      to={`/compare/${c.slug}`}
+                      className="glass-card p-5 flex items-center gap-4 group"
+                      aria-label={`Compare ${a} vs ${b}`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="h-10 w-10 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                          <span className="text-xs font-bold text-primary">{a.charAt(0)}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">{title}</p>
+                          {c.summary && <p className="text-xs text-muted-foreground line-clamp-1">{c.summary.substring(0, 80)}...</p>}
+                        </div>
+                      </div>
+                      <ArrowLeftRight className="h-4 w-4 text-muted-foreground/30 flex-shrink-0" aria-hidden="true" />
+                    </Link>
+                  </motion.article>
+                );
+              })
+            : fallbackComparisons.map((c, i) => (
+                <motion.article
+                  key={`${c.a}-${c.b}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Link
+                    to="/compare"
+                    className="glass-card p-5 flex items-center gap-4 group"
+                    aria-label={`Compare ${c.a} vs ${c.b} — ${c.category}`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="h-10 w-10 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                        <span className="text-xs font-bold text-primary">{c.a.charAt(0)}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">{c.a} vs {c.b}</p>
+                        <p className="text-xs text-muted-foreground">{c.category}</p>
+                      </div>
+                    </div>
+                    <ArrowLeftRight className="h-4 w-4 text-muted-foreground/30 flex-shrink-0" aria-hidden="true" />
+                  </Link>
+                </motion.article>
+              ))}
         </div>
       </div>
     </section>
