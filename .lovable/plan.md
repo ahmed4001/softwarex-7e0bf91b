@@ -1,113 +1,63 @@
 
 
-# Add AI-Generated Comparison Content
+# Round-Robin Sending for Brevo Accounts
 
-Enrich the existing 1,204 comparison entries with detailed, AI-generated content and create dedicated VS pages for each.
+## Overview
+Add automatic round-robin account selection when sending campaigns. Instead of manually picking an account, the system will automatically choose the active account with the most remaining daily credits (300 limit per account). The admin can still override manually if desired.
 
-## What Changes
+## Changes
 
-### 1. Extend the comparisons table with new columns
+### 1. Database: Add a credit reset function
+Create a database function `get_best_brevo_account` that returns the active account with the highest remaining credits (`daily_credit_limit - credits_used_today`). Also add a daily credit reset function.
 
-Add columns to store rich comparison content:
+**SQL Migration:**
+- `get_best_brevo_account()` -- returns the active account ID with the most remaining credits
+- `reset_brevo_daily_credits()` -- resets `credits_used_today` to 0 for all accounts where `credits_reset_at` is older than 24 hours
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `slug` | text (unique) | URL-friendly slug, e.g. "salesforce-vs-hubspot-crm" |
-| `summary` | text | 2-3 paragraph overview of the comparison |
-| `winner_verdict` | text | Which product wins overall and why |
-| `winner_product_id` | uuid | The winning product's ID |
-| `category_id` | uuid | Category both products belong to |
-| `product_a_score` | numeric | Overall score for product A (1-10) |
-| `product_b_score` | numeric | Overall score for product B (1-10) |
-| `feature_scores` | jsonb | Per-feature scoring breakdown |
-| `pros_a` | jsonb | Array of pros for product A |
-| `cons_a` | jsonb | Array of cons for product A |
-| `pros_b` | jsonb | Array of pros for product B |
-| `cons_b` | jsonb | Array of cons for product B |
-| `best_for_a` | text | "Best for..." summary for product A |
-| `best_for_b` | text | "Best for..." summary for product B |
-| `seo_title` | text | SEO-optimized page title |
-| `seo_description` | text | Meta description |
+### 2. Edge Function: New `send-campaign-roundrobin` action
+Add a new action in `supabase/functions/brevo-api/index.ts`:
 
-Also backfill slugs for all existing comparisons using a migration.
+- **`send-campaign-roundrobin`**: Does NOT require `accountId`. Instead, queries all active accounts ordered by remaining credits descending, picks the first one with credits > 0, and sends via that account. If no accounts have credits left, returns an error. After sending, increments `credits_used_today` for the chosen account.
+- Also update the existing `send-campaign` action to check credit limits before sending (reject if `credits_used_today >= daily_credit_limit`).
 
-### 2. Create AI content generation edge function
+### 3. Frontend: Add "Auto (Round-Robin)" option in CampaignComposer
+Update `src/components/admin/CampaignComposer.tsx`:
 
-A new `generate-comparison-content` edge function that:
-- Fetches comparisons that have no `summary` yet (in batches of 10)
-- For each, loads both products' data (name, tagline, description, features, pricing, ratings, pros/cons summaries)
-- Calls Lovable AI (gemini-3-flash-preview) with a structured prompt to generate all comparison fields
-- Uses tool calling to get structured JSON output
-- Saves the generated content back to the comparisons table
-- Processes in batches to avoid timeouts (configurable batch size)
+- Add a special "Auto - Best Available" option in the account selector dropdown (value: `"auto"`)
+- When `accountId === "auto"`, call the edge function with `action: "send-campaign-roundrobin"` instead of `"send-campaign"`
+- Show which account was used in the success toast (returned from the edge function response)
+- Update the confirmation dialog to say "via best available account" when auto is selected
 
-### 3. Create a dedicated VS comparison page
+### 4. Frontend: Credit usage visualization
+Update `src/pages/admin/AdminBrevoPage.tsx`:
 
-New route: `/compare/:slug` (e.g., `/compare/salesforce-vs-hubspot-crm`)
-
-The page will display:
-- Hero section with both product logos, names, and overall scores
-- Winner verdict banner
-- Side-by-side feature score comparison (bar chart style)
-- Pros and cons cards for each product
-- "Best for" recommendations
-- Full summary narrative
-- Existing feature matrix from the current compare page
-- Pricing calculator
-- Links to individual product pages
-
-### 4. Update the existing compare page and homepage links
-
-- Add a "Browse Comparisons" section or listing to `/compare` that shows popular/recent comparisons
-- Update `PopularComparisonsSection` to link to actual comparison detail pages instead of just `/compare`
-- Add the new route to `App.tsx`
+- Add a small progress bar under each account's credit cell showing usage percentage
+- Color-code: green (< 50%), yellow (50-80%), red (> 80%)
 
 ## Technical Details
 
-### Database Migration
-
-```sql
-ALTER TABLE comparisons
-  ADD COLUMN slug text UNIQUE,
-  ADD COLUMN summary text,
-  ADD COLUMN winner_verdict text,
-  ADD COLUMN winner_product_id uuid,
-  ADD COLUMN category_id uuid,
-  ADD COLUMN product_a_score numeric DEFAULT 0,
-  ADD COLUMN product_b_score numeric DEFAULT 0,
-  ADD COLUMN feature_scores jsonb DEFAULT '[]',
-  ADD COLUMN pros_a jsonb DEFAULT '[]',
-  ADD COLUMN cons_a jsonb DEFAULT '[]',
-  ADD COLUMN pros_b jsonb DEFAULT '[]',
-  ADD COLUMN cons_b jsonb DEFAULT '[]',
-  ADD COLUMN best_for_a text,
-  ADD COLUMN best_for_b text,
-  ADD COLUMN seo_title text,
-  ADD COLUMN seo_description text;
+```text
++------------------+       +-------------------+       +-------------+
+| CampaignComposer | ----> | brevo-api (edge)  | ----> | Brevo API   |
+| accountId="auto" |       | round-robin logic |       |             |
++------------------+       +-------------------+       +-------------+
+                                    |
+                                    v
+                           +------------------+
+                           | brevo_accounts   |
+                           | (pick best one)  |
+                           +------------------+
 ```
 
-Then backfill slugs from existing titles (e.g., "Salesforce vs HubSpot CRM" becomes "salesforce-vs-hubspot-crm").
+**Round-robin algorithm:**
+1. Query all active accounts where `credits_used_today < daily_credit_limit`
+2. Reset credits if `credits_reset_at` is older than 24 hours
+3. Order by `(daily_credit_limit - credits_used_today) DESC`
+4. Pick the first account (most remaining credits)
+5. Send campaign, increment credits, log with the chosen account ID
 
-### New Files
-
-- `supabase/functions/generate-comparison-content/index.ts` -- AI content generation
-- `src/pages/ComparisonDetailPage.tsx` -- dedicated VS page
-
-### Modified Files
-
-- `src/App.tsx` -- add `/compare/:slug` route
-- `src/components/home/PopularComparisonsSection.tsx` -- link to actual comparison pages
-- `supabase/config.toml` -- register new edge function
-
-### AI Prompt Strategy
-
-The edge function will use tool calling to extract structured output. The system prompt will instruct the model to act as a SaaS analyst producing a fair, data-driven comparison. Input includes both products' real data (features, pricing, ratings, reviews summary). Output is the structured comparison fields above.
-
-### Execution Plan
-
-1. Run the database migration to add columns and backfill slugs
-2. Deploy the `generate-comparison-content` edge function
-3. Call it to process all 1,204 comparisons (in batches of ~10, multiple invocations)
-4. Create the `ComparisonDetailPage.tsx` component
-5. Wire up routing and update homepage links
-
+### Files to modify:
+- `supabase/functions/brevo-api/index.ts` -- add round-robin action + credit check
+- `src/components/admin/CampaignComposer.tsx` -- add auto option + update send logic
+- `src/pages/admin/AdminBrevoPage.tsx` -- add credit progress bars
+- New database migration -- add helper functions
