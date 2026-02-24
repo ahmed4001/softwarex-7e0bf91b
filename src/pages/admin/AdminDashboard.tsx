@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { StatCard } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Package, Star, Users, MessageSquare, Eye, TrendingUp, UserPlus, BarChart3 } from "lucide-react";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Package, Star, Users, MessageSquare, Eye } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
-const CHART_COLORS = ["hsl(239, 84%, 67%)", "hsl(187, 92%, 41%)", "hsl(142, 71%, 45%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)"];
+const CHART_COLORS = ["hsl(245, 82%, 63%)", "hsl(187, 92%, 42%)", "hsl(152, 69%, 45%)", "hsl(38, 92%, 50%)"];
 
 export default function AdminDashboard() {
   const { data: stats } = useQuery({
@@ -20,23 +21,14 @@ export default function AdminDashboard() {
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending"),
       ]);
-      return {
-        products: products.count || 0,
-        reviews: reviews.count || 0,
-        users: users.count || 0,
-        pending: pending.count || 0,
-      };
+      return { products: products.count || 0, reviews: reviews.count || 0, users: users.count || 0, pending: pending.count || 0 };
     },
   });
 
   const { data: recentReviews } = useQuery({
     queryKey: ["admin-recent-reviews"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("reviews")
-        .select("*, products(name), profiles(name)")
-        .order("created_at", { ascending: false })
-        .limit(10);
+      const { data } = await supabase.from("reviews").select("*, products(name), profiles(name)").order("created_at", { ascending: false }).limit(10);
       return data || [];
     },
   });
@@ -49,116 +41,120 @@ export default function AdminDashboard() {
     },
   });
 
-  // Mock chart data
-  const reviewsOverTime = Array.from({ length: 30 }, (_, i) => ({
-    day: `Day ${i + 1}`,
-    reviews: Math.floor(Math.random() * 20) + 5,
-  }));
-
+  const reviewsOverTime = Array.from({ length: 30 }, (_, i) => ({ day: `${i + 1}`, reviews: Math.floor(Math.random() * 20) + 5 }));
   const statusBreakdown = [
-    { name: "Approved", value: 65 },
-    { name: "Pending", value: 20 },
-    { name: "Rejected", value: 10 },
-    { name: "Spam", value: 5 },
+    { name: "Approved", value: 65 }, { name: "Pending", value: 20 },
+    { name: "Rejected", value: 10 }, { name: "Spam", value: 5 },
   ];
 
   return (
     <>
       <SeoHead title="Admin Dashboard" />
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back. Here's an overview of your platform.</p>
+      <div className="space-y-8">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Platform overview and recent activity</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+            <StatCard title="Total Products" value={stats?.products || 0} icon={Package} color="primary" trend={12} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <StatCard title="Total Reviews" value={stats?.reviews || 0} icon={Star} color="secondary" trend={8} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <StatCard title="Total Users" value={stats?.users || 0} icon={Users} color="success" trend={15} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <StatCard title="Pending Reviews" value={stats?.pending || 0} icon={MessageSquare} color="warning" trend={-5} />
+          </motion.div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Products" value={stats?.products || 0} icon={Package} color="primary" trend={12} />
-          <StatCard title="Total Reviews" value={stats?.reviews || 0} icon={Star} color="secondary" trend={8} />
-          <StatCard title="Total Users" value={stats?.users || 0} icon={Users} color="success" trend={15} />
-          <StatCard title="Pending Reviews" value={stats?.pending || 0} icon={MessageSquare} color="warning" trend={-5} />
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 product-card">
-            <h3 className="font-semibold text-foreground mb-4">Reviews Over Last 30 Days</h3>
-            <ResponsiveContainer width="100%" height={250}>
+        <div className="grid xl:grid-cols-3 gap-5">
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="xl:col-span-2 glass-card p-6">
+            <h3 className="font-display font-bold text-foreground mb-5">Reviews — Last 30 Days</h3>
+            <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={reviewsOverTime}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Area type="monotone" dataKey="reviews" stroke="hsl(239, 84%, 67%)" fill="hsl(239, 84%, 67%)" fillOpacity={0.1} strokeWidth={2} />
+                <defs>
+                  <linearGradient id="reviewGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(245, 82%, 63%)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="hsl(245, 82%, 63%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(225, 15%, 90%)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'hsl(225, 10%, 48%)' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(225, 10%, 48%)' }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(225, 15%, 90%)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }} />
+                <Area type="monotone" dataKey="reviews" stroke="hsl(245, 82%, 63%)" fill="url(#reviewGrad)" strokeWidth={2.5} />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-          <div className="product-card">
-            <h3 className="font-semibold text-foreground mb-4">Review Status</h3>
-            <ResponsiveContainer width="100%" height={250}>
+          </motion.div>
+          
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="glass-card p-6">
+            <h3 className="font-display font-bold text-foreground mb-5">Review Status</h3>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
+                <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value" strokeWidth={0}>
                   {statusBreakdown.map((_, i) => <Cell key={i} fill={CHART_COLORS[i]} />)}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ borderRadius: 12 }} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex flex-wrap gap-3 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center mt-3">
               {statusBreakdown.map((s, i) => (
-                <div key={s.name} className="flex items-center gap-1.5 text-xs">
+                <div key={s.name} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i] }} />
-                  {s.name}
+                  {s.name} ({s.value}%)
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Tables Row */}
-        <div className="grid lg:grid-cols-2 gap-4">
-          {/* Recent Reviews */}
-          <div className="product-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Recent Reviews</h3>
-              <Link to="/admin/reviews"><Button variant="ghost" size="sm">View All</Button></Link>
+        <div className="grid xl:grid-cols-2 gap-5">
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display font-bold text-foreground">Recent Reviews</h3>
+              <Link to="/admin/reviews"><Button variant="ghost" size="sm" className="rounded-lg font-medium">View All</Button></Link>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-1">
               {recentReviews?.slice(0, 5).map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div key={r.id} className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-muted/50 transition-colors">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{r.title || "Untitled review"}</p>
-                    <p className="text-xs text-muted-foreground">on {r.products?.name || "Unknown"} by {r.profiles?.name || "Anonymous"}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{r.title || "Untitled"}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">on {r.products?.name || "—"} · by {r.profiles?.name || "Anonymous"}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <StatusBadge status={r.status} />
-                  </div>
+                  <StatusBadge status={r.status} />
                 </div>
               ))}
-              {(!recentReviews || recentReviews.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">No reviews yet.</p>}
+              {(!recentReviews || recentReviews.length === 0) && <p className="text-sm text-muted-foreground text-center py-8">No reviews yet.</p>}
             </div>
-          </div>
+          </motion.div>
 
-          {/* Top Products */}
-          <div className="product-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Top Products by Views</h3>
-              <Link to="/admin/products"><Button variant="ghost" size="sm">View All</Button></Link>
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="glass-card p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display font-bold text-foreground">Top Products</h3>
+              <Link to="/admin/products"><Button variant="ghost" size="sm" className="rounded-lg font-medium">View All</Button></Link>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-1">
               {topProducts?.map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.total_reviews} reviews · ★ {Number(p.avg_rating).toFixed(1)}</p>
+                <div key={i} className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-muted-foreground w-5 text-center">#{i + 1}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.total_reviews} reviews · ★ {Number(p.avg_rating).toFixed(1)}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Eye className="h-3 w-3" /> {p.view_count}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                    <Eye className="h-3.5 w-3.5" /> {p.view_count}
                   </div>
                 </div>
               ))}
-              {(!topProducts || topProducts.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">No products yet.</p>}
+              {(!topProducts || topProducts.length === 0) && <p className="text-sm text-muted-foreground text-center py-8">No products yet.</p>}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </>

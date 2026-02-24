@@ -6,6 +6,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -15,7 +17,7 @@ export default function CategoryPage() {
   const { data: category } = useQuery({
     queryKey: ["category", slug],
     queryFn: async () => {
-      if (isAll) return { name: "All Categories", description: "Browse all software categories", slug: "all" };
+      if (isAll) return { name: "All Categories", description: "Browse all software", slug: "all" };
       const { data } = await supabase.from("categories").select("*").eq("slug", slug!).single();
       return data;
     },
@@ -48,38 +50,54 @@ export default function CategoryPage() {
   return (
     <>
       <SeoHead title={category?.name || "Categories"} description={category?.description || "Browse software"} />
-      <div className="container py-8">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <Link to="/" className="hover:text-foreground">Home</Link>
-          <span>/</span>
-          <span className="text-foreground">{category?.name || "Categories"}</span>
+      <div className="container py-10">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+          <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+          <span className="opacity-30">/</span>
+          <span className="text-foreground font-medium">{category?.name || "Categories"}</span>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-10">
           {/* Sidebar */}
-          <aside className="w-full md:w-56 flex-shrink-0">
-            <h3 className="font-semibold text-foreground mb-3">Categories</h3>
-            <div className="space-y-1">
-              <Link to="/category/all" className={`block px-3 py-2 text-sm rounded-lg transition-colors ${isAll ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted"}`}>
-                All Categories
-              </Link>
-              {categories?.map((c) => (
-                <Link key={c.id} to={`/category/${c.slug}`} className={`block px-3 py-2 text-sm rounded-lg transition-colors ${slug === c.slug ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted"}`}>
-                  {c.name} <span className="text-xs opacity-60">({c.product_count})</span>
+          <aside className="w-full lg:w-60 flex-shrink-0">
+            <div className="glass-card p-5 lg:sticky lg:top-24">
+              <h3 className="font-display font-bold text-foreground mb-4 text-sm uppercase tracking-wider">Categories</h3>
+              <div className="space-y-0.5">
+                <Link to="/category/all" className={cn(
+                  "block px-3 py-2.5 text-sm rounded-xl transition-all duration-200 font-medium",
+                  isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                )}>
+                  All Categories
                 </Link>
-              ))}
+                {categories?.map((c) => (
+                  <Link key={c.id} to={`/category/${c.slug}`} className={cn(
+                    "flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all duration-200",
+                    slug === c.slug ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  )}>
+                    <span>{c.name}</span>
+                    <span className="text-xs opacity-50">{c.product_count}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </aside>
 
           {/* Main */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-6">
+          <div className="flex-1 min-w-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4"
+            >
               <div>
-                <h1 className="text-2xl font-bold text-foreground">{isAll ? "All Software" : `Best ${category?.name} Software in ${new Date().getFullYear()}`}</h1>
+                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+                  {isAll ? "All Software" : `Best ${category?.name} Software`}
+                </h1>
                 <p className="text-muted-foreground mt-1">{products?.length || 0} products found</p>
               </div>
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-44 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="rating">Top Rated</SelectItem>
                   <SelectItem value="reviews">Most Reviews</SelectItem>
@@ -87,7 +105,7 @@ export default function CategoryPage() {
                   <SelectItem value="name">A-Z</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </motion.div>
 
             <div className="space-y-4">
               {isLoading ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={i} />) :
@@ -101,7 +119,7 @@ export default function CategoryPage() {
                 ))
               }
               {!isLoading && products?.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground">No products found in this category.</div>
+                <div className="glass-card p-16 text-center text-muted-foreground">No products found.</div>
               )}
             </div>
           </div>

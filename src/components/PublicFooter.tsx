@@ -1,45 +1,71 @@
 import { Link } from "react-router-dom";
+import { Github, Twitter, Linkedin, ArrowUpRight } from "lucide-react";
 
 export function PublicFooter() {
   return (
-    <footer className="bg-foreground text-background py-16">
-      <div className="container">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-lg gradient-hero flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">S</span>
+    <footer className="relative overflow-hidden">
+      {/* Gradient top border */}
+      <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      
+      <div className="bg-foreground text-background relative">
+        <div className="absolute inset-0 mesh-gradient opacity-20" />
+        <div className="container relative py-20">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
+            <div className="col-span-2">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="h-9 w-9 rounded-xl gradient-hero flex items-center justify-center">
+                  <span className="text-sm font-black text-primary-foreground">S</span>
+                </div>
+                <span className="text-lg font-display font-bold">SoftwareHub</span>
               </div>
-              <span className="text-lg font-bold">SoftwareHub</span>
+              <p className="text-sm opacity-50 leading-relaxed max-w-xs mb-6">
+                Discover the best software for your business. Real reviews from verified users, honest comparisons.
+              </p>
+              <div className="flex items-center gap-3">
+                {[Twitter, Github, Linkedin].map((Icon, i) => (
+                  <a key={i} href="#" className="h-9 w-9 rounded-xl bg-background/10 flex items-center justify-center hover:bg-background/20 transition-colors">
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
             </div>
-            <p className="text-sm opacity-60">Find the best software for your business. Read real reviews from verified users.</p>
+            
+            {[
+              { title: "Browse", links: [
+                { to: "/category/all", label: "All Categories" },
+                { to: "/compare", label: "Compare" },
+                { to: "/blog", label: "Blog" },
+                { to: "/search", label: "Search" },
+              ]},
+              { title: "Company", links: [
+                { to: "/page/about", label: "About" },
+                { to: "/page/contact", label: "Contact" },
+                { to: "/submit-product", label: "List Your Product" },
+              ]},
+              { title: "Legal", links: [
+                { to: "/page/privacy", label: "Privacy" },
+                { to: "/page/terms", label: "Terms" },
+              ]},
+            ].map((section) => (
+              <div key={section.title}>
+                <h4 className="font-display font-semibold mb-4 text-sm uppercase tracking-wider opacity-60">{section.title}</h4>
+                <div className="space-y-3">
+                  {section.links.map((l) => (
+                    <Link key={l.to} to={l.to} className="group flex items-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
+                      {l.label}
+                      <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          <div>
-            <h4 className="font-semibold mb-3">Browse</h4>
-            <div className="space-y-2 text-sm opacity-60">
-              <Link to="/category/all" className="block hover:opacity-100 transition-opacity">All Categories</Link>
-              <Link to="/compare" className="block hover:opacity-100 transition-opacity">Compare</Link>
-              <Link to="/blog" className="block hover:opacity-100 transition-opacity">Blog</Link>
-            </div>
+          
+          <div className="h-px bg-background/10 mb-6" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-30">
+            <span>© {new Date().getFullYear()} SoftwareHub. All rights reserved.</span>
+            <span>Made with precision & care.</span>
           </div>
-          <div>
-            <h4 className="font-semibold mb-3">Company</h4>
-            <div className="space-y-2 text-sm opacity-60">
-              <Link to="/page/about" className="block hover:opacity-100 transition-opacity">About</Link>
-              <Link to="/page/contact" className="block hover:opacity-100 transition-opacity">Contact</Link>
-              <Link to="/submit-product" className="block hover:opacity-100 transition-opacity">List Your Product</Link>
-            </div>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-3">Legal</h4>
-            <div className="space-y-2 text-sm opacity-60">
-              <Link to="/page/privacy" className="block hover:opacity-100 transition-opacity">Privacy Policy</Link>
-              <Link to="/page/terms" className="block hover:opacity-100 transition-opacity">Terms of Service</Link>
-            </div>
-          </div>
-        </div>
-        <div className="border-t border-background/10 pt-6 text-sm text-center opacity-40">
-          © {new Date().getFullYear()} SoftwareHub. All rights reserved.
         </div>
       </div>
     </footer>

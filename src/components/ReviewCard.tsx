@@ -19,49 +19,54 @@ interface ReviewCardProps {
 
 export function ReviewCard({ title, body, pros, cons, overall_rating, reviewer_name, reviewer_role, company_size, helpful_count = 0, verified_reviewer, created_at }: ReviewCardProps) {
   return (
-    <div className="product-card">
-      <div className="flex items-start justify-between mb-3">
+    <div className="glass-card p-7">
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2.5 mb-2">
             <StarRating rating={overall_rating} size="sm" />
-            <span className="text-sm font-semibold">{overall_rating}.0</span>
+            <span className="text-sm font-display font-bold">{overall_rating}.0</span>
           </div>
-          {title && <h4 className="font-semibold text-foreground">{title}</h4>}
+          {title && <h4 className="font-display font-bold text-lg text-foreground">{title}</h4>}
         </div>
         {verified_reviewer && (
-          <div className="flex items-center gap-1 text-success text-xs font-medium">
+          <div className="flex items-center gap-1.5 text-success text-xs font-semibold bg-success/8 px-3 py-1.5 rounded-full">
             <CheckCircle className="h-3.5 w-3.5" /> Verified
           </div>
         )}
       </div>
-      
+
       {pros && (
-        <div className="mb-2">
-          <span className="text-xs font-semibold text-success">PROS: </span>
-          <span className="text-sm text-muted-foreground">{pros}</span>
+        <div className="mb-3 p-3 rounded-xl bg-success/5 border border-success/10">
+          <span className="text-xs font-bold text-success uppercase tracking-wider">Pros</span>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{pros}</p>
         </div>
       )}
       {cons && (
-        <div className="mb-2">
-          <span className="text-xs font-semibold text-destructive">CONS: </span>
-          <span className="text-sm text-muted-foreground">{cons}</span>
+        <div className="mb-3 p-3 rounded-xl bg-destructive/5 border border-destructive/10">
+          <span className="text-xs font-bold text-destructive uppercase tracking-wider">Cons</span>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{cons}</p>
         </div>
       )}
-      {body && <p className="text-sm text-muted-foreground mb-3">{body}</p>}
+      {body && <p className="text-sm text-muted-foreground leading-relaxed mb-4">{body}</p>}
 
-      <div className="flex items-center justify-between pt-3 border-t border-border">
-        <div className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{reviewer_name || "Anonymous"}</span>
-          {reviewer_role && <> · {reviewer_role}</>}
-          {company_size && <> · {company_size}</>}
-          <> · {formatDistanceToNow(new Date(created_at), { addSuffix: true })}</>
+      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-primary">{(reviewer_name || "A").charAt(0)}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-foreground">{reviewer_name || "Anonymous"}</span>
+            {reviewer_role && <span className="opacity-60"> · {reviewer_role}</span>}
+            {company_size && <span className="opacity-60"> · {company_size}</span>}
+          </div>
+          <span className="opacity-40">· {formatDistanceToNow(new Date(created_at), { addSuffix: true })}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-            <ThumbsUp className="h-3 w-3" /> {helpful_count}
+        <div className="flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 rounded-lg">
+            <ThumbsUp className="h-3.5 w-3.5" /> {helpful_count}
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs">
-            <ThumbsDown className="h-3 w-3" />
+          <Button variant="ghost" size="sm" className="h-8 text-xs rounded-lg">
+            <ThumbsDown className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
