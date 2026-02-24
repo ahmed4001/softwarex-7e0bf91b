@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, category_slug, g2_category, page, import_products } = await req.json();
+    const { action, category_slug, g2_category, page, import_products, quick_import } = await req.json();
 
     // Action: discover — crawl a G2 category page and extract products
     if (action === "discover") {
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Action: import — take discovered products and scrape + insert them
+    // Action: import — take discovered products and insert them (quick mode skips per-product scraping)
     if (action === "import") {
       if (!import_products || !Array.isArray(import_products) || import_products.length === 0) {
         return new Response(
@@ -196,7 +196,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Look up category ID
       const { data: category } = await supabase
         .from("categories")
         .select("id")
@@ -215,7 +214,6 @@ Deno.serve(async (req) => {
 
       for (const product of import_products) {
         try {
-          // Check if already exists
           const { data: existing } = await supabase
             .from("products")
             .select("id")
@@ -227,52 +225,54 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Try to find website URL by scraping the G2 product page
           let websiteUrl = product.website_url || null;
           let g2Data: any = {};
 
-          try {
-            const g2Res = await fetch("https://api.firecrawl.dev/v1/scrape", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                url: product.g2_url,
-                formats: [
-                  {
-                    type: "json",
-                    schema: {
-                      type: "object",
-                      properties: {
-                        website_url: { type: "string", description: "The official website URL of the product" },
-                        avg_rating: { type: "number", description: "Overall average rating out of 5" },
-                        total_reviews: { type: "number", description: "Total number of reviews" },
-                        description: { type: "string", description: "Product description (2-3 sentences)" },
-                        tagline: { type: "string", description: "Product tagline or one-liner" },
-                        pricing_model: { type: "string", enum: ["free", "freemium", "paid", "subscription", "one-time"] },
-                        pros_summary: { type: "string", description: "Summary of what users like most" },
-                        cons_summary: { type: "string", description: "Summary of common complaints" },
-                        features: { type: "array", items: { type: "string" }, description: "Key features (up to 8)" },
+          // Only scrape individual G2 product pages in non-quick mode
+          if (!quick_import && FIRECRAWL_API_KEY) {
+            try {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 15000);
+
+              const g2Res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                signal: controller.signal,
+                body: JSON.stringify({
+                  url: product.g2_url,
+                  formats: [
+                    {
+                      type: "json",
+                      schema: {
+                        type: "object",
+                        properties: {
+                          website_url: { type: "string", description: "The official website URL of the product" },
+                          avg_rating: { type: "number", description: "Overall average rating out of 5" },
+                          total_reviews: { type: "number", description: "Total number of reviews" },
+                          description: { type: "string", description: "Product description (2-3 sentences)" },
+                          tagline: { type: "string", description: "Product tagline or one-liner" },
+                          pricing_model: { type: "string", enum: ["free", "freemium", "paid", "subscription", "one-time"] },
+                          features: { type: "array", items: { type: "string" }, description: "Key features (up to 8)" },
+                        },
                       },
                     },
-                  },
-                ],
-                onlyMainContent: true,
-                waitFor: 3000,
-              }),
-            });
-            const g2Result = await g2Res.json();
-            g2Data = g2Result?.data?.json || g2Result?.json || {};
-            if (!websiteUrl && g2Data.website_url) {
-              websiteUrl = g2Data.website_url;
+                  ],
+                  onlyMainContent: true,
+                  waitFor: 3000,
+                }),
+              });
+              clearTimeout(timeout);
+              const g2Result = await g2Res.json();
+              g2Data = g2Result?.data?.json || g2Result?.json || {};
+              if (!websiteUrl && g2Data.website_url) websiteUrl = g2Data.website_url;
+            } catch (e) {
+              console.warn(`Scrape timeout/error for ${product.name}, using discovered data`);
             }
-          } catch (e) {
-            console.error(`Failed to scrape G2 for ${product.name}:`, e);
           }
 
-          // Insert the product
           const productRecord = {
             name: product.name,
             slug: product.slug,
@@ -305,8 +305,10 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Rate limit delay
-        await new Promise((r) => setTimeout(r, 1500));
+        // Only delay in non-quick mode
+        if (!quick_import) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
       }
 
       return new Response(
