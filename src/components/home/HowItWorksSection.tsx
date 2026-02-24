@@ -1,70 +1,61 @@
 import { motion } from "framer-motion";
-import { Search, BarChart3, Rocket } from "lucide-react";
+import { Search, BarChart3, ArrowRight } from "lucide-react";
 
 const steps = [
   {
-    step: "01",
-    title: "Search & Discover",
-    desc: "Find software by category, features, or search. Filter by pricing, rating, and more.",
+    step: "1",
+    title: "Search & discover",
+    desc: "Browse categories or search by name. Filter by pricing, rating, company size, and features.",
     icon: Search,
-    color: "from-primary to-violet-500",
   },
   {
-    step: "02",
-    title: "Compare & Read",
-    desc: "Side-by-side comparisons with real reviews from verified users who've actually used the products.",
+    step: "2",
+    title: "Compare & read reviews",
+    desc: "See side-by-side comparisons with real reviews from verified users at real companies.",
     icon: BarChart3,
-    color: "from-secondary to-cyan-400",
   },
   {
-    step: "03",
-    title: "Decide & Act",
-    desc: "Make confident decisions backed by data. Visit the vendor directly or save for later.",
-    icon: Rocket,
-    color: "from-pink-500 to-rose-400",
+    step: "3",
+    title: "Make a decision",
+    desc: "Choose the best tool with confidence. Visit the vendor, start a trial, or save for later.",
+    icon: ArrowRight,
   },
 ];
 
 export function HowItWorksSection() {
   return (
-    <section className="py-28 relative overflow-hidden">
-      <div className="absolute inset-0 mesh-gradient opacity-30" />
-      <div className="container relative">
+    <section className="py-20 md:py-24 bg-muted/40">
+      <div className="container">
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-14"
         >
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-3 block">
-            Simple Process
-          </span>
-          <h2 className="text-3xl md:text-5xl font-display font-black text-foreground">
-            How It Works
+          <p className="text-sm font-semibold text-primary mb-2">How it works</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground">
+            Three steps to the right tool
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
-          {/* Connector line */}
-          <div className="hidden md:block absolute top-20 left-[20%] right-[20%] h-px bg-gradient-to-r from-primary/20 via-secondary/30 to-pink-500/20" />
-
+        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           {steps.map((s, i) => (
             <motion.div
               key={s.step}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
-              className="text-center relative"
+              transition={{ delay: i * 0.1 }}
+              className="text-center"
             >
-              <div className={`inline-flex h-16 w-16 rounded-3xl bg-gradient-to-br ${s.color} items-center justify-center mb-6 shadow-xl relative z-10`}>
-                <s.icon className="h-7 w-7 text-primary-foreground" />
+              <div className="inline-flex h-12 w-12 rounded-xl bg-primary/10 items-center justify-center mb-5">
+                <s.icon className="h-5 w-5 text-primary" />
               </div>
-              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 mb-3">
+              <div className="text-xs font-bold text-muted-foreground/50 uppercase tracking-wider mb-2">
                 Step {s.step}
               </div>
-              <h3 className="font-display font-bold text-xl text-foreground mb-3">{s.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+              <h3 className="font-bold text-lg text-foreground mb-2">{s.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
             </motion.div>
           ))}
         </div>

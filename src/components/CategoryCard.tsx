@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { 
-  BarChart3, Code, DollarSign, Globe, HeadphonesIcon, LayoutDashboard, 
+import {
+  BarChart3, Code, DollarSign, Globe, HeadphonesIcon, LayoutDashboard,
   Mail, Megaphone, Shield, ShoppingCart, Users, Zap
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -22,35 +22,24 @@ interface CategoryCardProps {
 
 export function CategoryCard({ slug, name, icon, product_count, color, index = 0 }: CategoryCardProps) {
   const IconComponent = iconMap[icon || ""] || LayoutDashboard;
-  const c = color || '#6366f1';
-  
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      transition={{ duration: 0.3, delay: index * 0.04 }}
     >
       <Link
         to={`/category/${slug}`}
-        className="glass-card glow-border group flex flex-col items-center text-center p-7 relative overflow-hidden"
+        className="glass-card group flex items-center gap-4 p-5"
       >
-        {/* Subtle background glow */}
-        <div 
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{ background: `radial-gradient(circle at center, ${c}08, transparent 70%)` }}
-        />
-        
-        <div
-          className="relative h-16 w-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
-          style={{ 
-            backgroundColor: `${c}12`,
-            boxShadow: `0 0 0 0 ${c}00`,
-          }}
-        >
-          <IconComponent className="h-8 w-8 transition-colors duration-300" style={{ color: c }} />
+        <div className="h-10 w-10 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/12 transition-colors">
+          <IconComponent className="h-5 w-5 text-primary" />
         </div>
-        <h3 className="font-display font-semibold text-foreground mb-1">{name}</h3>
-        <p className="text-sm text-muted-foreground">{product_count} products</p>
+        <div className="min-w-0">
+          <h3 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors truncate">{name}</h3>
+          <p className="text-xs text-muted-foreground">{product_count} products</p>
+        </div>
       </Link>
     </motion.div>
   );
