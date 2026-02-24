@@ -35,7 +35,7 @@ export default function CategoryPage() {
   const { data: products, isLoading } = useQuery({
     queryKey: ["products-category", slug, sort],
     queryFn: async () => {
-      let query = supabase.from("products").select("*, categories(name)").eq("is_active", true);
+      let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").eq("is_active", true);
       if (!isAll && category && 'id' in category) query = query.eq("category_id", (category as any).id);
       if (sort === "rating") query = query.order("avg_rating", { ascending: false });
       else if (sort === "reviews") query = query.order("total_reviews", { ascending: false });

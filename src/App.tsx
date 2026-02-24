@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const AllCategoriesPage = lazy(() => import("./pages/AllCategoriesPage"));
 const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const ComparePage = lazy(() => import("./pages/ComparePage"));
@@ -42,6 +43,7 @@ const App = () => (
               {/* Public routes */}
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/categories" element={<AllCategoriesPage />} />
                 <Route path="/category/:slug" element={<CategoryPage />} />
                 <Route path="/product/:slug" element={<ProductDetailPage />} />
                 <Route path="/search" element={<SearchPage />} />

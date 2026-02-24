@@ -17,7 +17,7 @@ export default function AdminProductsPage() {
   const { data: products, isLoading } = useQuery({
     queryKey: ["admin-products", search],
     queryFn: async () => {
-      let query = supabase.from("products").select("*, categories(name)").order("created_at", { ascending: false });
+      let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
       const { data } = await query.limit(50);
       return data || [];

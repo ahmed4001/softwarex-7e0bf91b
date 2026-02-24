@@ -142,7 +142,7 @@ export default function HomePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("*, categories(name)")
+        .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .eq("is_featured", true)
         .order("avg_rating", { ascending: false })
@@ -156,7 +156,7 @@ export default function HomePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("*, categories(name)")
+        .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .order("avg_rating", { ascending: false })
         .limit(8);
@@ -206,7 +206,7 @@ export default function HomePage() {
               label="Software Categories"
               title="Browse Business Software by Category"
               subtitle="Explore top-rated tools across 50+ software categories for every business need"
-              linkTo="/category/all"
+              linkTo="/categories"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {categories?.map((cat, i) => (

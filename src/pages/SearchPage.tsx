@@ -17,7 +17,7 @@ export default function SearchPage() {
       if (!q.trim()) return [];
       const { data } = await supabase
         .from("products")
-        .select("*, categories(name)")
+        .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .ilike("name", `%${q}%`)
         .order("avg_rating", { ascending: false })
