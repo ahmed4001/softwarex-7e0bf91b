@@ -24,6 +24,7 @@ export default function AdminSeedPage() {
   const [currentBatch, setCurrentBatch] = useState(0);
   const [totalBatches, setTotalBatches] = useState(0);
   const [currentProduct, setCurrentProduct] = useState("");
+  const [scrapingCategory, setScrapingCategory] = useState<string | null>(null);
 
   const totalProducts = seedProducts.length;
   const successCount = results.filter((r) => r.status === "success").length;
@@ -31,14 +32,17 @@ export default function AdminSeedPage() {
   const skippedCount = results.filter((r) => r.status === "skipped").length;
   const progress = totalBatches > 0 ? (currentBatch / totalBatches) * 100 : 0;
 
-  const startScraping = useCallback(async () => {
+  const categorySlugs = [...new Set(seedProducts.map((p) => p.category_slug))];
+
+  const runScrape = useCallback(async (productsToScrape: SeedProduct[], label?: string) => {
     setIsRunning(true);
     setResults([]);
     setCurrentBatch(0);
+    setScrapingCategory(label || null);
 
     const batches: SeedProduct[][] = [];
-    for (let i = 0; i < seedProducts.length; i += BATCH_SIZE) {
-      batches.push(seedProducts.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < productsToScrape.length; i += BATCH_SIZE) {
+      batches.push(productsToScrape.slice(i, i + BATCH_SIZE));
     }
     setTotalBatches(batches.length);
 
@@ -74,8 +78,16 @@ export default function AdminSeedPage() {
 
     setIsRunning(false);
     setCurrentProduct("");
-    toast({ title: "Scraping complete", description: "All products have been processed." });
+    setScrapingCategory(null);
+    toast({ title: "Scraping complete", description: label ? `${label} done.` : "All products processed." });
   }, [toast]);
+
+  const startScraping = useCallback(() => runScrape(seedProducts), [runScrape]);
+
+  const scrapeCategory = useCallback((slug: string) => {
+    const catProducts = seedProducts.filter((p) => p.category_slug === slug);
+    runScrape(catProducts, slug);
+  }, [runScrape]);
 
   const createComparisons = useCallback(async () => {
     setIsCreatingComparisons(true);
@@ -95,9 +107,6 @@ export default function AdminSeedPage() {
     }
     setIsCreatingComparisons(false);
   }, [toast]);
-
-  // Group products by category for display
-  const categorySlugs = [...new Set(seedProducts.map((p) => p.category_slug))];
 
   return (
     <div className="space-y-6">
@@ -139,15 +148,15 @@ export default function AdminSeedPage() {
       {/* Actions */}
       <div className="flex flex-wrap gap-4">
         <Button onClick={startScraping} disabled={isRunning} size="lg">
-          {isRunning ? (
+          {isRunning && !scrapingCategory ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Scraping... Batch {currentBatch}/{totalBatches}
+              Scraping All... Batch {currentBatch}/{totalBatches}
             </>
           ) : (
             <>
               <Play className="mr-2 h-4 w-4" />
-              Start Scraping ({totalProducts} products)
+              Scrape All ({totalProducts} products)
             </>
           )}
         </Button>
@@ -239,14 +248,31 @@ export default function AdminSeedPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {categorySlugs.map((slug) => {
+              {categorySlugs.map((slug) => {
               const catProducts = seedProducts.filter((p) => p.category_slug === slug);
+              const isScraping = isRunning && scrapingCategory === slug;
               return (
-                <div key={slug} className="border rounded-lg p-3">
-                  <div className="font-medium text-sm text-foreground mb-1">{slug}</div>
-                  <div className="text-xs text-muted-foreground">
+                <div key={slug} className="border rounded-lg p-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm text-foreground">{slug}</div>
+                    <Badge variant="secondary" className="text-xs">{catProducts.length}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex-1">
                     {catProducts.map((p) => p.name).join(", ")}
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-1"
+                    disabled={isRunning}
+                    onClick={() => scrapeCategory(slug)}
+                  >
+                    {isScraping ? (
+                      <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Scraping...</>
+                    ) : (
+                      <><Play className="mr-1 h-3 w-3" /> Scrape {catProducts.length} products</>
+                    )}
+                  </Button>
                 </div>
               );
             })}
