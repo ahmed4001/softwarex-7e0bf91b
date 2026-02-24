@@ -60,13 +60,13 @@
     --glow: 220 90% 56%;
     --glow-secondary: 150 60% 45%;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 0 0% 9%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 161 93% 30%;
-    --sidebar-primary-foreground: 151 80% 95%;
-    --sidebar-accent: 0 0% 32%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 83%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 93%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
     --sidebar-ring: 161 93% 30%;
 
     --chart-1: 158 64% 51%;
