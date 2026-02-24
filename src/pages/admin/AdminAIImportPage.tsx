@@ -22,6 +22,7 @@ import {
   Zap, Globe, Building2, Calendar, DollarSign, Layers,
   ThumbsUp, ThumbsDown, BrainCircuit, ArrowRight,
   Upload, Image, Search, RefreshCw, Rocket, Square,
+  Camera, MonitorSmartphone,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────
@@ -1301,13 +1302,29 @@ function UploadImagesTab() {
   const [uploading, setUploading] = useState(false);
   const [autoFetching, setAutoFetching] = useState(false);
   const [fetchProgress, setFetchProgress] = useState(0);
+  // Bulk scrape state
+  const [bulkScraping, setBulkScraping] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState(0);
+  const [scrapeMode, setScrapeMode] = useState<"both" | "logo" | "screenshot">("both");
+  const [scrapeResumeIndex, setScrapeResumeIndex] = useState(() => {
+    const stored = localStorage.getItem("bulk-photos-resume-index");
+    return stored ? parseInt(stored, 10) || 0 : 0;
+  });
+  const [scrapeStatus, setScrapeStatus] = useState<{ current: string; success: number; failed: number; total: number } | null>(null);
+  const scrapeCancelRef = useRef(false);
+
+  const setScrapeResumeIndexPersist = (v: number) => {
+    setScrapeResumeIndex(v);
+    if (v > 0) localStorage.setItem("bulk-photos-resume-index", String(v));
+    else localStorage.removeItem("bulk-photos-resume-index");
+  };
 
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products-for-images"],
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, slug, logo_url, website_url")
+        .select("id, name, slug, logo_url, website_url, screenshots")
         .eq("is_active", true)
         .order("name")
         .limit(500);
@@ -1316,6 +1333,16 @@ function UploadImagesTab() {
   });
 
   const productsWithoutLogos = products.filter((p) => !p.logo_url);
+  const productsNeedingPhotos = products.filter((p) => {
+    const hasLogo = !!p.logo_url;
+    const hasScreenshots = Array.isArray(p.screenshots) && p.screenshots.length > 0;
+    const hasWebsite = !!p.website_url;
+    if (scrapeMode === "logo") return !hasLogo && hasWebsite;
+    if (scrapeMode === "screenshot") return !hasScreenshots && hasWebsite;
+    return (!hasLogo || !hasScreenshots) && hasWebsite;
+  });
+
+  // ... keep existing code (handleFileUpload function)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1352,6 +1379,8 @@ function UploadImagesTab() {
     }
   };
 
+  // ... keep existing code (autoFetchLogos function)
+
   const autoFetchLogos = async () => {
     setAutoFetching(true);
     setFetchProgress(0);
@@ -1364,7 +1393,6 @@ function UploadImagesTab() {
           const domain = new URL(p.website_url).hostname.replace("www.", "");
           const logoUrl = `https://logo.clearbit.com/${domain}`;
           
-          // Test if logo exists
           const res = await fetch(logoUrl, { method: "HEAD" });
           if (res.ok) {
             await supabase
@@ -1385,15 +1413,68 @@ function UploadImagesTab() {
     toast({ title: "Auto-fetch complete", description: `Updated ${updated} product logos.` });
   };
 
+  // ── Bulk Scrape with Firecrawl ─────────────────────────
+  const bulkScrapePhotos = async (startFrom = 0) => {
+    setBulkScraping(true);
+    scrapeCancelRef.current = false;
+    let success = 0;
+    let failed = 0;
+
+    for (let i = startFrom; i < productsNeedingPhotos.length; i++) {
+      if (scrapeCancelRef.current) {
+        setScrapeResumeIndexPersist(i);
+        toast({ title: "Scraping paused", description: `Processed ${success + failed} products. Resume anytime.` });
+        break;
+      }
+
+      const p = productsNeedingPhotos[i];
+      setScrapeStatus({ current: p.name, success, failed, total: productsNeedingPhotos.length });
+      setScrapeProgress(Math.round(((i) / productsNeedingPhotos.length) * 100));
+
+      try {
+        const { data, error } = await supabase.functions.invoke("bulk-fetch-photos", {
+          body: { productId: p.id, websiteUrl: p.website_url, productSlug: p.slug, mode: scrapeMode },
+        });
+
+        if (error) throw error;
+        if (data?.success) {
+          success++;
+        } else {
+          failed++;
+        }
+      } catch (e: any) {
+        console.error(`Failed for ${p.name}:`, e);
+        failed++;
+      }
+
+      // Throttle to avoid overloading Firecrawl
+      if (i < productsNeedingPhotos.length - 1 && !scrapeCancelRef.current) {
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+
+      if (i === productsNeedingPhotos.length - 1) {
+        setScrapeResumeIndexPersist(0);
+      }
+    }
+
+    setScrapeProgress(100);
+    setScrapeStatus(null);
+    setBulkScraping(false);
+    queryClient.invalidateQueries({ queryKey: ["admin-products-for-images"] });
+    toast({ title: "Bulk scrape complete", description: `${success} succeeded, ${failed} failed.` });
+  };
+
+  const stopBulkScrape = () => { scrapeCancelRef.current = true; };
+
   return (
     <div className="space-y-6">
       {/* Manual Upload Card */}
       <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="bg-gradient-to-br from-violet-500/10 via-accent/20 to-transparent p-1">
+        <div className="bg-gradient-to-br from-accent/40 via-primary/5 to-transparent p-1">
           <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
             <div className="flex items-center gap-3 mb-5">
-              <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                <Upload className="h-5 w-5 text-violet-600" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Upload className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h3 className="font-semibold">Upload Product Logo</h3>
@@ -1449,19 +1530,117 @@ function UploadImagesTab() {
         </div>
       </Card>
 
-      {/* Auto-fetch Logos Card */}
+      {/* Bulk Scrape Photos Card */}
       <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="bg-gradient-to-br from-emerald-500/10 via-accent/20 to-transparent p-1">
+        <div className="bg-gradient-to-br from-primary/10 via-accent/20 to-transparent p-1">
           <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <RefreshCw className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Camera className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Auto-Fetch Logos</h3>
+                  <h3 className="font-semibold">Bulk Scrape Real Photos</h3>
                   <p className="text-xs text-muted-foreground">
-                    Automatically grab logos from product websites using Clearbit
+                    Scrape logos &amp; homepage screenshots from product websites using Firecrawl
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={scrapeMode} onValueChange={(v) => setScrapeMode(v as any)}>
+                  <SelectTrigger className="h-9 w-40 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="both">Logos + Screenshots</SelectItem>
+                    <SelectItem value="logo">Logos Only</SelectItem>
+                    <SelectItem value="screenshot">Screenshots Only</SelectItem>
+                  </SelectContent>
+                </Select>
+                {bulkScraping ? (
+                  <Button onClick={stopBulkScrape} variant="destructive" size="sm">
+                    <Square className="h-4 w-4 mr-1" /> Stop
+                  </Button>
+                ) : scrapeResumeIndex > 0 && scrapeResumeIndex < productsNeedingPhotos.length ? (
+                  <div className="flex gap-1.5">
+                    <Button onClick={() => bulkScrapePhotos(scrapeResumeIndex)} size="sm">
+                      <RefreshCw className="h-4 w-4 mr-1" /> Resume ({productsNeedingPhotos.length - scrapeResumeIndex} left)
+                    </Button>
+                    <Button onClick={() => { setScrapeResumeIndexPersist(0); bulkScrapePhotos(0); }} variant="outline" size="sm">
+                      Restart
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => bulkScrapePhotos(0)}
+                    disabled={productsNeedingPhotos.length === 0}
+                    size="sm"
+                    className="shadow-md"
+                  >
+                    <Camera className="h-4 w-4 mr-1" /> Scrape {productsNeedingPhotos.length} Products
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              <div className="text-center p-3 rounded-xl bg-muted/30">
+                <span className="font-bold text-2xl">{products.filter(p => p.website_url).length}</span>
+                <p className="text-xs text-muted-foreground mt-1">With Website</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-primary/5">
+                <span className="font-bold text-2xl">{products.filter(p => p.logo_url).length}</span>
+                <p className="text-xs text-muted-foreground mt-1">Have Logo</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-primary/5">
+                <span className="font-bold text-2xl">{products.filter(p => Array.isArray(p.screenshots) && p.screenshots.length > 0).length}</span>
+                <p className="text-xs text-muted-foreground mt-1">Have Screenshots</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-destructive/5">
+                <span className="font-bold text-2xl">{productsNeedingPhotos.length}</span>
+                <p className="text-xs text-muted-foreground mt-1">Need Photos</p>
+              </div>
+            </div>
+
+            {bulkScraping && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Scraping progress</span>
+                    <span className="font-semibold">{scrapeProgress}%</span>
+                  </div>
+                  <Progress value={scrapeProgress} className="h-2" />
+                </div>
+                {scrapeStatus && (
+                  <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3 text-sm animate-in fade-in">
+                    <MonitorSmartphone className="h-4 w-4 text-primary animate-pulse flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">Scraping: {scrapeStatus.current}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {scrapeStatus.success} success · {scrapeStatus.failed} failed · {scrapeStatus.total - scrapeStatus.success - scrapeStatus.failed} remaining
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Auto-fetch Logos Card */}
+      <Card className="overflow-hidden border-0 shadow-lg">
+        <div className="bg-gradient-to-br from-accent/40 via-primary/5 to-transparent p-1">
+          <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <RefreshCw className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Auto-Fetch Logos (Clearbit)</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Quick logo-only fetch via Clearbit — no screenshots
                   </p>
                 </div>
               </div>
@@ -1476,21 +1655,6 @@ function UploadImagesTab() {
                   <><RefreshCw className="h-4 w-4 mr-2" /> Fetch {productsWithoutLogos.length} Logos</>
                 )}
               </Button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="text-center p-3 rounded-xl bg-muted/30">
-                <span className="font-bold text-2xl">{products.length}</span>
-                <p className="text-xs text-muted-foreground mt-1">Total Products</p>
-              </div>
-              <div className="text-center p-3 rounded-xl bg-primary/5">
-                <span className="font-bold text-2xl">{products.length - productsWithoutLogos.length}</span>
-                <p className="text-xs text-muted-foreground mt-1">Have Logos</p>
-              </div>
-              <div className="text-center p-3 rounded-xl bg-destructive/5">
-                <span className="font-bold text-2xl">{productsWithoutLogos.length}</span>
-                <p className="text-xs text-muted-foreground mt-1">Missing Logos</p>
-              </div>
             </div>
 
             {autoFetching && (
