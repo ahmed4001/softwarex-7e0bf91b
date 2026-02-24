@@ -1,14 +1,18 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import {
   Type, Image, MousePointerClick, Minus, MoveVertical,
   Trash2, GripVertical, Plus, Heading1, AlignLeft,
-  Columns2, ArrowUp, ArrowDown, Code,
+  Columns2, ArrowUp, ArrowDown, Code, Save, FolderOpen, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -212,17 +216,15 @@ interface EmailBuilderProps {
 }
 
 export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
+  const queryClient = useQueryClient();
   const [blocks, setBlocks] = useState<EmailBlock[]>(() => {
-    // Start with a sensible default if no content
     if (!value || value.length < 30) {
-      const initial: EmailBlock[] = [
+      return [
         { id: genId(), type: "heading", props: defaultProps("heading") },
         { id: genId(), type: "text", props: defaultProps("text") },
         { id: genId(), type: "button", props: defaultProps("button") },
       ];
-      return initial;
     }
-    // If value already exists (from template), start with a text block containing notice
     return [
       { id: genId(), type: "text", props: { ...defaultProps("text"), text: "Template loaded. Add or replace blocks below to customise your email." } },
     ];
@@ -233,6 +235,72 @@ export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
   const [showCode, setShowCode] = useState(false);
   const [emailBg] = useState("#f9fafb");
   const [contentBg] = useState("#ffffff");
+
+  // Save template state
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDesc, setTemplateDesc] = useState("");
+
+  // Load template state
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+
+  // Fetch saved templates
+  const { data: savedTemplates = [], isLoading: templatesLoading } = useQuery({
+    queryKey: ["email-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Save template mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("email_templates").insert({
+        name: templateName,
+        description: templateDesc || null,
+        blocks: blocks as any,
+        thumbnail_html: blocksToFullHtml(blocks, emailBg, contentBg).slice(0, 2000),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      setSaveDialogOpen(false);
+      setTemplateName("");
+      setTemplateDesc("");
+      toast.success("Template saved!");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Delete template mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("email_templates").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      toast.success("Template deleted");
+    },
+  });
+
+  const loadTemplate = (templateBlocks: any[]) => {
+    const loaded: EmailBlock[] = templateBlocks.map((b: any) => ({
+      id: genId(),
+      type: b.type,
+      props: b.props,
+    }));
+    syncHtml(loaded);
+    setLoadDialogOpen(false);
+    setSelectedBlockId(null);
+    toast.success("Template loaded");
+  };
 
   const syncHtml = useCallback((newBlocks: EmailBlock[]) => {
     setBlocks(newBlocks);
@@ -319,7 +387,13 @@ export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
             {bp.icon} {bp.label}
           </Button>
         ))}
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setLoadDialogOpen(true)}>
+            <FolderOpen className="h-3 w-3" /> Load
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setTemplateName(""); setTemplateDesc(""); setSaveDialogOpen(true); }} disabled={blocks.length === 0}>
+            <Save className="h-3 w-3" /> Save
+          </Button>
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowCode(true)}>
             <Code className="h-3 w-3" /> HTML
           </Button>
@@ -401,6 +475,79 @@ export function EmailBuilder({ value, onChange }: EmailBuilderProps) {
           )}
         </div>
       </div>
+
+      {/* Save Template Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Template Name</Label>
+              <Input placeholder="e.g. Weekly Newsletter" value={templateName} onChange={(e) => setTemplateName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Input placeholder="Brief description..." value={templateDesc} onChange={(e) => setTemplateDesc(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!templateName.trim() || saveMutation.isPending}>
+              {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              <Save className="h-4 w-4 mr-1" /> Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Template Dialog */}
+      <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Load Saved Template</DialogTitle>
+          </DialogHeader>
+          {templatesLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : savedTemplates.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FolderOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No saved templates yet. Build an email and save it as a template.</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2">
+                {savedTemplates.map((tpl) => (
+                  <div key={tpl.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{tpl.name}</p>
+                      {tpl.description && <p className="text-xs text-muted-foreground truncate">{tpl.description}</p>}
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {(tpl.blocks as any[])?.length || 0} blocks · {new Date(tpl.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" className="h-7 text-xs" onClick={() => loadTemplate(tpl.blocks as any[])}>
+                        Use
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-destructive"
+                        onClick={() => deleteMutation.mutate(tpl.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
