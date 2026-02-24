@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, XCircle, SkipForward, Loader2, Play, Zap, BarChart3, Globe } from "lucide-react";
+import { CheckCircle2, XCircle, SkipForward, Loader2, Play, Zap, BarChart3, Globe, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import G2DiscoveryPanel from "@/components/admin/G2DiscoveryPanel";
+import CapterraDiscoveryPanel from "@/components/admin/CapterraDiscoveryPanel";
 
 interface ScrapeResult {
   name: string;
@@ -124,6 +125,9 @@ export default function AdminSeedPage() {
           <TabsTrigger value="discovery" className="gap-2">
             <Globe className="h-4 w-4" /> G2 Discovery
           </TabsTrigger>
+          <TabsTrigger value="capterra" className="gap-2">
+            <BookOpen className="h-4 w-4" /> Capterra Discovery
+          </TabsTrigger>
           <TabsTrigger value="seed" className="gap-2">
             <Play className="h-4 w-4" /> Seed List
           </TabsTrigger>
@@ -131,6 +135,10 @@ export default function AdminSeedPage() {
 
         <TabsContent value="discovery">
           <G2DiscoveryPanel />
+        </TabsContent>
+
+        <TabsContent value="capterra">
+          <CapterraDiscoveryPanel />
         </TabsContent>
 
         <TabsContent value="seed" className="space-y-6">

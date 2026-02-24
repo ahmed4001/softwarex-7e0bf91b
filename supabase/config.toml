@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.discover-products]
 verify_jwt = false
+
+[functions.discover-capterra]
+verify_jwt = false
