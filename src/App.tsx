@@ -36,11 +36,13 @@ const AdminTranslationsPage = lazy(() => import("./pages/admin/AdminTranslations
 const AdminAIImportPage = lazy(() => import("./pages/admin/AdminAIImportPage"));
 const AdminBlogEditorPage = lazy(() => import("./pages/admin/AdminBlogEditorPage"));
 const AdminBrevoPage = lazy(() => import("./pages/admin/AdminBrevoPage"));
+const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorProductsPage = lazy(() => import("./pages/vendor/VendorProductsPage"));
 const VendorReviewsPage = lazy(() => import("./pages/vendor/VendorReviewsPage"));
 const VendorClaimPage = lazy(() => import("./pages/vendor/VendorClaimPage"));
+const VendorAnalyticsPage = lazy(() => import("./pages/vendor/VendorAnalyticsPage"));
 
 const queryClient = new QueryClient();
 
@@ -84,6 +86,7 @@ function AppContent() {
           <Route path="ai-import" element={<AdminAIImportPage />} />
           <Route path="translations" element={<AdminTranslationsPage />} />
           <Route path="brevo" element={<AdminBrevoPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
         </Route>
 
         {/* Vendor routes */}
@@ -92,6 +95,7 @@ function AppContent() {
           <Route path="products" element={<VendorProductsPage />} />
           <Route path="reviews" element={<VendorReviewsPage />} />
           <Route path="claim" element={<VendorClaimPage />} />
+          <Route path="analytics" element={<VendorAnalyticsPage />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
