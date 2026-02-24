@@ -16,6 +16,7 @@ const AllCategoriesPage = lazy(() => import("./pages/AllCategoriesPage"));
 const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const ComparePage = lazy(() => import("./pages/ComparePage"));
+const ComparisonDetailPage = lazy(() => import("./pages/ComparisonDetailPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/product/:slug" element={<ProductDetailPage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/compare" element={<ComparePage />} />
+                <Route path="/compare/:slug" element={<ComparisonDetailPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/login" element={<LoginPage />} />

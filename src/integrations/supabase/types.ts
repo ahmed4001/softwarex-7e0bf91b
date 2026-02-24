@@ -327,30 +327,93 @@ export type Database = {
       }
       comparisons: {
         Row: {
+          best_for_a: string | null
+          best_for_b: string | null
+          category_id: string | null
+          cons_a: Json | null
+          cons_b: Json | null
           created_at: string | null
+          feature_scores: Json | null
           id: string
           is_published: boolean | null
+          product_a_score: number | null
+          product_b_score: number | null
           product_ids: Json
+          pros_a: Json | null
+          pros_b: Json | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string | null
+          summary: string | null
           title: string | null
           view_count: number | null
+          winner_product_id: string | null
+          winner_verdict: string | null
         }
         Insert: {
+          best_for_a?: string | null
+          best_for_b?: string | null
+          category_id?: string | null
+          cons_a?: Json | null
+          cons_b?: Json | null
           created_at?: string | null
+          feature_scores?: Json | null
           id?: string
           is_published?: boolean | null
+          product_a_score?: number | null
+          product_b_score?: number | null
           product_ids?: Json
+          pros_a?: Json | null
+          pros_b?: Json | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          summary?: string | null
           title?: string | null
           view_count?: number | null
+          winner_product_id?: string | null
+          winner_verdict?: string | null
         }
         Update: {
+          best_for_a?: string | null
+          best_for_b?: string | null
+          category_id?: string | null
+          cons_a?: Json | null
+          cons_b?: Json | null
           created_at?: string | null
+          feature_scores?: Json | null
           id?: string
           is_published?: boolean | null
+          product_a_score?: number | null
+          product_b_score?: number | null
           product_ids?: Json
+          pros_a?: Json | null
+          pros_b?: Json | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          summary?: string | null
           title?: string | null
           view_count?: number | null
+          winner_product_id?: string | null
+          winner_verdict?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "comparisons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparisons_winner_product_id_fkey"
+            columns: ["winner_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_library: {
         Row: {
