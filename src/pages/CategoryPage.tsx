@@ -8,16 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export default function CategoryPage() {
   const { slug } = useParams();
   const [sort, setSort] = useState("rating");
   const isAll = slug === "all";
+  const { t } = useTranslation();
 
   const { data: category } = useQuery({
     queryKey: ["category", slug],
     queryFn: async () => {
-      if (isAll) return { name: "All Categories", description: "Browse all software", slug: "all" };
+      if (isAll) return { name: t("categoryPage.allCategories"), description: t("categories.subtitle"), slug: "all" };
       const { data } = await supabase.from("categories").select("*").eq("slug", slug!).single();
       return data;
     },
@@ -49,26 +51,24 @@ export default function CategoryPage() {
 
   return (
     <>
-      <SeoHead title={category?.name || "Categories"} description={category?.description || "Browse software"} />
+      <SeoHead title={category?.name || t("categories.title")} description={category?.description || t("categories.subtitle")} />
       <div className="container py-10">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-          <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+          <Link to="/" className="hover:text-foreground transition-colors">{t("nav.home")}</Link>
           <span className="opacity-30">/</span>
-          <span className="text-foreground font-medium">{category?.name || "Categories"}</span>
+          <span className="text-foreground font-medium">{category?.name || t("categories.title")}</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10">
-          {/* Sidebar */}
           <aside className="w-full lg:w-60 flex-shrink-0">
             <div className="glass-card p-5 lg:sticky lg:top-24">
-              <h3 className="font-display font-bold text-foreground mb-4 text-sm uppercase tracking-wider">Categories</h3>
+              <h3 className="font-display font-bold text-foreground mb-4 text-sm uppercase tracking-wider">{t("categories.title")}</h3>
               <div className="space-y-0.5">
                 <Link to="/category/all" className={cn(
                   "block px-3 py-2.5 text-sm rounded-xl transition-all duration-200 font-medium",
                   isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}>
-                  All Categories
+                  {t("categoryPage.allCategories")}
                 </Link>
                 {categories?.map((c) => (
                   <Link key={c.id} to={`/category/${c.slug}`} className={cn(
@@ -83,7 +83,6 @@ export default function CategoryPage() {
             </div>
           </aside>
 
-          {/* Main */}
           <div className="flex-1 min-w-0">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -92,17 +91,17 @@ export default function CategoryPage() {
             >
               <div>
                 <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                  {isAll ? "All Software" : category?.name?.endsWith("Software") ? `Best ${category.name}` : `Best ${category?.name} Software`}
+                  {isAll ? t("categoryPage.allSoftware") : `${t("categoryPage.best")} ${category?.name} ${category?.name?.endsWith("Software") ? "" : t("categoryPage.software")}`}
                 </h1>
-                <p className="text-muted-foreground mt-1">{products?.length || 0} products found</p>
+                <p className="text-muted-foreground mt-1">{t("categoryPage.productsFound", { count: products?.length || 0 })}</p>
               </div>
               <Select value={sort} onValueChange={setSort}>
                 <SelectTrigger className="w-44 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rating">Top Rated</SelectItem>
-                  <SelectItem value="reviews">Most Reviews</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="name">A-Z</SelectItem>
+                  <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
+                  <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
+                  <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
+                  <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
                 </SelectContent>
               </Select>
             </motion.div>
@@ -119,7 +118,7 @@ export default function CategoryPage() {
                 ))
               }
               {!isLoading && products?.length === 0 && (
-                <div className="glass-card p-16 text-center text-muted-foreground">No products found.</div>
+                <div className="glass-card p-16 text-center text-muted-foreground">{t("categoryPage.noProducts")}</div>
               )}
             </div>
           </div>

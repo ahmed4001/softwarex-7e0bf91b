@@ -6,10 +6,12 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") || "";
+  const { t } = useTranslation();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["search", q],
@@ -29,7 +31,7 @@ export default function SearchPage() {
 
   return (
     <>
-      <SeoHead title={q ? `Search: ${q}` : "Search"} />
+      <SeoHead title={q ? `${t("common.search")}: ${q}` : t("common.search")} />
       <div className="container py-8">
         <div className="max-w-2xl mx-auto mb-8">
           <div className="relative">
@@ -37,13 +39,13 @@ export default function SearchPage() {
             <Input
               value={q}
               onChange={(e) => setParams({ q: e.target.value })}
-              placeholder="Search software..."
+              placeholder={t("searchPage.searchSoftware")}
               className="h-14 pl-12 text-lg rounded-2xl"
             />
           </div>
         </div>
 
-        {q && <p className="text-muted-foreground mb-6">{products?.length || 0} results for "{q}"</p>}
+        {q && <p className="text-muted-foreground mb-6">{t("searchPage.resultsFor", { count: products?.length || 0, query: q })}</p>}
 
         <div className="grid md:grid-cols-2 gap-4">
           {isLoading ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />) :
@@ -59,8 +61,8 @@ export default function SearchPage() {
 
         {!isLoading && q && products?.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-lg font-medium mb-2">No results found</p>
-            <p>Try different keywords or <Link to="/category/all" className="text-primary hover:underline">browse categories</Link></p>
+            <p className="text-lg font-medium mb-2">{t("searchPage.noResults")}</p>
+            <p>{t("searchPage.tryDifferent")} <Link to="/category/all" className="text-primary hover:underline">{t("searchPage.browseCategories")}</Link></p>
           </div>
         )}
       </div>

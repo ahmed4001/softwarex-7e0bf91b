@@ -137,5 +137,44 @@
     "faq": "Frequently Asked Questions",
     "vendorCTA": "Are You a Vendor?",
     "vendorCTASubtitle": "List your product and reach thousands of potential customers."
+  },
+  "categoryPage": {
+    "allCategories": "All Categories",
+    "allSoftware": "All Software",
+    "best": "Best",
+    "software": "Software",
+    "productsFound": "{{count}} products found",
+    "topRated": "Top Rated",
+    "mostReviews": "Most Reviews",
+    "newest": "Newest",
+    "az": "A-Z",
+    "noProducts": "No products found."
+  },
+  "searchPage": {
+    "searchSoftware": "Search software...",
+    "resultsFor": "{{count}} results for \"{{query}}\"",
+    "noResults": "No results found",
+    "tryDifferent": "Try different keywords or",
+    "browseCategories": "browse categories"
+  },
+  "productDetail": {
+    "home": "Home",
+    "about": "About {{name}}",
+    "visitWebsite": "Visit Website",
+    "writeReview": "Write a Review",
+    "compare": "Compare",
+    "founded": "Founded {{year}}",
+    "overview": "Overview",
+    "reviews": "Reviews ({{count}})",
+    "pricing": "Pricing",
+    "alternatives": "Alternatives",
+    "features": "Features",
+    "pros": "Pros",
+    "cons": "Cons",
+    "noReviews": "No reviews yet. Be the first!",
+    "alternativesPlaceholder": "Alternative products will appear here.",
+    "notFound": "Product not found.",
+    "verified": "Verified",
+    "sponsored": "Sponsored"
   }
 }
