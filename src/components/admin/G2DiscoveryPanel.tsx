@@ -293,17 +293,23 @@ export default function G2DiscoveryPanel() {
       setAutoCategoryIndex(i + 1);
       setAutoCurrentCategory(catSlug);
 
-      // Step 1: Discover products for this category
+      // Step 1: Discover products across multiple pages
       let discovered: DiscoveredProduct[] = [];
-      try {
-        const { data, error } = await supabase.functions.invoke("discover-products", {
-          body: { action: "discover", category_slug: catSlug, page: 1 },
-        });
-        if (!error && data?.products) {
-          discovered = data.products.filter((p: any) => !p.already_exists);
+      const maxPages = 10; // up to 10 pages per category
+      for (let page = 1; page <= maxPages; page++) {
+        try {
+          const { data, error } = await supabase.functions.invoke("discover-products", {
+            body: { action: "discover", category_slug: catSlug, page },
+          });
+          if (!error && data?.products) {
+            const newOnes = data.products.filter((p: any) => !p.already_exists);
+            discovered.push(...newOnes);
+          }
+          // Stop if no more pages
+          if (!data?.has_next_page) break;
+        } catch {
+          break; // stop paging on error
         }
-      } catch {
-        // skip this category on discovery error
       }
 
       if (discovered.length === 0) {
