@@ -960,44 +960,65 @@ function EnrichProductsTab() {
   const enrichPercent = products.length > 0 ? Math.round((enrichedCount / products.length) * 100) : 0;
 
   const enrichSingle = async (product: any): Promise<{ ok: boolean; rateLimited?: boolean }> => {
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const maxAttempts = 3;
+
     setEnriching(product.id);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-generate-products", {
-        body: {
-          action: "enrich_product",
-          payload: {
-            product: {
-              name: product.name, category: (product as any).categories?.name || "Software",
-              website_url: product.website_url, description: product.description,
-              features: product.features, tagline: product.tagline, pricing_model: product.pricing_model,
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const { data, error } = await supabase.functions.invoke("ai-generate-products", {
+            body: {
+              action: "enrich_product",
+              payload: {
+                product: {
+                  name: product.name, category: (product as any).categories?.name || "Software",
+                  website_url: product.website_url, description: product.description,
+                  features: product.features, tagline: product.tagline, pricing_model: product.pricing_model,
+                },
+              },
             },
-          },
-        },
-      });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+          });
+          if (error) throw error;
+          if (data.error) throw new Error(data.error);
 
-      const enrichment = data.enrichment;
-      const updatePayload: any = {};
-      const fields = ["description", "tagline", "features", "integrations", "pros_summary", "cons_summary",
-        "logo_url", "seo_title", "seo_description", "founded_year", "headquarters", "company_size", "pricing_model", "starting_price"];
-      for (const f of fields) { if (enrichment[f]) updatePayload[f] = enrichment[f]; }
+          const enrichment = data.enrichment;
+          const updatePayload: any = {};
+          const fields = ["description", "tagline", "features", "integrations", "pros_summary", "cons_summary",
+            "logo_url", "seo_title", "seo_description", "founded_year", "headquarters", "company_size", "pricing_model", "starting_price"];
+          for (const f of fields) { if (enrichment[f]) updatePayload[f] = enrichment[f]; }
 
-      await supabase.from("products").update(updatePayload).eq("id", product.id);
-      queryClient.invalidateQueries({ queryKey: ["admin-products-to-enrich"] });
-      toast({ title: "Enriched", description: `${product.name} updated.` });
-      return { ok: true };
-    } catch (e: any) {
-      const message = e?.message || "Unknown error";
-      const isRateLimited = /rate limit|429/i.test(message);
-      toast({
-        title: isRateLimited ? "Rate limited" : "Enrichment failed",
-        description: isRateLimited
-          ? "AI provider is rate limiting requests. Slowing down and pausing bulk enrichment."
-          : message,
-        variant: "destructive",
-      });
-      return { ok: false, rateLimited: isRateLimited };
+          await supabase.from("products").update(updatePayload).eq("id", product.id);
+          queryClient.invalidateQueries({ queryKey: ["admin-products-to-enrich"] });
+          toast({ title: "Enriched", description: `${product.name} updated.` });
+          return { ok: true };
+        } catch (e: any) {
+          const message = e?.message || "Unknown error";
+          const isRateLimited = /rate limit|429/i.test(message);
+
+          if (isRateLimited && attempt < maxAttempts) {
+            const waitMs = 15000 * attempt;
+            toast({
+              title: "Rate limited — retrying",
+              description: `Waiting ${Math.round(waitMs / 1000)}s before retry ${attempt + 1}/${maxAttempts}.`,
+              variant: "destructive",
+            });
+            await sleep(waitMs);
+            continue;
+          }
+
+          toast({
+            title: isRateLimited ? "Rate limited" : "Enrichment failed",
+            description: isRateLimited
+              ? "AI provider is temporarily rate limiting requests. Please retry in a minute."
+              : message,
+            variant: "destructive",
+          });
+          return { ok: false, rateLimited: isRateLimited };
+        }
+      }
+
+      return { ok: false, rateLimited: true };
     } finally {
       setEnriching(null);
     }
@@ -1007,7 +1028,7 @@ function EnrichProductsTab() {
     setBulkEnriching(true);
     bulkCancelRef.current = false;
     setEnrichProgress(0);
-    const delayMs = 3000; // 3s between requests to stay under rate limits
+    const delayMs = 5000;
     let completed = 0;
 
     for (let i = 0; i < needsEnrichment.length; i++) {
@@ -1025,7 +1046,6 @@ function EnrichProductsTab() {
         break;
       }
 
-      // Throttle: wait between requests to avoid rate limits
       if (i < needsEnrichment.length - 1 && !bulkCancelRef.current) {
         await new Promise((r) => setTimeout(r, delayMs));
       }
