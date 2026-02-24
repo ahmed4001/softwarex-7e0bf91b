@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Link, useSearchParams } from "react-router-dom";
-import { CalendarDays, Eye, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Eye, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { PaginationControls } from "@/components/PaginationControls";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
@@ -150,29 +150,7 @@ export default function BlogPage() {
               })}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10">
-                <Button variant="outline" size="icon" className="rounded-xl" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {Array.from({ length: totalPages }).map((_, i) => {
-                  if (totalPages <= 7 || i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 1) {
-                    return (
-                      <Button key={i} variant={i === page ? "default" : "outline"} size="icon" className="rounded-xl h-9 w-9 text-sm" onClick={() => setPage(i)}>
-                        {i + 1}
-                      </Button>
-                    );
-                  }
-                  if (i === 1 && page > 3) return <span key={i} className="text-muted-foreground px-1">…</span>;
-                  if (i === totalPages - 2 && page < totalPages - 4) return <span key={i} className="text-muted-foreground px-1">…</span>;
-                  return null;
-                })}
-                <Button variant="outline" size="icon" className="rounded-xl" disabled={page >= totalPages - 1} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-10" />
 
             {!isLoading && (!posts || posts.length === 0) && (
               <div className="text-center py-16 text-muted-foreground">{t("blog.noPosts")}</div>
