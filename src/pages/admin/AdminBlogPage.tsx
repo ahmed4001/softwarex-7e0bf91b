@@ -30,6 +30,7 @@ export default function AdminBlogPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["admin-blog"],
@@ -319,7 +320,7 @@ export default function AdminBlogPage() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Copy slug" onClick={() => handleCopySlug(p.slug)}>
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Delete">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Delete" onClick={() => setSingleDeleteId(p.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -353,6 +354,36 @@ export default function AdminBlogPage() {
               onClick={() => bulkDeleteMutation.mutate()}
             >
               {bulkDeleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!singleDeleteId} onOpenChange={(open) => { if (!open) setSingleDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This blog post will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!singleDeleteId) return;
+                const { error } = await supabase.from("blog_posts").delete().eq("id", singleDeleteId);
+                if (error) {
+                  toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+                } else {
+                  queryClient.invalidateQueries({ queryKey: ["admin-blog"] });
+                  toast({ title: "Post deleted" });
+                }
+                setSingleDeleteId(null);
+              }}
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
