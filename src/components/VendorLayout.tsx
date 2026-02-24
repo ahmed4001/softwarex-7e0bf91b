@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { BarChart3, Package, MessageSquare, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+import { BarChart3, Package, MessageSquare, ShieldCheck, ArrowLeft, Loader2, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const vendorNav = [
   { to: "/vendor", label: "Dashboard", icon: BarChart3, end: true },
   { to: "/vendor/products", label: "Products", icon: Package },
   { to: "/vendor/reviews", label: "Reviews", icon: MessageSquare },
+  { to: "/vendor/analytics", label: "Analytics", icon: TrendingUp },
   { to: "/vendor/claim", label: "Claim Product", icon: ShieldCheck },
 ];
 
