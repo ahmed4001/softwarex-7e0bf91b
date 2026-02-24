@@ -59,7 +59,29 @@ export function HeroSection() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground leading-[1.08] mb-6">
             Find & Compare the
             <br />
-            <span className="text-primary">Best Business Software</span>
+            <motion.span
+              className="text-primary inline-block"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6, type: "spring", stiffness: 120 }}
+            >
+              <motion.span
+                className="inline-block"
+                animate={{ 
+                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  backgroundImage: "linear-gradient(90deg, hsl(var(--primary)), hsl(260 60% 55%), hsl(330 80% 55%), hsl(var(--primary)))",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Best Business Software
+              </motion.span>
+            </motion.span>
           </h1>
 
           <p className="text-lg md:text-xl text-foreground/60 mb-4 max-w-2xl mx-auto leading-relaxed">
