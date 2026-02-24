@@ -1,108 +1,68 @@
 import { motion } from "framer-motion";
-import { Sparkles, CheckCircle, Shield, Zap } from "lucide-react";
+import { Search, ArrowRight, CheckCircle, Shield, TrendingUp } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
-import { Hero3DScene } from "@/components/Hero3DScene";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-      <div className="absolute inset-0 gradient-hero" />
-      <div className="absolute inset-0 noise-overlay" />
-      <Hero3DScene />
+    <section className="relative bg-foreground overflow-hidden">
+      {/* Subtle grid pattern */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      }} />
 
-      <div className="container relative z-10 py-24">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center max-w-4xl mx-auto"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border backdrop-blur-md text-sm font-medium mb-10"
-            style={{
-              background: "hsla(0, 0%, 100%, 0.08)",
-              borderColor: "hsla(0, 0%, 100%, 0.15)",
-              color: "hsla(0, 0%, 100%, 0.9)",
-            }}
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
-            </span>
-            Trusted by 10,000+ professionals worldwide
-          </motion.div>
-
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-black text-primary-foreground leading-[0.92] mb-8 tracking-tight">
-            <motion.span
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="block"
-            >
-              Discover the
-            </motion.span>
-            <motion.span
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45, duration: 0.6 }}
-              className="block mt-1"
-            >
-              <span className="relative inline-block">
-                <span className="hero-gradient-text">Best Software</span>
-                <motion.span
-                  className="absolute -bottom-2 left-0 right-0 h-1.5 rounded-full"
-                  style={{ background: "linear-gradient(90deg, #06b6d4, #a78bfa, #ec4899)" }}
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.9, duration: 0.8, ease: "easeOut" }}
-                />
-              </span>
-            </motion.span>
-          </h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed"
-            style={{ color: "hsla(0, 0%, 100%, 0.65)" }}
-          >
-            Real reviews from verified users. Compare features, pricing, and more
-            — all in one place. Make smarter decisions, faster.
-          </motion.p>
-
+      <div className="container relative z-10 py-20 md:py-28 lg:py-36">
+        <div className="max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
-            <SearchBar variant="hero" className="max-w-2xl mx-auto mb-12" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/15 text-primary text-sm font-medium mb-8">
+              <TrendingUp className="h-3.5 w-3.5" />
+              #1 Software Review Platform
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.25rem] font-extrabold text-white leading-[1.08] mb-6">
+              Find the right software
+              <br />
+              <span className="text-primary">for your team</span>
+            </h1>
+
+            <p className="text-lg md:text-xl text-white/50 mb-10 max-w-xl leading-relaxed">
+              Compare features, read verified reviews, and make confident decisions. Trusted by 10,000+ professionals.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="mb-8"
+          >
+            <SearchBar variant="hero" className="max-w-xl" />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
-            className="flex flex-wrap items-center justify-center gap-8 text-sm"
-            style={{ color: "hsla(0, 0%, 100%, 0.55)" }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap items-center gap-6 text-sm text-white/40"
           >
             {[
-              { icon: CheckCircle, text: "100% Free to use" },
-              { icon: Shield, text: "Verified reviews only" },
-              { icon: Zap, text: "Instant comparisons" },
+              { icon: CheckCircle, text: "Free to use" },
+              { icon: Shield, text: "Verified reviews" },
             ].map(({ icon: Icon, text }) => (
-              <span key={text} className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-green-400" /> {text}
+              <span key={text} className="flex items-center gap-1.5">
+                <Icon className="h-3.5 w-3.5" /> {text}
               </span>
             ))}
+            <span className="text-white/20">·</span>
+            <span className="text-white/40">CRM · Marketing · HR · Analytics · more</span>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
-
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 }

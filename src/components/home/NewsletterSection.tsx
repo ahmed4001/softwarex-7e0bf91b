@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, ArrowRight } from "lucide-react";
+import { Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,47 +17,42 @@ export function NewsletterSection() {
       if (error.code === "23505") toast.info("You're already subscribed!");
       else toast.error("Failed to subscribe.");
     } else {
-      toast.success("Welcome aboard!");
+      toast.success("You're in! Check your inbox.");
       setEmail("");
     }
   };
 
   return (
-    <section className="py-28 relative">
-      <div className="container max-w-3xl text-center relative">
+    <section className="py-16 border-t border-border">
+      <div className="container">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          className="flex flex-col md:flex-row items-center justify-between gap-8 max-w-4xl mx-auto"
         >
-          <div className="h-20 w-20 rounded-3xl gradient-hero flex items-center justify-center mx-auto mb-8 animate-pulse-glow shadow-2xl">
-            <TrendingUp className="h-9 w-9 text-primary-foreground" />
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Mail className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-lg">Weekly insights</h3>
+              <p className="text-sm text-muted-foreground">New reviews, comparisons, and software tips. No spam.</p>
+            </div>
           </div>
-          <h2 className="text-3xl md:text-5xl font-display font-black text-foreground mb-4">
-            Stay Ahead of the Curve
-          </h2>
-          <p className="text-muted-foreground mb-10 text-lg max-w-md mx-auto">
-            Get the latest software reviews and industry insights delivered weekly.
-          </p>
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+          <form onSubmit={handleSubmit} className="flex gap-2 w-full md:w-auto">
             <Input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="you@company.com"
-              className="h-14 rounded-2xl bg-card text-base flex-1 border-border/50 px-5"
+              className="h-11 rounded-lg bg-card w-full md:w-72"
               required
             />
-            <Button
-              type="submit"
-              className="btn-premium h-14 px-8 rounded-2xl text-primary-foreground font-semibold gap-2 text-base"
-            >
-              Subscribe <ArrowRight className="h-4 w-4" />
+            <Button type="submit" className="h-11 px-6 rounded-lg font-semibold bg-primary text-primary-foreground flex-shrink-0">
+              Subscribe
             </Button>
           </form>
-          <p className="text-xs text-muted-foreground/60 mt-5">
-            No spam, ever. Unsubscribe anytime.
-          </p>
         </motion.div>
       </div>
     </section>

@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Star } from "lucide-react";
+import { ArrowRight, Sparkles, Star, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -70,50 +70,28 @@ export default function HomePage() {
       <SeoHead
         title="Find the Best Software for Your Business"
         description="Read honest reviews, compare features, and discover the right tools. Trusted by thousands."
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "SoftwareHub",
-          description: "Find the best software for your business",
-        }}
+        jsonLd={{ "@context": "https://schema.org", "@type": "WebSite", name: "SoftwareHub" }}
       />
 
       <HeroSection />
       <StatsSection stats={stats} />
       <TrustedBySection />
 
-      {/* Browse by Category */}
-      <section className="py-28 relative">
-        <div className="absolute inset-0 mesh-gradient opacity-30" />
-        <div className="container relative">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-14 gap-4"
-          >
-            <div>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-3 block">Explore</span>
-              <h2 className="text-3xl md:text-5xl font-display font-black text-foreground">Browse by Category</h2>
-              <p className="text-muted-foreground mt-2 text-lg">Discover software across every industry</p>
-            </div>
-            <Link to="/category/all">
-              <Button variant="ghost" className="gap-2 font-semibold group text-base">
-                View All <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          </motion.div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+      {/* Categories */}
+      <section className="py-20">
+        <div className="container">
+          <SectionHeader
+            label="Explore"
+            title="Browse by category"
+            subtitle="Find the right tools for your team"
+            linkTo="/category/all"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {categories?.map((cat, i) => (
-              <CategoryCard key={cat.id} slug={cat.slug} name={cat.name} icon={cat.icon || ""} product_count={cat.product_count || 0} color={cat.color || "#6366f1"} index={i} />
+              <CategoryCard key={cat.id} slug={cat.slug} name={cat.name} icon={cat.icon || ""} product_count={cat.product_count || 0} color={cat.color || "#3b82f6"} index={i} />
             ))}
             {(!categories || categories.length === 0) && (
-              <div className="col-span-full text-center py-20">
-                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="h-7 w-7 text-muted-foreground/40" />
-                </div>
-                <p className="text-muted-foreground font-medium">Categories coming soon</p>
-              </div>
+              <EmptyBlock icon={<LayoutGrid className="h-6 w-6 text-muted-foreground/30" />} text="Categories coming soon" />
             )}
           </div>
         </div>
@@ -121,41 +99,17 @@ export default function HomePage() {
 
       <div className="section-gradient-divider" />
 
-      {/* Featured Products */}
-      <section className="py-28 animated-gradient-bg">
+      {/* Featured */}
+      <section className="py-20 bg-muted/30">
         <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-14 gap-4"
-          >
-            <div>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-3 flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5" /> Featured
-              </span>
-              <h2 className="text-3xl md:text-5xl font-display font-black text-foreground">Hand-Picked Software</h2>
-              <p className="text-muted-foreground mt-2 text-lg">Curated by our team of experts</p>
-            </div>
-          </motion.div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <SectionHeader label="Featured" title="Hand-picked software" subtitle="Curated by our team of experts" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loadingFeatured ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />) :
               featuredProducts && featuredProducts.length > 0 ?
                 featuredProducts.map((p: any) => (
-                  <ProductCard
-                    key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline}
-                    logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews}
-                    pricing_model={p.pricing_model} category_name={p.categories?.name}
-                    is_featured={p.is_featured} is_sponsored={p.is_sponsored}
-                  />
+                  <ProductCard key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline} logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews} pricing_model={p.pricing_model} category_name={p.categories?.name} is_featured={p.is_featured} is_sponsored={p.is_sponsored} />
                 )) : (
-                  <div className="col-span-full text-center py-20">
-                    <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="h-7 w-7 text-primary/40" />
-                    </div>
-                    <p className="text-muted-foreground font-medium mb-1">No featured products yet</p>
-                    <p className="text-sm text-muted-foreground/60">Check back soon for curated picks</p>
-                  </div>
+                  <EmptyBlock icon={<Sparkles className="h-6 w-6 text-muted-foreground/30" />} text="No featured products yet" sub="Check back soon" />
                 )
             }
           </div>
@@ -165,53 +119,23 @@ export default function HomePage() {
       <div className="section-gradient-divider" />
 
       {/* Top Rated */}
-      <section className="py-28">
+      <section className="py-20">
         <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-14 gap-4"
-          >
-            <div>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-star mb-3 flex items-center gap-2">
-                <Star className="h-3.5 w-3.5 fill-star" /> Top Rated
-              </span>
-              <h2 className="text-3xl md:text-5xl font-display font-black text-foreground">Highest Rated Software</h2>
-              <p className="text-muted-foreground mt-2 text-lg">Loved by our community of reviewers</p>
-            </div>
-            <Link to="/category/all">
-              <Button variant="ghost" className="gap-2 font-semibold group text-base">
-                View All <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          </motion.div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <SectionHeader label="Top Rated" title="Highest rated software" subtitle="Loved by our community" linkTo="/category/all" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {loadingTop ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) :
               topProducts && topProducts.length > 0 ?
                 topProducts.map((p: any) => (
-                  <ProductCard
-                    key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline}
-                    logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews}
-                    pricing_model={p.pricing_model} category_name={p.categories?.name}
-                  />
+                  <ProductCard key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline} logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews} pricing_model={p.pricing_model} category_name={p.categories?.name} />
                 )) : (
-                  <div className="col-span-full text-center py-20">
-                    <div className="h-16 w-16 rounded-2xl bg-star/10 flex items-center justify-center mx-auto mb-4">
-                      <Star className="h-7 w-7 text-star/40" />
-                    </div>
-                    <p className="text-muted-foreground font-medium mb-1">No rated products yet</p>
-                    <p className="text-sm text-muted-foreground/60">Be the first to leave a review</p>
-                  </div>
+                  <EmptyBlock icon={<Star className="h-6 w-6 text-muted-foreground/30" />} text="No rated products yet" sub="Be the first to review" />
                 )
             }
           </div>
         </div>
       </section>
 
-      <div className="section-gradient-divider" />
       <HowItWorksSection />
-      <div className="section-gradient-divider" />
       <TestimonialsSection />
       <CTASection />
       <NewsletterSection />
@@ -219,10 +143,36 @@ export default function HomePage() {
   );
 }
 
-function BarChart3(props: any) {
+function SectionHeader({ label, title, subtitle, linkTo }: { label: string; title: string; subtitle: string; linkTo?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
-    </svg>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-3"
+    >
+      <div>
+        <p className="text-sm font-semibold text-primary mb-1">{label}</p>
+        <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">{title}</h2>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
+      </div>
+      {linkTo && (
+        <Link to={linkTo}>
+          <Button variant="ghost" className="gap-1.5 font-semibold group text-sm">
+            View All <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Button>
+        </Link>
+      )}
+    </motion.div>
+  );
+}
+
+function EmptyBlock({ icon, text, sub }: { icon: React.ReactNode; text: string; sub?: string }) {
+  return (
+    <div className="col-span-full text-center py-16">
+      <div className="h-14 w-14 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">{icon}</div>
+      <p className="text-muted-foreground font-medium text-sm">{text}</p>
+      {sub && <p className="text-xs text-muted-foreground/60 mt-0.5">{sub}</p>}
+    </div>
   );
 }
