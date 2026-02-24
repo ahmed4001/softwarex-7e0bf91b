@@ -7,7 +7,118 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const LOVABLE_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+// Call Lovable AI gateway first, fallback to direct Google Gemini on 402/429
+async function aiCall(prompt: string, maxTokens = 4000): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const GOOGLE_GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
+
+  // Try Lovable AI first
+  if (LOVABLE_API_KEY) {
+    try {
+      const result = await callLovableAI(prompt, maxTokens, LOVABLE_API_KEY);
+      return result;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      // Only fallback on credit/rate limit issues
+      if (msg.includes("402") || msg.includes("429") || msg.includes("credits")) {
+        console.log("Lovable AI unavailable, falling back to Google Gemini...");
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Fallback to direct Google Gemini
+  if (!GOOGLE_GEMINI_API_KEY) {
+    throw new Error("AI credits exhausted and no Google Gemini API key configured. Please add GOOGLE_GEMINI_API_KEY or top up Lovable AI credits.");
+  }
+
+  return await callGeminiDirect(prompt, maxTokens, GOOGLE_GEMINI_API_KEY);
+}
+
+async function callLovableAI(prompt: string, maxTokens: number, apiKey: string): Promise<string> {
+  const response = await fetch(LOVABLE_GATEWAY_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      max_tokens: maxTokens,
+      messages: [
+        {
+          role: "system",
+          content: "You are a data generation assistant. You ONLY return valid JSON arrays or objects. No markdown, no explanation, no code fences. Just raw JSON.",
+        },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Lovable AI error:", response.status, errText);
+    throw new Error(`Lovable AI error ${response.status}: ${errText}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || "";
+  return cleanJson(text);
+}
+
+async function callGeminiDirect(prompt: string, maxTokens: number, apiKey: string): Promise<string> {
+  const systemInstruction = "You are a data generation assistant. You ONLY return valid JSON arrays or objects. No markdown, no explanation, no code fences. Just raw JSON.";
+
+  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemInstruction }] },
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: maxTokens,
+        temperature: 0.7,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Gemini API error:", response.status, errText);
+    if (response.status === 429) {
+      throw new Error("Google Gemini rate limit exceeded. Please try again in a moment.");
+    }
+    throw new Error(`Google Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  return cleanJson(text);
+}
+
+function cleanJson(text: string): string {
+  let cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    JSON.parse(cleaned);
+  } catch {
+    const lastComplete = cleaned.lastIndexOf("},");
+    if (lastComplete > 0) {
+      cleaned = cleaned.substring(0, lastComplete + 1) + "]";
+    } else {
+      const lastObj = cleaned.lastIndexOf("}");
+      if (lastObj > 0) {
+        cleaned = cleaned.substring(0, lastObj + 1);
+        if (!cleaned.endsWith("]")) cleaned += "]";
+      }
+    }
+  }
+  return cleaned;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -15,78 +126,12 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { action, payload } = await req.json();
-
-    const aiCall = async (prompt: string, maxTokens = 4000) => {
-      const response = await fetch(AI_GATEWAY_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          max_tokens: maxTokens,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a data generation assistant. You ONLY return valid JSON arrays or objects. No markdown, no explanation, no code fences. Just raw JSON.",
-            },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("AI gateway error:", response.status, errText);
-        if (response.status === 429) {
-          throw new Error("Rate limit exceeded. Please try again in a moment.");
-        }
-        if (response.status === 402) {
-          throw new Error("AI credits exhausted. Please add credits in workspace settings.");
-        }
-        throw new Error(`AI gateway error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || "";
-      // Strip any markdown fences the model might add
-      let cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      
-      // Try to repair truncated JSON arrays
-      try {
-        JSON.parse(cleaned);
-      } catch {
-        // If JSON is truncated, try to fix it
-        // Remove any trailing incomplete object
-        const lastComplete = cleaned.lastIndexOf("},");
-        if (lastComplete > 0) {
-          cleaned = cleaned.substring(0, lastComplete + 1) + "]";
-        } else {
-          const lastObj = cleaned.lastIndexOf("}");
-          if (lastObj > 0) {
-            cleaned = cleaned.substring(0, lastObj + 1);
-            if (!cleaned.endsWith("]")) cleaned += "]";
-          }
-        }
-      }
-      return cleaned;
-    };
 
     // ACTION 1: Generate products for a category
     if (action === "generate_category") {
       const { category, count: rawCount, categoryId } = payload;
-      const count = Math.min(rawCount, 20); // Cap at 20 to avoid truncated responses
+      const count = Math.min(rawCount, 20);
       const prompt = `Generate ${count} realistic software products for the category "${category}".
 Return ONLY a valid JSON array. Each product must have ALL these fields:
 {
@@ -116,7 +161,6 @@ Use REAL software products that actually exist. Make all data accurate.`;
       const result = await aiCall(prompt, count <= 5 ? 6000 : 12000);
       let products = JSON.parse(result);
 
-      // Add Clearbit logo URLs and category_id
       products = products.map((p: any) => {
         const domain = p.website_url
           ? new URL(p.website_url).hostname.replace("www.", "")
@@ -189,7 +233,6 @@ Only return fields that need updating. Use real accurate data.`;
       const result = await aiCall(prompt, 4000);
       const enrichment = JSON.parse(result);
 
-      // Add Clearbit logo if website_url exists
       const websiteUrl = enrichment.website_url || product.website_url;
       if (websiteUrl && !product.logo_url) {
         try {
