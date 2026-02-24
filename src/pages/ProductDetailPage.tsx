@@ -16,7 +16,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", slug],
     queryFn: async () => {
-      const { data } = await supabase.from("products").select("*, categories(name, slug)").eq("slug", slug!).single();
+      const { data } = await supabase.from("products").select("*, categories!products_category_id_fkey(name, slug)").eq("slug", slug!).single();
       return data;
     },
     enabled: !!slug,
