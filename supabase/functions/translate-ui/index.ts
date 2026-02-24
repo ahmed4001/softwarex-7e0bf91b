@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -11,6 +13,8 @@ Deno.serve(async (req) => {
 
   try {
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
 
     const { targetLang, sourceTranslations } = await req.json();
@@ -21,6 +25,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check DB cache first
+    const supabase = createClient(supabaseUrl, anonKey);
+    const { data: cached } = await supabase
+      .from("ui_translations")
+      .select("translations")
+      .eq("lang_code", targetLang)
+      .single();
+
+    if (cached?.translations) {
+      return new Response(
+        JSON.stringify({ translations: cached.translations, language: targetLang, source: "cache" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Generate via AI
     const prompt = `You are a professional translator. Translate the following JSON object from English to ${targetLang}. 
 Keep ALL JSON keys exactly the same (do not translate keys). Only translate the string values.
 Keep HTML tags like <strong> intact. Keep brand names like "SoftwareHub" unchanged.
@@ -66,8 +86,17 @@ Return ONLY the translated JSON object, no markdown, no explanation.`;
     const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const translations = JSON.parse(jsonStr);
 
+    // Save to DB cache (best-effort, using service role for write)
+    try {
+      const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      await serviceClient.from("ui_translations").upsert(
+        { lang_code: targetLang, translations, version: "2" },
+        { onConflict: "lang_code" }
+      );
+    } catch {}
+
     return new Response(
-      JSON.stringify({ translations, language: targetLang }),
+      JSON.stringify({ translations, language: targetLang, source: "generated" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
