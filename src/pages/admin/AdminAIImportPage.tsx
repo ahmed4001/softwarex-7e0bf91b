@@ -497,6 +497,14 @@ function GenerateReviewsTab() {
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
 
+  // Bulk review state
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkInserted, setBulkInserted] = useState(0);
+  const [bulkProcessed, setBulkProcessed] = useState(0);
+  const [bulkRemaining, setBulkRemaining] = useState(0);
+  const [bulkLog, setBulkLog] = useState<string[]>([]);
+  const bulkCancelRef = useRef(false);
+
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products-for-reviews"],
     queryFn: async () => {
@@ -509,6 +517,76 @@ function GenerateReviewsTab() {
       return data || [];
     },
   });
+
+  const { data: reviewStats = { total: 0, withReviews: 0, withoutReviews: 0 }, refetch: refetchStats } = useQuery({
+    queryKey: ["admin-review-stats"],
+    queryFn: async () => {
+      const { count: total } = await supabase.from("reviews").select("*", { count: "exact", head: true });
+      const { count: productCount } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true);
+      const { count: withReviews } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true).gt("total_reviews", 0);
+      return {
+        total: total || 0,
+        withReviews: withReviews || 0,
+        withoutReviews: (productCount || 0) - (withReviews || 0),
+      };
+    },
+  });
+
+  const addBulkLog = (msg: string) => setBulkLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 200));
+
+  const startBulkReviews = async () => {
+    bulkCancelRef.current = false;
+    setBulkRunning(true);
+    setBulkInserted(0);
+    setBulkProcessed(0);
+    setBulkLog([]);
+
+    addBulkLog(`Starting bulk review generation for all products without reviews...`);
+
+    let totalInserted = 0;
+    let totalProcessed = 0;
+
+    while (!bulkCancelRef.current) {
+      try {
+        const { data, error } = await supabase.functions.invoke("bulk-generate-reviews", {
+          body: { batch_size: 2, reviews_per_product: 5 },
+        });
+
+        if (error) {
+          addBulkLog(`❌ Error: ${error.message}`);
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+
+        if (data) {
+          totalInserted += data.inserted || 0;
+          totalProcessed += data.products_processed || 0;
+          setBulkInserted(totalInserted);
+          setBulkProcessed(totalProcessed);
+          setBulkRemaining(data.remaining || 0);
+          addBulkLog(`✅ +${data.inserted} reviews for ${data.products_processed} products (${data.remaining} remaining)`);
+
+          if ((data.remaining || 0) <= 0) {
+            addBulkLog(`🎉 All products now have reviews!`);
+            break;
+          }
+        }
+      } catch (e: any) {
+        addBulkLog(`❌ Network error: ${e.message}`);
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      // Small delay between batches
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    setBulkRunning(false);
+    refetchStats();
+    toast({
+      title: bulkCancelRef.current ? "Review generation stopped" : "Bulk review generation complete!",
+      description: `Added ${totalInserted} reviews across ${totalProcessed} products.`,
+    });
+  };
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -584,7 +662,98 @@ function GenerateReviewsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Generator Card */}
+      {/* Bulk Review Generator */}
+      <Card className="overflow-hidden border-0 shadow-lg">
+        <div className="bg-gradient-to-br from-[hsl(var(--star))]/10 via-accent/20 to-transparent p-1">
+          <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-xl bg-[hsl(var(--star))]/10 flex items-center justify-center">
+                <Zap className="h-5 w-5 text-[hsl(var(--star))]" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Bulk Generate Reviews</h3>
+                <p className="text-xs text-muted-foreground">Auto-generate 5 reviews for every product that has none</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-5">
+              <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/50">
+                <AnimatedNumber value={reviewStats.total} />
+                <p className="text-xs text-muted-foreground mt-1">Total Reviews</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/50">
+                <AnimatedNumber value={reviewStats.withReviews} />
+                <p className="text-xs text-muted-foreground mt-1">Products with Reviews</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/50">
+                <AnimatedNumber value={reviewStats.withoutReviews} />
+                <p className="text-xs text-muted-foreground mt-1">Need Reviews</p>
+              </div>
+            </div>
+
+            <div className="flex items-end gap-4">
+              {!bulkRunning ? (
+                <Button
+                  onClick={startBulkReviews}
+                  disabled={reviewStats.withoutReviews === 0}
+                  className="h-11 px-8 font-semibold shadow-md"
+                  size="lg"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Generate Reviews for {reviewStats.withoutReviews} Products
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { bulkCancelRef.current = true; }}
+                  variant="destructive"
+                  className="h-11 px-8"
+                  size="lg"
+                >
+                  Stop Generation
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {(bulkRunning || bulkInserted > 0) && (
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Bulk Review Progress</h3>
+              {bulkRunning && (
+                <p className="text-sm text-muted-foreground">
+                  Generating reviews... <span className="text-foreground font-medium">{bulkRemaining} products remaining</span>
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <StatPill icon={Star} label="Reviews" value={bulkInserted.toLocaleString()} />
+              <StatPill icon={Package} label="Products" value={bulkProcessed.toLocaleString()} />
+            </div>
+          </div>
+          {reviewStats.withoutReviews > 0 && (
+            <>
+              <Progress value={Math.round(((reviewStats.withoutReviews - bulkRemaining) / reviewStats.withoutReviews) * 100)} className="h-2" />
+              <p className="text-xs text-muted-foreground text-right">
+                {Math.round(((reviewStats.withoutReviews - bulkRemaining) / reviewStats.withoutReviews) * 100)}% complete
+              </p>
+            </>
+          )}
+          {bulkLog.length > 0 && (
+            <div className="bg-muted/30 border border-border/50 rounded-lg p-3 max-h-48 overflow-auto">
+              <div className="space-y-1">
+                {bulkLog.map((entry, i) => (
+                  <p key={i} className="text-xs font-mono text-muted-foreground">{entry}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Single Product Generator */}
       <Card className="overflow-hidden border-0 shadow-lg">
         <div className="bg-gradient-to-br from-[hsl(var(--star))]/10 via-accent/20 to-transparent p-1">
           <div className="bg-card rounded-[calc(var(--radius)-2px)] p-6">
@@ -593,7 +762,7 @@ function GenerateReviewsTab() {
                 <Star className="h-5 w-5 text-[hsl(var(--star))]" />
               </div>
               <div>
-                <h3 className="font-semibold">Generate Reviews</h3>
+                <h3 className="font-semibold">Generate Reviews for Single Product</h3>
                 <p className="text-xs text-muted-foreground">AI creates realistic, varied reviews for any product</p>
               </div>
             </div>
@@ -745,14 +914,14 @@ function GenerateReviewsTab() {
       </AnimatePresence>
 
       {/* Empty state */}
-      {reviews.length === 0 && !generateMutation.isPending && (
+      {reviews.length === 0 && !generateMutation.isPending && !bulkRunning && bulkInserted === 0 && (
         <Card className="p-12 border-dashed border-2">
           <div className="flex flex-col items-center text-center gap-3">
             <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center">
               <Star className="h-7 w-7 text-muted-foreground/50" />
             </div>
             <p className="font-medium text-muted-foreground">No reviews generated yet</p>
-            <p className="text-sm text-muted-foreground/70">Select a product and generate realistic reviews</p>
+            <p className="text-sm text-muted-foreground/70">Use bulk generation or select a product for individual reviews</p>
           </div>
         </Card>
       )}
