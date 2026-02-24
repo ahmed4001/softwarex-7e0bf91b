@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   CheckCircle2, XCircle, SkipForward, Loader2, Search, Download,
-  ChevronRight, Globe, Star, ArrowRight,
+  ChevronRight, Globe, Star, ArrowRight, Sparkles, RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -367,10 +367,62 @@ export default function CapterraDiscoveryPanel() {
     autoCancelRef.current = true;
   }, []);
 
+  // Enrich state
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichResults, setEnrichResults] = useState<ImportResult[]>([]);
+  const [enrichProgress, setEnrichProgress] = useState(0);
+  const [enrichBatchSize] = useState(5);
+
+  const enrichProducts = useCallback(async (catSlug?: string) => {
+    setIsEnriching(true);
+    setEnrichResults([]);
+    setEnrichProgress(0);
+
+    const maxBatches = 10;
+    let totalProcessed = 0;
+
+    for (let batch = 0; batch < maxBatches; batch++) {
+      setEnrichProgress(((batch + 1) / maxBatches) * 100);
+
+      const { data, error } = await invokeWithRetry({
+        action: "enrich",
+        category_slug: catSlug || undefined,
+        import_products: Array.from({ length: enrichBatchSize }),
+      });
+
+      if (error) {
+        setEnrichResults(prev => [...prev, { name: `Batch ${batch + 1}`, status: "error", reason: error.message || "Network error" }]);
+        break;
+      }
+
+      if (data?.results) {
+        setEnrichResults(prev => [...prev, ...data.results]);
+        totalProcessed += data.results.length;
+
+        // Stop if no more products to enrich
+        if (data.results.length === 0 || data.message === "No products need enrichment") {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+
+    setIsEnriching(false);
+    setEnrichProgress(100);
+    toast({
+      title: "Enrichment complete",
+      description: `Processed ${totalProcessed} products.`,
+    });
+  }, [invokeWithRetry, enrichBatchSize, toast]);
+
   const newProductsCount = discoveredProducts.filter((p) => !p.already_exists).length;
   const successCount = importResults.filter((r) => r.status === "success").length;
   const errorCount = importResults.filter((r) => r.status === "error").length;
   const autoProgress = categoryEntries.length > 0 ? (autoCategoryIndex / categoryEntries.length) * 100 : 0;
+  const enrichSuccessCount = enrichResults.filter((r) => r.status === "success").length;
+  const enrichSkipCount = enrichResults.filter((r) => r.status === "skipped").length;
+  const enrichErrorCount = enrichResults.filter((r) => r.status === "error").length;
 
   return (
     <div className="space-y-6">
@@ -456,7 +508,80 @@ export default function CapterraDiscoveryPanel() {
         )}
       </Card>
 
-      {/* Category selector */}
+      {/* Enrich Products */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Enrich Products
+              </CardTitle>
+              <CardDescription>
+                Re-scrape products imported via Quick Import to fill in missing details (website URL, features, descriptions, pricing, etc.)
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => enrichProducts()}
+                disabled={isEnriching || isAutoRunning || isImporting}
+              >
+                {isEnriching ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enriching...</>
+                ) : (
+                  <><RefreshCw className="mr-2 h-4 w-4" /> Enrich All Products</>
+                )}
+              </Button>
+              {selectedCategory && (
+                <Button
+                  variant="outline"
+                  onClick={() => enrichProducts(selectedCategory)}
+                  disabled={isEnriching || isAutoRunning || isImporting}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" /> Enrich {CATEGORY_LABELS[selectedCategory] || selectedCategory}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        {isEnriching && (
+          <CardContent className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Enriching products...</span>
+              <span className="font-medium">{Math.round(enrichProgress)}%</span>
+            </div>
+            <Progress value={enrichProgress} className="h-2" />
+          </CardContent>
+        )}
+        {enrichResults.length > 0 && (
+          <CardContent>
+            <div className="text-sm mb-3 font-medium">
+              {enrichSuccessCount} enriched, {enrichSkipCount} skipped, {enrichErrorCount} errors
+            </div>
+            <ScrollArea className="h-48">
+              <div className="space-y-1">
+                {enrichResults.map((r, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      {r.status === "success" && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                      {r.status === "error" && <XCircle className="h-4 w-4 text-destructive" />}
+                      {r.status === "skipped" && <SkipForward className="h-4 w-4 text-amber-600" />}
+                      <span className="font-medium">{r.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={r.status === "success" ? "default" : r.status === "skipped" ? "secondary" : "destructive"} className="text-xs">
+                        {r.status}
+                      </Badge>
+                      {r.reason && <span className="text-xs text-muted-foreground max-w-48 truncate">{r.reason}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        )}
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Or discover by category</CardTitle>

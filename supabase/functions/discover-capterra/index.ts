@@ -321,8 +321,140 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Action: enrich — re-scrape products that have minimal data
+    if (action === "enrich") {
+      if (!FIRECRAWL_API_KEY) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Firecrawl not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Find products missing key data (no website_url or no features)
+      let query = supabase
+        .from("products")
+        .select("id, name, slug, website_url, features, description, logo_url, tagline, avg_rating, total_reviews, pricing_model, starting_price")
+        .eq("is_active", true);
+
+      if (category_slug) {
+        const { data: cat } = await supabase.from("categories").select("id").eq("slug", category_slug).maybeSingle();
+        if (cat) query = query.eq("category_id", cat.id);
+      }
+
+      // Products needing enrichment: no website_url OR empty/default features
+      query = query.or("website_url.is.null,features.eq.[]");
+      query = query.limit(import_products?.length || 20);
+
+      const { data: products, error: fetchError } = await query;
+      if (fetchError) {
+        return new Response(
+          JSON.stringify({ success: false, error: fetchError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!products || products.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, results: [], message: "No products need enrichment" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const results: any[] = [];
+
+      for (const product of products) {
+        try {
+          // Build Capterra search URL from slug
+          const searchUrl = `https://www.capterra.com/p/${product.slug}/`;
+          
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 20000);
+
+          const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+              url: product.website_url || searchUrl,
+              formats: [
+                {
+                  type: "json",
+                  schema: {
+                    type: "object",
+                    properties: {
+                      website_url: { type: "string", description: "The official website URL" },
+                      description: { type: "string", description: "Product description (2-3 sentences)" },
+                      tagline: { type: "string", description: "Product tagline or one-liner" },
+                      pricing_model: { type: "string", enum: ["free", "freemium", "paid", "subscription", "one-time"] },
+                      starting_price: { type: "number", description: "Starting price per month in USD" },
+                      features: { type: "array", items: { type: "string" }, description: "Key features (up to 10)" },
+                      logo_url: { type: "string", description: "URL of the product logo" },
+                      pros_summary: { type: "string", description: "Summary of what users like most" },
+                      cons_summary: { type: "string", description: "Summary of common complaints" },
+                      headquarters: { type: "string", description: "Company headquarters location" },
+                      founded_year: { type: "number", description: "Year the company was founded" },
+                    },
+                  },
+                },
+              ],
+              onlyMainContent: true,
+              waitFor: 3000,
+            }),
+          });
+          clearTimeout(timeout);
+
+          const result = await res.json();
+          const scraped = result?.data?.json || result?.json || {};
+
+          // Build update object — only update fields that are missing/empty
+          const updates: Record<string, any> = {};
+          if (!product.website_url && scraped.website_url) updates.website_url = scraped.website_url;
+          if ((!product.features || (Array.isArray(product.features) && product.features.length === 0)) && scraped.features?.length) updates.features = scraped.features;
+          if ((!product.description || product.description.endsWith("is a software product.")) && scraped.description) updates.description = scraped.description;
+          if ((!product.tagline || product.tagline.endsWith("software solution")) && scraped.tagline) updates.tagline = scraped.tagline;
+          if (!product.logo_url && scraped.logo_url) updates.logo_url = scraped.logo_url;
+          if (scraped.pricing_model) updates.pricing_model = scraped.pricing_model;
+          if (scraped.starting_price) updates.starting_price = scraped.starting_price;
+          if (scraped.pros_summary) updates.pros_summary = scraped.pros_summary;
+          if (scraped.cons_summary) updates.cons_summary = scraped.cons_summary;
+          if (scraped.headquarters) updates.headquarters = scraped.headquarters;
+          if (scraped.founded_year) updates.founded_year = scraped.founded_year;
+
+          if (Object.keys(updates).length === 0) {
+            results.push({ name: product.name, status: "skipped", reason: "No new data found" });
+            continue;
+          }
+
+          updates.updated_at = new Date().toISOString();
+          const { error: updateError } = await supabase.from("products").update(updates).eq("id", product.id);
+
+          if (updateError) {
+            results.push({ name: product.name, status: "error", reason: updateError.message });
+          } else {
+            results.push({ name: product.name, status: "success", fields_updated: Object.keys(updates).filter(k => k !== "updated_at") });
+          }
+        } catch (e) {
+          results.push({
+            name: product.name,
+            status: "error",
+            reason: e instanceof Error ? e.message : "Unknown error",
+          });
+        }
+
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, results, total_enriched: results.filter(r => r.status === "success").length }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ success: false, error: "Unknown action. Use 'discover' or 'import'" }),
+      JSON.stringify({ success: false, error: "Unknown action. Use 'discover', 'import', or 'enrich'" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
