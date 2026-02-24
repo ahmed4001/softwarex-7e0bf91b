@@ -1366,6 +1366,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_blog_view: { Args: { post_slug: string }; Returns: undefined }
       reset_brevo_daily_credits: { Args: never; Returns: undefined }
     }
     Enums: {
