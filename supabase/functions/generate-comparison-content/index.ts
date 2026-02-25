@@ -95,27 +95,86 @@ Return a JSON object with these fields:
 
 Return ONLY the JSON object, no markdown.`;
 
-        const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${lovableKey}`,
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7,
-          }),
-        });
+        // Try Lovable AI first, fall back to Google Gemini on 402/429
+        let content = "";
+        let aiOk = false;
 
-        if (!aiResponse.ok) {
-          errors.push(`AI error for ${comparison.id}: ${aiResponse.status}`);
-          continue;
+        // Attempt 1: Lovable AI Gateway
+        try {
+          const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${lovableKey}`,
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [{ role: "user", content: prompt }],
+              temperature: 0.7,
+            }),
+          });
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            content = aiData.choices?.[0]?.message?.content || "";
+            aiOk = true;
+          } else if (aiResponse.status === 402 || aiResponse.status === 429) {
+            console.log(`Lovable AI returned ${aiResponse.status}, falling back to Gemini`);
+            await aiResponse.text(); // consume body
+          } else {
+            errors.push(`AI error for ${comparison.id}: ${aiResponse.status}`);
+            await aiResponse.text();
+            continue;
+          }
+        } catch (e) {
+          console.log(`Lovable AI failed: ${e}, falling back to Gemini`);
         }
 
-        const aiData = await aiResponse.json();
-        const content = aiData.choices?.[0]?.message?.content || "";
-        
+        // Attempt 2: Google Gemini direct
+        if (!aiOk) {
+          const geminiKey = Deno.env.get("GOOGLE_GEMINI_API_KEY");
+          if (!geminiKey) {
+            errors.push(`No fallback key for ${comparison.id}`);
+            continue;
+          }
+
+          const models = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+          let geminiOk = false;
+
+          for (const model of models) {
+            try {
+              const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.7 },
+                  }),
+                }
+              );
+
+              if (geminiRes.ok) {
+                const geminiData = await geminiRes.json();
+                content = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                geminiOk = true;
+                break;
+              } else {
+                const errText = await geminiRes.text();
+                console.log(`Gemini ${model} failed: ${geminiRes.status} ${errText.substring(0, 100)}`);
+              }
+            } catch (e) {
+              console.log(`Gemini ${model} error: ${e}`);
+            }
+          }
+
+          if (!geminiOk) {
+            errors.push(`All AI providers failed for ${comparison.id}`);
+            continue;
+          }
+        }
+
         // Parse JSON from response (handle potential markdown wrapping)
         const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         const result = JSON.parse(jsonStr);
