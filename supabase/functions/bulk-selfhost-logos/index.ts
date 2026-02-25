@@ -10,9 +10,12 @@ async function tryFetchLogo(formattedUrl: string): Promise<{ bytes: Uint8Array; 
   const domain = new URL(formattedUrl).hostname.replace("www.", "");
   const candidates = [
     `https://logo.clearbit.com/${domain}`,
-    `https://${domain}/favicon.ico`,
     `https://${domain}/apple-touch-icon.png`,
     `https://${domain}/favicon-32x32.png`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`,
+    `https://${domain}/favicon.ico`,
   ];
 
   for (const candidate of candidates) {
