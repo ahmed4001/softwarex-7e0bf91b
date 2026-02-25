@@ -47,7 +47,13 @@ export default function SearchPage() {
         .order("is_sponsored", { ascending: false })
         .order("avg_rating", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-      return data || [];
+      const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
+      return (data || []).sort((a: any, b: any) => {
+        if (a.is_sponsored && b.is_sponsored) {
+          return (tierOrder[a.sponsor_tier] ?? 3) - (tierOrder[b.sponsor_tier] ?? 3);
+        }
+        return 0;
+      });
     },
     enabled: q.length > 0,
   });

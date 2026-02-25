@@ -61,7 +61,14 @@ export default function CategoryPage() {
       else if (sort === "newest") query = query.order("created_at", { ascending: false });
       else query = query.order("name");
       const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-      return data || [];
+      // Sort sponsored products by tier priority (gold > silver > bronze)
+      const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
+      return (data || []).sort((a: any, b: any) => {
+        if (a.is_sponsored && b.is_sponsored) {
+          return (tierOrder[a.sponsor_tier] ?? 3) - (tierOrder[b.sponsor_tier] ?? 3);
+        }
+        return 0;
+      });
     },
     enabled: !!category,
   });
