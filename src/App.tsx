@@ -40,6 +40,7 @@ const AdminBlogEditorPage = lazy(() => import("./pages/admin/AdminBlogEditorPage
 const AdminBrevoPage = lazy(() => import("./pages/admin/AdminBrevoPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
 const AdminAIPage = lazy(() => import("./pages/admin/AdminAIPage"));
+const AdminActivityPage = lazy(() => import("./pages/admin/AdminActivityPage"));
 const AdminProductEditorPage = lazy(() => import("./pages/admin/AdminProductEditorPage"));
 const AdminSubmissionsPage = lazy(() => import("./pages/admin/AdminSubmissionsPage"));
 
@@ -98,6 +99,7 @@ function AppContent() {
           <Route path="analytics" element={<ErrorBoundary><AdminAnalyticsPage /></ErrorBoundary>} />
           <Route path="ai" element={<ErrorBoundary><AdminAIPage /></ErrorBoundary>} />
           <Route path="submissions" element={<ErrorBoundary><AdminSubmissionsPage /></ErrorBoundary>} />
+          <Route path="activity" element={<ErrorBoundary><AdminActivityPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}
