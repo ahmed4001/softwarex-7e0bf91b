@@ -10,6 +10,45 @@ import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useMemo } from "react";
 
+function VendorDashboardSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div>
+        <div className="h-8 w-56 bg-muted rounded-lg mb-2" />
+        <div className="h-4 w-72 bg-muted/60 rounded-lg" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="glass-card border-l-4 border-l-muted p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-3 w-24 bg-muted/70 rounded mb-3" />
+                <div className="h-9 w-20 bg-muted/50 rounded" />
+              </div>
+              <div className="h-14 w-14 rounded-2xl bg-muted/40" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="h-64 rounded-xl bg-muted/30" />
+      <div>
+        <div className="h-6 w-40 bg-muted rounded-lg mb-4" />
+        <div className="grid md:grid-cols-2 gap-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="glass-card p-5 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-muted/50" />
+              <div className="flex-1">
+                <div className="h-5 w-32 bg-muted/60 rounded mb-2" />
+                <div className="h-3 w-48 bg-muted/40 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function VendorDashboard() {
   const { user } = useAuth();
 
@@ -81,6 +120,9 @@ export default function VendorDashboard() {
   return (
     <>
       <SeoHead title="Vendor Dashboard — SoftwareHub" description="Manage your products, respond to reviews, and view analytics." />
+      {!user ? (
+        <VendorDashboardSkeleton />
+      ) : (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Vendor Dashboard</h1>
@@ -168,6 +210,7 @@ export default function VendorDashboard() {
           </>
         )}
       </motion.div>
+      )}
     </>
   );
 }
