@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { NotificationsTab } from "@/components/dashboard/NotificationsTab";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +12,7 @@ import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus } from "lucide-react";
+import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -56,6 +57,7 @@ export default function DashboardPage() {
             <Tabs defaultValue="saved" className="space-y-6">
               <TabsList className="bg-muted/50">
                 <TabsTrigger value="saved" className="gap-1.5"><Bookmark className="h-4 w-4" /> {t("dashboard.saved")}</TabsTrigger>
+                <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-4 w-4" /> Activity</TabsTrigger>
                 <TabsTrigger value="reviews" className="gap-1.5"><Star className="h-4 w-4" /> {t("dashboard.myReviews")}</TabsTrigger>
                 <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
               </TabsList>
@@ -64,6 +66,11 @@ export default function DashboardPage() {
                 <TabsContent value="saved" asChild forceMount={undefined}>
                   <motion.div key="saved" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                     <SavedProductsTab userId={user.id} />
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="notifications" asChild forceMount={undefined}>
+                  <motion.div key="notifications" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <NotificationsTab userId={user.id} />
                   </motion.div>
                 </TabsContent>
                 <TabsContent value="reviews" asChild forceMount={undefined}>
