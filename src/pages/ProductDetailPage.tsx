@@ -178,7 +178,7 @@ export default function ProductDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           className="glass-card p-8 mb-8 relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/5 to-transparent rounded-bl-full" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/3 to-transparent rounded-bl-full pointer-events-none" />
           
           <div className="flex flex-col lg:flex-row gap-8 relative">
             <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-border/30 shadow-lg">
@@ -214,10 +214,25 @@ export default function ProductDetailPage() {
                 <Link to={`/compare?products=${product.id}`}><Button variant="ghost" className="rounded-xl font-medium">{t("productDetail.compare")}</Button></Link>
               </div>
             </div>
-            <div className="flex flex-col gap-3 text-sm text-muted-foreground lg:border-l lg:border-border/50 lg:pl-8 flex-shrink-0">
-              {product.headquarters && <div className="flex items-center gap-2.5"><Building2 className="h-4 w-4 text-primary/60" />{product.headquarters}</div>}
-              {product.founded_year && <div className="flex items-center gap-2.5"><Calendar className="h-4 w-4 text-primary/60" />{t("productDetail.founded", { year: product.founded_year })}</div>}
-              {product.company_size && <div className="flex items-center gap-2.5"><Users className="h-4 w-4 text-primary/60" />{product.company_size}</div>}
+            <div className="flex flex-col gap-4 lg:border-l lg:border-border/50 lg:pl-8 flex-shrink-0">
+              <div className="flex flex-col gap-3 text-sm text-muted-foreground">
+                {product.headquarters && <div className="flex items-center gap-2.5"><Building2 className="h-4 w-4 text-primary/60" />{product.headquarters}</div>}
+                {product.founded_year && <div className="flex items-center gap-2.5"><Calendar className="h-4 w-4 text-primary/60" />{t("productDetail.founded", { year: product.founded_year })}</div>}
+                {product.company_size && <div className="flex items-center gap-2.5"><Users className="h-4 w-4 text-primary/60" />{product.company_size}</div>}
+              </div>
+              {(() => {
+                const heroScreenshots = Array.isArray(product.screenshots) ? product.screenshots.filter((s): s is string => typeof s === "string" && s.length > 0) : [];
+                return heroScreenshots.length > 0 ? (
+                  <div className="w-56 rounded-xl overflow-hidden border border-border shadow-md bg-background">
+                    <img
+                      src={heroScreenshots[0]}
+                      alt={`${product.name} preview`}
+                      className="w-full h-auto object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
         </motion.div>
