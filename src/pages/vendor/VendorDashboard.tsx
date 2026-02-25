@@ -4,21 +4,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { SeoHead } from "@/components/SeoHead";
 import { StatCard } from "@/components/StatCard";
 import { motion } from "framer-motion";
-import { Package, Star, Eye, MessageSquare, TrendingUp } from "lucide-react";
+import { Package, Star, Eye, MessageSquare, TrendingUp, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useMemo } from "react";
 
 export default function VendorDashboard() {
   const { user } = useAuth();
 
-  // Get claimed products
   const { data: claims = [] } = useQuery({
     queryKey: ["vendor-claims", user?.id],
     enabled: !!user,
     queryFn: async () => {
       const { data } = await supabase
         .from("product_claims")
-        .select("*, products(id, name, slug, logo_url, avg_rating, total_reviews, view_count)")
+        .select("*, products(id, name, slug, logo_url, avg_rating, total_reviews, view_count, click_count)")
         .eq("user_id", user!.id)
         .eq("status", "approved");
       return data || [];
@@ -27,7 +28,6 @@ export default function VendorDashboard() {
 
   const productIds = claims.map((c: any) => c.products?.id).filter(Boolean);
 
-  // Get reviews for claimed products
   const { data: reviews = [] } = useQuery({
     queryKey: ["vendor-reviews-count", productIds],
     enabled: productIds.length > 0,
@@ -40,7 +40,6 @@ export default function VendorDashboard() {
     },
   });
 
-  // Get vendor responses count
   const { data: responses = [] } = useQuery({
     queryKey: ["vendor-responses-count", user?.id],
     enabled: !!user,
@@ -54,12 +53,30 @@ export default function VendorDashboard() {
   });
 
   const totalViews = claims.reduce((sum: number, c: any) => sum + (c.products?.view_count || 0), 0);
+  const totalClicks = claims.reduce((sum: number, c: any) => sum + (c.products?.click_count || 0), 0);
   const totalReviews = reviews.length;
   const avgRating = totalReviews > 0
     ? (reviews.reduce((sum: number, r: any) => sum + r.overall_rating, 0) / totalReviews).toFixed(1)
     : "—";
-  const pendingReviews = reviews.filter((r: any) => r.status === "approved").length;
-  const unanswered = pendingReviews - responses.length;
+  const approvedReviews = reviews.filter((r: any) => r.status === "approved").length;
+  const unanswered = Math.max(0, approvedReviews - responses.length);
+
+  // Build review trend chart data (last 12 months)
+  const chartData = useMemo(() => {
+    const months: { month: string; reviews: number; avgRating: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("en", { month: "short", year: "2-digit" });
+      const monthReviews = reviews.filter((r: any) => r.created_at?.startsWith(key));
+      const avg = monthReviews.length > 0
+        ? monthReviews.reduce((s: number, r: any) => s + r.overall_rating, 0) / monthReviews.length
+        : 0;
+      months.push({ month: label, reviews: monthReviews.length, avgRating: Math.round(avg * 10) / 10 });
+    }
+    return months;
+  }, [reviews]);
 
   return (
     <>
@@ -75,18 +92,48 @@ export default function VendorDashboard() {
             <Package className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">No claimed products yet</h2>
             <p className="text-sm text-muted-foreground mb-4">Claim your product listing to respond to reviews and view analytics.</p>
-            <Link to="/vendor/claim">
-              <Button>Claim a Product</Button>
-            </Link>
+            <Link to="/vendor/claim"><Button>Claim a Product</Button></Link>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <StatCard title="Products" value={claims.length} icon={Package} />
               <StatCard title="Total Views" value={totalViews.toLocaleString()} icon={Eye} />
+              <StatCard title="Clicks" value={totalClicks.toLocaleString()} icon={TrendingUp} />
               <StatCard title="Avg Rating" value={avgRating} icon={Star} />
-              <StatCard title="Unanswered" value={Math.max(0, unanswered)} icon={MessageSquare} />
+              <StatCard title="Unanswered" value={unanswered} icon={MessageSquare} />
             </div>
+
+            {/* Review Trend Chart */}
+            {reviews.length > 0 && (
+              <div className="glass-card p-6 mb-8">
+                <h2 className="text-lg font-display font-bold text-foreground mb-4">Review Trend (12 months)</h2>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="vendorGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                      <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Area type="monotone" dataKey="reviews" stroke="hsl(var(--primary))" fill="url(#vendorGrad)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
 
             <h2 className="text-lg font-display font-bold text-foreground mb-4">Your Products</h2>
             <div className="grid md:grid-cols-2 gap-4">
@@ -103,13 +150,18 @@ export default function VendorDashboard() {
                     <h3 className="font-semibold text-foreground truncate">{c.products?.name}</h3>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                       <span className="flex items-center gap-1"><Star className="h-3 w-3" />{c.products?.avg_rating || 0}</span>
-                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{c.products?.total_reviews || 0} reviews</span>
+                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{c.products?.total_reviews || 0}</span>
                       <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{c.products?.view_count || 0}</span>
                     </div>
                   </div>
-                  <Link to={`/product/${c.products?.slug}`}>
-                    <Button variant="outline" size="sm">View</Button>
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link to={`/vendor/products/${c.products?.id}/edit`}>
+                      <Button variant="ghost" size="sm" className="gap-1"><Pencil className="h-3.5 w-3.5" /></Button>
+                    </Link>
+                    <Link to={`/product/${c.products?.slug}`}>
+                      <Button variant="outline" size="sm">View</Button>
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
