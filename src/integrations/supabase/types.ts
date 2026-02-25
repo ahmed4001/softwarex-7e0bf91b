@@ -648,10 +648,14 @@ export type Database = {
       pages: {
         Row: {
           body: string | null
+          canonical_url: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
+          og_image: string | null
+          robots: string | null
           seo_description: string | null
+          seo_keywords: string | null
           seo_title: string | null
           show_in_footer: boolean | null
           show_in_nav: boolean | null
@@ -662,10 +666,14 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          canonical_url?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          og_image?: string | null
+          robots?: string | null
           seo_description?: string | null
+          seo_keywords?: string | null
           seo_title?: string | null
           show_in_footer?: boolean | null
           show_in_nav?: boolean | null
@@ -676,10 +684,14 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          canonical_url?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          og_image?: string | null
+          robots?: string | null
           seo_description?: string | null
+          seo_keywords?: string | null
           seo_title?: string | null
           show_in_footer?: boolean | null
           show_in_nav?: boolean | null
