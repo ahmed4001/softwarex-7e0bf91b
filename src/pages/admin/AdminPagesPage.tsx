@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -15,6 +16,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Plus, Pencil, Trash2, FileText, Search, Eye, Globe } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +46,10 @@ const EMPTY_PAGE = {
   show_in_footer: false,
   seo_title: "",
   seo_description: "",
+  seo_keywords: "",
+  canonical_url: "",
+  og_image: "",
+  robots: "index, follow",
 };
 
 export default function AdminPagesPage() {
@@ -74,6 +82,10 @@ export default function AdminPagesPage() {
         show_in_footer: page.show_in_footer,
         seo_title: page.seo_title || null,
         seo_description: page.seo_description || null,
+        seo_keywords: page.seo_keywords || null,
+        canonical_url: page.canonical_url || null,
+        og_image: page.og_image || null,
+        robots: page.robots || "index, follow",
       };
       if (page.id) {
         const { error } = await supabase.from("pages").update(payload).eq("id", page.id);
@@ -116,6 +128,10 @@ export default function AdminPagesPage() {
         show_in_footer: page.show_in_footer ?? false,
         seo_title: page.seo_title || "",
         seo_description: page.seo_description || "",
+        seo_keywords: (page as any).seo_keywords || "",
+        canonical_url: (page as any).canonical_url || "",
+        og_image: (page as any).og_image || "",
+        robots: (page as any).robots || "index, follow",
       });
     } else {
       setEditingPage({ ...EMPTY_PAGE });
@@ -194,50 +210,129 @@ export default function AdminPagesPage() {
 
       {/* Editor Dialog */}
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPage.id ? "Edit Page" : "New Page"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Title</Label>
-                <Input value={editingPage.title} onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })} />
+          <Tabs defaultValue="content" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="seo">SEO & Meta</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="content" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Title</Label>
+                  <Input value={editingPage.title} onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Slug</Label>
+                  <Input value={editingPage.slug} onChange={(e) => setEditingPage({ ...editingPage, slug: e.target.value })} placeholder="auto-generated" />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Slug</Label>
-                <Input value={editingPage.slug} onChange={(e) => setEditingPage({ ...editingPage, slug: e.target.value })} placeholder="auto-generated" />
+                <Label>Body (HTML)</Label>
+                <Textarea value={editingPage.body} onChange={(e) => setEditingPage({ ...editingPage, body: e.target.value })} rows={10} placeholder="Page content..." />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Body (HTML)</Label>
-              <Textarea value={editingPage.body} onChange={(e) => setEditingPage({ ...editingPage, body: e.target.value })} rows={10} placeholder="Page content..." />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            </TabsContent>
+
+            <TabsContent value="seo" className="space-y-4">
               <div className="space-y-1.5">
                 <Label>SEO Title</Label>
-                <Input value={editingPage.seo_title} onChange={(e) => setEditingPage({ ...editingPage, seo_title: e.target.value })} />
+                <Input value={editingPage.seo_title} onChange={(e) => setEditingPage({ ...editingPage, seo_title: e.target.value })} placeholder="Title for search engines" />
+                <p className={`text-xs ${(editingPage.seo_title || editingPage.title).length > 60 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {(editingPage.seo_title || editingPage.title).length}/60 characters
+                </p>
               </div>
               <div className="space-y-1.5">
-                <Label>SEO Description</Label>
-                <Input value={editingPage.seo_description} onChange={(e) => setEditingPage({ ...editingPage, seo_description: e.target.value })} />
+                <Label>Meta Description</Label>
+                <Textarea value={editingPage.seo_description} onChange={(e) => setEditingPage({ ...editingPage, seo_description: e.target.value })} rows={3} placeholder="Description for search results..." />
+                <p className={`text-xs ${editingPage.seo_description.length > 160 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {editingPage.seo_description.length}/160 characters
+                </p>
               </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Switch checked={editingPage.is_active} onCheckedChange={(v) => setEditingPage({ ...editingPage, is_active: v })} />
-                <Label>Active</Label>
+              <div className="space-y-1.5">
+                <Label>SEO Keywords</Label>
+                <Input value={editingPage.seo_keywords} onChange={(e) => setEditingPage({ ...editingPage, seo_keywords: e.target.value })} placeholder="keyword1, keyword2, keyword3" />
               </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={editingPage.show_in_nav} onCheckedChange={(v) => setEditingPage({ ...editingPage, show_in_nav: v })} />
-                <Label>Show in Nav</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Canonical URL</Label>
+                  <Input value={editingPage.canonical_url} onChange={(e) => setEditingPage({ ...editingPage, canonical_url: e.target.value })} placeholder="https://... (leave empty for default)" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>OG Image URL</Label>
+                  <Input value={editingPage.og_image} onChange={(e) => setEditingPage({ ...editingPage, og_image: e.target.value })} placeholder="https://... (social share image)" />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={editingPage.show_in_footer} onCheckedChange={(v) => setEditingPage({ ...editingPage, show_in_footer: v })} />
-                <Label>Show in Footer</Label>
+              <div className="space-y-1.5">
+                <Label>Robots Directive</Label>
+                <Select value={editingPage.robots} onValueChange={(v) => setEditingPage({ ...editingPage, robots: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="index, follow">Index, Follow (default)</SelectItem>
+                    <SelectItem value="noindex, follow">No Index, Follow</SelectItem>
+                    <SelectItem value="index, nofollow">Index, No Follow</SelectItem>
+                    <SelectItem value="noindex, nofollow">No Index, No Follow</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-          </div>
+
+              {/* Google Search Preview */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Search Preview</p>
+                <div className="rounded-xl border border-border p-4 bg-muted/30 space-y-1">
+                  <p className="text-sm font-medium text-primary truncate">
+                    {editingPage.seo_title || editingPage.title || "Page Title"} | SoftwareHub
+                  </p>
+                  <p className="text-xs text-emerald-700 truncate">
+                    yoursite.com › {editingPage.slug || "page-slug"}
+                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {editingPage.seo_description || "Page description will appear here..."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Social Preview */}
+              {editingPage.og_image && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Social Share Preview</p>
+                  <div className="rounded-xl border border-border overflow-hidden max-w-sm bg-muted/30">
+                    <div className="aspect-[1.91/1] bg-muted overflow-hidden">
+                      <img src={editingPage.og_image} alt="OG Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-3 space-y-0.5">
+                      <p className="text-[11px] text-muted-foreground uppercase">yoursite.com</p>
+                      <p className="text-sm font-semibold text-foreground line-clamp-1">{editingPage.seo_title || editingPage.title || "Page Title"}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{editingPage.seo_description || "Description..."}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="settings" className="space-y-4">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch checked={editingPage.is_active} onCheckedChange={(v) => setEditingPage({ ...editingPage, is_active: v })} />
+                  <Label>Active</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={editingPage.show_in_nav} onCheckedChange={(v) => setEditingPage({ ...editingPage, show_in_nav: v })} />
+                  <Label>Show in Nav</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={editingPage.show_in_footer} onCheckedChange={(v) => setEditingPage({ ...editingPage, show_in_footer: v })} />
+                  <Label>Show in Footer</Label>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
             <Button onClick={() => saveMutation.mutate(editingPage)} disabled={!editingPage.title || saveMutation.isPending}>

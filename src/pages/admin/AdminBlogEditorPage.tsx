@@ -414,6 +414,51 @@ export default function AdminBlogEditorPage() {
             <div className="product-card space-y-5">
               <h2 className="text-sm font-semibold text-foreground">Search Engine Optimization</h2>
 
+              {/* Focus Keyword */}
+              <div className="space-y-2">
+                <Label htmlFor="focus_keyword">Focus Keyword</Label>
+                <Input
+                  id="focus_keyword"
+                  value={form.seo_keywords.split(",")[0]?.trim() || ""}
+                  onChange={(e) => {
+                    const rest = form.seo_keywords.split(",").slice(1).map(k => k.trim()).filter(Boolean);
+                    updateField("seo_keywords", [e.target.value.trim(), ...rest].filter(Boolean).join(", "));
+                  }}
+                  placeholder="Primary keyword for this post"
+                />
+                {form.seo_keywords.split(",")[0]?.trim() && (() => {
+                  const keyword = form.seo_keywords.split(",")[0].trim().toLowerCase();
+                  const titleHas = (form.seo_title || form.title).toLowerCase().includes(keyword);
+                  const descHas = form.seo_description.toLowerCase().includes(keyword);
+                  const slugHas = form.slug.toLowerCase().includes(keyword.replace(/\s+/g, "-"));
+                  const bodyHas = form.body.toLowerCase().includes(keyword);
+                  const score = [titleHas, descHas, slugHas, bodyHas].filter(Boolean).length;
+                  return (
+                    <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-1.5">
+                      <p className="text-xs font-semibold text-foreground">Keyword Analysis — "{keyword}"</p>
+                      <div className="grid grid-cols-2 gap-1.5 text-xs">
+                        <span className={titleHas ? "text-emerald-600" : "text-destructive"}>
+                          {titleHas ? "✓" : "✗"} In SEO title
+                        </span>
+                        <span className={descHas ? "text-emerald-600" : "text-destructive"}>
+                          {descHas ? "✓" : "✗"} In meta description
+                        </span>
+                        <span className={slugHas ? "text-emerald-600" : "text-destructive"}>
+                          {slugHas ? "✓" : "✗"} In URL slug
+                        </span>
+                        <span className={bodyHas ? "text-emerald-600" : "text-destructive"}>
+                          {bodyHas ? "✓" : "✗"} In body content
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden mt-1">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${score * 25}%`, backgroundColor: score >= 3 ? "hsl(var(--primary))" : score >= 2 ? "hsl(45, 90%, 50%)" : "hsl(var(--destructive))" }} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{score}/4 checks passed</p>
+                    </div>
+                  );
+                })()}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="seo_title">SEO Title</Label>
                 <Input
@@ -422,8 +467,9 @@ export default function AdminBlogEditorPage() {
                   onChange={(e) => updateField("seo_title", e.target.value)}
                   placeholder="Title for search engines (defaults to post title)"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className={`text-xs ${(form.seo_title || form.title).length > 60 ? "text-destructive" : "text-muted-foreground"}`}>
                   {(form.seo_title || form.title).length}/60 characters
+                  {(form.seo_title || form.title).length > 60 && " — too long, may be truncated"}
                 </p>
               </div>
 
@@ -436,53 +482,75 @@ export default function AdminBlogEditorPage() {
                   placeholder="Description for search results..."
                   rows={3}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className={`text-xs ${form.seo_description.length > 160 ? "text-destructive" : "text-muted-foreground"}`}>
                   {form.seo_description.length}/160 characters
+                  {form.seo_description.length > 160 && " — too long, may be truncated"}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="seo_keywords">Keywords</Label>
+                <Label htmlFor="seo_keywords">All Keywords</Label>
                 <Input
                   id="seo_keywords"
                   value={form.seo_keywords}
                   onChange={(e) => updateField("seo_keywords", e.target.value)}
                   placeholder="keyword1, keyword2, keyword3"
                 />
+                <p className="text-xs text-muted-foreground">Comma-separated. First keyword is used for focus analysis above.</p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="canonical_url">Canonical URL</Label>
-                <Input
-                  id="canonical_url"
-                  value={form.canonical_url}
-                  onChange={(e) => updateField("canonical_url", e.target.value)}
-                  placeholder="https://... (leave empty to use default)"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="canonical_url">Canonical URL</Label>
+                  <Input
+                    id="canonical_url"
+                    value={form.canonical_url}
+                    onChange={(e) => updateField("canonical_url", e.target.value)}
+                    placeholder="https://... (leave empty to use default)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="og_image">OG Image URL</Label>
+                  <Input
+                    id="og_image"
+                    value={form.og_image}
+                    onChange={(e) => updateField("og_image", e.target.value)}
+                    placeholder="https://... (social share image)"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="og_image">OG Image URL</Label>
-                <Input
-                  id="og_image"
-                  value={form.og_image}
-                  onChange={(e) => updateField("og_image", e.target.value)}
-                  placeholder="https://... (social share image)"
-                />
+              {/* Google Search Preview */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Google Search Preview</p>
+                <div className="rounded-xl border border-border p-4 bg-muted/30 space-y-1">
+                  <p className="text-sm font-medium text-primary truncate">
+                    {form.seo_title || form.title || "Post Title"} | SoftwareHub
+                  </p>
+                  <p className="text-xs text-emerald-700 truncate">
+                    yoursite.com › blog › {form.slug || "post-slug"}
+                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {form.seo_description || form.excerpt || "Post description will appear here..."}
+                  </p>
+                </div>
               </div>
 
-              {/* Preview */}
-              <div className="rounded-xl border border-border p-4 bg-muted/30 space-y-1">
-                <p className="text-xs text-muted-foreground mb-2">Search Preview</p>
-                <p className="text-sm font-medium text-primary truncate">
-                  {form.seo_title || form.title || "Post Title"}
-                </p>
-                <p className="text-xs text-primary/70 truncate">
-                  yoursite.com/blog/{form.slug || "post-slug"}
-                </p>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {form.seo_description || form.excerpt || "Post description will appear here..."}
-                </p>
+              {/* Social Share Preview */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Social Share Preview</p>
+                <div className="rounded-xl border border-border overflow-hidden max-w-sm bg-muted/30">
+                  {(form.og_image || form.featured_image) && (
+                    <div className="aspect-[1.91/1] bg-muted overflow-hidden">
+                      <img src={form.og_image || form.featured_image} alt="OG Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-3 space-y-0.5">
+                    <p className="text-[11px] text-muted-foreground uppercase">yoursite.com</p>
+                    <p className="text-sm font-semibold text-foreground line-clamp-1">{form.seo_title || form.title || "Post Title"}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{form.seo_description || form.excerpt || "Description..."}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
