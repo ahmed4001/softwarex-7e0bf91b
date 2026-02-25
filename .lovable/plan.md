@@ -1,31 +1,20 @@
 
 
-## Add Tag Filter to Public Blog Page
+## Fix Sponsored "AD" Badge Overlapping with Bookmark Button
 
-### What it does
-Adds a horizontal row of clickable tag pills above the blog post grid. Visitors can click a tag to show only posts with that tag, or click "All" to reset.
+**Problem**: In `ProductCard.tsx`, both the bookmark button (line 40) and the "AD" badge (line 52) are positioned at `absolute top-3 right-3`. When a logged-in user views a sponsored product, these two elements stack on top of each other.
 
-### How it works
-1. After fetching all published posts, extract every unique tag from all posts' `tags` JSON arrays
-2. Display them as clickable `Badge` components in a scrollable row
-3. Track the selected tag in local state (also sync to URL search params like `?tag=AI` for shareability)
-4. Filter the posts array client-side before rendering the grid
-5. Show the active tag highlighted with the `default` badge variant, inactive ones as `outline`
+**Solution**: Shift the "AD" badge position so it doesn't conflict with the bookmark button. When a user is logged in, the bookmark occupies the top-right corner, so the "AD" badge should move to the top-left or shift down.
 
-### Technical details
+### Changes
 
-**File: `src/pages/BlogPage.tsx`** (only file changed)
+**File: `src/components/ProductCard.tsx`**
 
-- Import `useSearchParams` from `react-router-dom` and `useMemo`/`useState` from React
-- After `posts` are fetched, compute `allTags` with `useMemo` -- iterate all posts, collect tags from the JSONB arrays, deduplicate, and sort alphabetically
-- Read/write `?tag=` search param for the active filter (enables shareable filtered URLs)
-- Add a filter bar between the subtitle and the grid:
-  - "All" pill (resets filter)
-  - One pill per unique tag
-  - Active tag uses `variant="default"`, others use `variant="outline"`
-  - Wrapped in a flex container with `overflow-x-auto` for horizontal scroll on mobile
-- Filter `posts` array: if a tag is selected, only show posts whose `tags` array includes that tag
-- Update the empty state to distinguish "no posts at all" vs "no posts matching this tag"
+1. Move the "AD" badge from `top-3 right-3` to `top-3 left-3` (top-left corner of the card), which avoids any conflict with the bookmark button regardless of login state. This also visually separates the two elements cleanly.
 
-No database changes needed -- tags are already stored as JSONB on `blog_posts` and fetched in the existing query.
+Alternatively, we could conditionally offset the AD badge when the user is logged in, but a consistent top-left placement is simpler and more predictable.
 
+### Technical Details
+
+- Change line 52: `className="absolute top-3 right-3 ..."` to `className="absolute top-3 left-3 ..."`
+- Single line change, no other files affected
