@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Link } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, Eye } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -31,6 +32,15 @@ export default function AdminProductsPage() {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); toast.success("Updated"); },
     onError: () => toast.error("Failed to update"),
+  });
+
+  const tierMutation = useMutation({
+    mutationFn: async ({ id, tier }: { id: string; tier: string | null }) => {
+      const { error } = await supabase.from("products").update({ sponsor_tier: tier as any }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); toast.success("Tier updated"); },
+    onError: () => toast.error("Failed to update tier"),
   });
 
   return (
@@ -88,8 +98,22 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-3 text-center">
                       <Switch checked={p.is_featured} onCheckedChange={(v) => toggleMutation.mutate({ id: p.id, field: "is_featured", value: v })} />
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <Switch checked={p.is_sponsored} onCheckedChange={(v) => toggleMutation.mutate({ id: p.id, field: "is_sponsored", value: v })} />
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <Switch checked={p.is_sponsored} onCheckedChange={(v) => toggleMutation.mutate({ id: p.id, field: "is_sponsored", value: v })} />
+                        {p.is_sponsored && (
+                          <Select value={p.sponsor_tier || ""} onValueChange={(v) => tierMutation.mutate({ id: p.id, tier: v || null })}>
+                            <SelectTrigger className="h-7 w-24 text-xs">
+                              <SelectValue placeholder="Tier" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bronze">Bronze</SelectItem>
+                              <SelectItem value="silver">Silver</SelectItem>
+                              <SelectItem value="gold">Gold</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
