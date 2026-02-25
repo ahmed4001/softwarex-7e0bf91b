@@ -102,12 +102,23 @@ export default function ProductDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("reviews")
-        .select("*, profiles(name, avatar_url)")
+        .select("*")
         .eq("product_id", product!.id)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(10);
-      return data || [];
+      
+      if (!data || data.length === 0) return [];
+      
+      // Fetch reviewer profiles separately
+      const userIds = [...new Set(data.map((r: any) => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+      
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      return data.map((r: any) => ({ ...r, profiles: profileMap.get(r.user_id) || null }));
     },
     enabled: !!product?.id,
   });
@@ -133,9 +144,19 @@ export default function ProductDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("vendor_responses")
-        .select("*, profiles!vendor_responses_user_id_fkey(name)")
+        .select("*")
         .in("review_id", reviewIds);
-      return data || [];
+      
+      if (!data || data.length === 0) return [];
+      
+      const userIds = [...new Set(data.map((r: any) => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", userIds);
+      
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      return data.map((r: any) => ({ ...r, profiles: profileMap.get(r.user_id) || null }));
     },
     enabled: reviewIds.length > 0,
   });
