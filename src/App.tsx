@@ -98,8 +98,10 @@ function AppContent() {
           <Route index element={<ErrorBoundary><AdminDashboard /></ErrorBoundary>} />
           <Route path="products" element={<ErrorBoundary><AdminProductsPage /></ErrorBoundary>} />
           <Route path="products/new" element={<ErrorBoundary><AdminProductEditorPage /></ErrorBoundary>} />
+          <Route path="products/sponsored" element={<ErrorBoundary><AdminProductsPage /></ErrorBoundary>} />
           <Route path="products/:id/edit" element={<ErrorBoundary><AdminProductEditorPage /></ErrorBoundary>} />
           <Route path="categories" element={<ErrorBoundary><AdminCategoriesPage /></ErrorBoundary>} />
+          <Route path="categories/new" element={<ErrorBoundary><AdminCategoriesPage /></ErrorBoundary>} />
           <Route path="reviews" element={<ErrorBoundary><AdminReviewsPage /></ErrorBoundary>} />
           <Route path="reviews/pending" element={<ErrorBoundary><AdminReviewsPage /></ErrorBoundary>} />
           <Route path="reviews/flagged" element={<ErrorBoundary><AdminReviewsPage /></ErrorBoundary>} />
@@ -124,6 +126,7 @@ function AppContent() {
           <Route path="broadcast" element={<ErrorBoundary><AdminBroadcastPage /></ErrorBoundary>} />
           <Route path="import-export" element={<ErrorBoundary><AdminProductImportExportPage /></ErrorBoundary>} />
           <Route path="sentiment" element={<ErrorBoundary><AdminSentimentPage /></ErrorBoundary>} />
+          <Route path="emails" element={<ErrorBoundary><AdminBrevoPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}
