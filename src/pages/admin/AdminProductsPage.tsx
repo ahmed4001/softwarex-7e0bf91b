@@ -15,6 +15,7 @@ import { Plus, Search, Pencil, Trash2, Eye, CheckSquare, Square, ImageDown, Load
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
@@ -22,7 +23,8 @@ export default function AdminProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFetchingLogos, setIsFetchingLogos] = useState(false);
   const [isFetchingScreenshots, setIsFetchingScreenshots] = useState(false);
-  const [fetchProgress, setFetchProgress] = useState({ processed: 0, succeeded: 0, failed: 0 });
+  const [fetchProgress, setFetchProgress] = useState({ processed: 0, succeeded: 0, failed: 0, total: 0 });
+  const [activeFetchMode, setActiveFetchMode] = useState<"logo" | "screenshot" | null>(null);
   const abortRef = useRef(false);
   const queryClient = useQueryClient();
 
@@ -74,8 +76,25 @@ export default function AdminProductsPage() {
   const bulkFetchMedia = useCallback(async (mode: "logo" | "screenshot" | "both") => {
     const setLoading = mode === "screenshot" ? setIsFetchingScreenshots : setIsFetchingLogos;
     setLoading(true);
+    setActiveFetchMode(mode === "screenshot" ? "screenshot" : "logo");
     abortRef.current = false;
-    setFetchProgress({ processed: 0, succeeded: 0, failed: 0 });
+
+    // Get total count of products needing processing
+    let countQuery = supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true)
+      .not("website_url", "is", null)
+      .neq("website_url", "");
+    if (mode === "logo" || mode === "both") {
+      countQuery = countQuery.or("logo_url.ilike.%clearbit%,logo_url.is.null,logo_url.eq.");
+    } else {
+      countQuery = countQuery.or("screenshots.is.null,screenshots.eq.[]");
+    }
+    const { count: totalCount } = await countQuery;
+    const total = totalCount || 0;
+
+    setFetchProgress({ processed: 0, succeeded: 0, failed: 0, total });
     let offset = 0;
     const batchSize = mode === "screenshot" ? 5 : 20;
     let totalProcessed = 0, totalSucceeded = 0, totalFailed = 0;
@@ -89,7 +108,7 @@ export default function AdminProductsPage() {
         totalProcessed += data.processed || 0;
         totalSucceeded += data.succeeded || 0;
         totalFailed += data.failed || 0;
-        setFetchProgress({ processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed });
+        setFetchProgress({ processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, total });
 
         if (data.done || data.processed === 0) break;
         offset = data.nextOffset;
@@ -101,6 +120,7 @@ export default function AdminProductsPage() {
       toast.error(`Fetch stopped: ${e.message || "Unknown error"}`);
     } finally {
       setLoading(false);
+      setActiveFetchMode(null);
     }
   }, [queryClient]);
 
@@ -192,6 +212,24 @@ export default function AdminProductsPage() {
             <Link to="/admin/products/new"><Button className="gap-1"><Plus className="h-4 w-4" />Add Product</Button></Link>
           </div>
         </div>
+
+        {activeFetchMode && fetchProgress.total > 0 && (
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">
+                {activeFetchMode === "screenshot" ? "Fetching Screenshots" : "Fetching Logos"}
+              </span>
+              <span className="text-muted-foreground">
+                {fetchProgress.processed} / {fetchProgress.total} processed · {fetchProgress.total - fetchProgress.processed} remaining
+              </span>
+            </div>
+            <Progress value={fetchProgress.total > 0 ? (fetchProgress.processed / fetchProgress.total) * 100 : 0} className="h-2" />
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span className="text-primary">✓ {fetchProgress.succeeded} succeeded</span>
+              <span className="text-destructive">✗ {fetchProgress.failed} failed</span>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <div className="relative max-w-md flex-1">
