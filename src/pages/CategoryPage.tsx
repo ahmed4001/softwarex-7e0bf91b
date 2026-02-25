@@ -55,6 +55,7 @@ export default function CategoryPage() {
     queryFn: async () => {
       let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
+      query = query.order("is_sponsored", { ascending: false });
       if (sort === "rating") query = query.order("avg_rating", { ascending: false });
       else if (sort === "reviews") query = query.order("total_reviews", { ascending: false });
       else if (sort === "newest") query = query.order("created_at", { ascending: false });
