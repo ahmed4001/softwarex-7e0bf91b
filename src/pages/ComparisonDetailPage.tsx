@@ -53,7 +53,15 @@ export default function ComparisonDetailPage() {
   const consB = Array.isArray(comparison.cons_b) ? comparison.cons_b : [];
   const isWinnerA = comparison.winner_product_id === productA?.id;
 
-  if (!productA || !productB) return <div className="container py-20 text-center text-muted-foreground">{t("comparisonDetail.loadingProducts")}</div>;
+  if (!productA || !productB) return (
+    <div className="container py-20 text-center">
+      <h1 className="text-2xl font-bold text-foreground mb-4">{comparison.title || "Comparison"}</h1>
+      <p className="text-muted-foreground mb-6">One or both products in this comparison are currently unavailable.</p>
+      <Link to="/compare">
+        <Button variant="outline">{t("nav.compare")} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+      </Link>
+    </div>
+  );
 
   return (
     <>
