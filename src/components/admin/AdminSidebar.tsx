@@ -44,6 +44,7 @@ const sidebarItems = [
   },
   { label: "Media Library", icon: Image, to: "/admin/media" },
   { label: "Advertisements", icon: Megaphone, to: "/admin/ads" },
+  { label: "Comparisons", icon: ArrowLeftRight, to: "/admin/comparisons" },
   { label: "Submissions", icon: MessageSquare, to: "/admin/submissions" },
   { label: "Email Templates", icon: Mail, to: "/admin/emails" },
   { label: "Analytics", icon: BarChart3, to: "/admin/analytics" },
