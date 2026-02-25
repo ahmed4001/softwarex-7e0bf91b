@@ -41,12 +41,14 @@ const AdminBrevoPage = lazy(() => import("./pages/admin/AdminBrevoPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
 const AdminAIPage = lazy(() => import("./pages/admin/AdminAIPage"));
 const AdminProductEditorPage = lazy(() => import("./pages/admin/AdminProductEditorPage"));
+const AdminSubmissionsPage = lazy(() => import("./pages/admin/AdminSubmissionsPage"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorProductsPage = lazy(() => import("./pages/vendor/VendorProductsPage"));
 const VendorReviewsPage = lazy(() => import("./pages/vendor/VendorReviewsPage"));
 const VendorClaimPage = lazy(() => import("./pages/vendor/VendorClaimPage"));
 const VendorAnalyticsPage = lazy(() => import("./pages/vendor/VendorAnalyticsPage"));
+const VendorProductEditorPage = lazy(() => import("./pages/vendor/VendorProductEditorPage"));
 
 const queryClient = new QueryClient();
 
@@ -95,6 +97,7 @@ function AppContent() {
           <Route path="brevo" element={<ErrorBoundary><AdminBrevoPage /></ErrorBoundary>} />
           <Route path="analytics" element={<ErrorBoundary><AdminAnalyticsPage /></ErrorBoundary>} />
           <Route path="ai" element={<ErrorBoundary><AdminAIPage /></ErrorBoundary>} />
+          <Route path="submissions" element={<ErrorBoundary><AdminSubmissionsPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}
@@ -104,6 +107,7 @@ function AppContent() {
           <Route path="reviews" element={<ErrorBoundary><VendorReviewsPage /></ErrorBoundary>} />
           <Route path="claim" element={<ErrorBoundary><VendorClaimPage /></ErrorBoundary>} />
           <Route path="analytics" element={<ErrorBoundary><VendorAnalyticsPage /></ErrorBoundary>} />
+          <Route path="products/:productId/edit" element={<ErrorBoundary><VendorProductEditorPage /></ErrorBoundary>} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
