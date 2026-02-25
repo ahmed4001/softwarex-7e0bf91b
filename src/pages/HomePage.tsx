@@ -26,6 +26,7 @@ import { SocialProofBanner } from "@/components/home/SocialProofBanner";
 import { VendorCTASection } from "@/components/home/VendorCTASection";
 import { MostPopularCategoriesSection } from "@/components/home/MostPopularCategoriesSection";
 import { ResearchDirectorySection } from "@/components/home/ResearchDirectorySection";
+import { ProductShowcaseSection } from "@/components/home/ProductShowcaseSection";
 
 const SITE_URL = "https://softwarehub.com";
 
@@ -193,6 +194,9 @@ export default function HomePage() {
         <HeroSection />
         <StatsSection stats={stats} />
         <TrustedBySection />
+
+        {/* Real Product Screenshots Showcase */}
+        <ProductShowcaseSection />
 
         {/* Most Popular Categories - G2 style */}
         <MostPopularCategoriesSection />
