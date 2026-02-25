@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, Eye, CheckSquare, Square, ImageDown, Loader2, Monitor, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Eye, CheckSquare, Square, ImageDown, Loader2, Monitor } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,8 +20,6 @@ import { Progress } from "@/components/ui/progress";
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
   const [mediaFilter, setMediaFilter] = useState<"all" | "missing_logo" | "missing_screenshot">("all");
-  const [page, setPage] = useState(0);
-  const PAGE_SIZE = 50;
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFetchingLogos, setIsFetchingLogos] = useState(false);
@@ -127,25 +125,20 @@ export default function AdminProductsPage() {
     }
   }, [queryClient]);
 
-  const { data: queryResult, isLoading } = useQuery({
-    queryKey: ["admin-products", search, mediaFilter, page],
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["admin-products", search, mediaFilter],
     queryFn: async () => {
-      let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)", { count: "exact" }).order("created_at", { ascending: false });
+      let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
       if (mediaFilter === "missing_logo") {
         query = query.or("logo_url.is.null,logo_url.eq.,logo_url.ilike.%clearbit%");
       } else if (mediaFilter === "missing_screenshot") {
         query = query.or("screenshots.is.null,screenshots.eq.[]");
       }
-      const from = page * PAGE_SIZE;
-      const { data, count } = await query.range(from, from + PAGE_SIZE - 1);
-      return { products: data || [], totalCount: count || 0 };
+      const { data } = await query.limit(50);
+      return data || [];
     },
   });
-
-  const products = queryResult?.products || [];
-  const totalCount = queryResult?.totalCount || 0;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: string; value: boolean }) => {
@@ -185,7 +178,7 @@ export default function AdminProductsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Products</h1>
-            <p className="text-muted-foreground">{totalCount} products total</p>
+            <p className="text-muted-foreground">{products?.length || 0} products total</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -247,9 +240,9 @@ export default function AdminProductsPage() {
         <div className="flex items-center gap-3">
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search products..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="pl-10" />
+            <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
           </div>
-          <Select value={mediaFilter} onValueChange={(v) => { setMediaFilter(v as any); setPage(0); }}>
+          <Select value={mediaFilter} onValueChange={(v) => setMediaFilter(v as any)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
@@ -289,7 +282,7 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                  {products?.map((p: any) => (
+                {products?.map((p: any) => (
                   <tr key={p.id} className="admin-table-row">
                     <td className="px-4 py-3">
                       <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
@@ -347,22 +340,6 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">Page {page + 1} of {totalPages}</span>
-              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-                Next <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
