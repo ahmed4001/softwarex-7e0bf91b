@@ -16,9 +16,13 @@ import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const PAGE_SIZE = 50;
 
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
   const [mediaFilter, setMediaFilter] = useState<"all" | "missing_logo" | "missing_screenshot">("all");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -125,20 +129,30 @@ export default function AdminProductsPage() {
     }
   }, [queryClient]);
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["admin-products", search, mediaFilter],
+  // Reset page when filters change
+  const handleSearch = (val: string) => { setSearch(val); setPage(0); };
+  const handleMediaFilter = (val: "all" | "missing_logo" | "missing_screenshot") => { setMediaFilter(val); setPage(0); };
+
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: ["admin-products", search, mediaFilter, page],
     queryFn: async () => {
+      let countQuery = supabase.from("products").select("*", { count: "exact", head: true });
+      if (search) countQuery = countQuery.ilike("name", `%${search}%`);
+      if (mediaFilter === "missing_logo") countQuery = countQuery.or("logo_url.is.null,logo_url.eq.,logo_url.ilike.%clearbit%");
+      else if (mediaFilter === "missing_screenshot") countQuery = countQuery.or("screenshots.is.null,screenshots.eq.[]");
+      const { count } = await countQuery;
+
       let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
-      if (mediaFilter === "missing_logo") {
-        query = query.or("logo_url.is.null,logo_url.eq.,logo_url.ilike.%clearbit%");
-      } else if (mediaFilter === "missing_screenshot") {
-        query = query.or("screenshots.is.null,screenshots.eq.[]");
-      }
-      const { data } = await query.limit(50);
-      return data || [];
+      if (mediaFilter === "missing_logo") query = query.or("logo_url.is.null,logo_url.eq.,logo_url.ilike.%clearbit%");
+      else if (mediaFilter === "missing_screenshot") query = query.or("screenshots.is.null,screenshots.eq.[]");
+      const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      return { products: data || [], total: count || 0 };
     },
   });
+
+  const products = productsData?.products;
+  const totalPages = Math.ceil((productsData?.total || 0) / PAGE_SIZE);
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: string; value: boolean }) => {
@@ -178,7 +192,7 @@ export default function AdminProductsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Products</h1>
-            <p className="text-muted-foreground">{products?.length || 0} products total</p>
+            <p className="text-muted-foreground">{productsData?.total || 0} products total</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -240,9 +254,9 @@ export default function AdminProductsPage() {
         <div className="flex items-center gap-3">
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+            <Input placeholder="Search products..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-10" />
           </div>
-          <Select value={mediaFilter} onValueChange={(v) => setMediaFilter(v as any)}>
+          <Select value={mediaFilter} onValueChange={(v) => handleMediaFilter(v as any)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
@@ -339,6 +353,8 @@ export default function AdminProductsPage() {
             </table>
           </div>
         </div>
+
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-4" />
 
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <AlertDialogContent>
