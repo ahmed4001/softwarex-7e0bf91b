@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award } from "lucide-react";
 import { BadgeShowcase } from "@/components/dashboard/BadgeShowcase";
+import { StreakTracker } from "@/components/dashboard/StreakTracker";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -54,6 +55,10 @@ export default function DashboardPage() {
               <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">{t("dashboard.title")}</h1>
               <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
             </motion.div>
+
+            <div className="mb-8">
+              <StreakTracker userId={user.id} />
+            </div>
 
             <Tabs defaultValue="saved" className="space-y-6">
               <TabsList className="bg-muted/50">
