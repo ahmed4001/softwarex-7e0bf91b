@@ -51,7 +51,7 @@ export function MostPopularCategoriesSection() {
       if (categories && activeCat) {
         const { data } = await supabase
           .from("products")
-          .select("id, slug, name, logo_url, avg_rating, total_reviews")
+          .select("id, slug, name, logo_url, avg_rating, total_reviews, screenshots")
           .eq("category_id", (activeCat as any).id)
           .eq("is_active", true)
           .order("avg_rating", { ascending: false })
@@ -114,30 +114,56 @@ export function MostPopularCategoriesSection() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {products && products.length > 0 ? (
-                products.map((p: any, i: number) => (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                  >
-                    <Link
-                      to={`/product/${p.slug}`}
-                      className="glass-card p-5 text-center group block"
+                products.map((p: any, i: number) => {
+                  const screenshots = Array.isArray(p.screenshots) ? p.screenshots : [];
+                  const firstScreenshot = screenshots.find((s: any) => typeof s === "string" ? s : s?.url);
+                  const screenshotUrl = typeof firstScreenshot === "string" ? firstScreenshot : firstScreenshot?.url;
+
+                  return (
+                    <motion.div
+                      key={p.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
                     >
-                      <p className="font-semibold text-foreground text-sm mb-1 group-hover:text-primary transition-colors">
-                        {p.name}
-                      </p>
-                      <div className="flex items-center justify-center gap-1.5 mb-4">
-                        <StarRating rating={Number(p.avg_rating) || 0} size="sm" />
-                        <span className="text-xs text-muted-foreground">
-                          ({p.total_reviews?.toLocaleString() || 0})
-                        </span>
-                      </div>
-                      <ProductLogo name={p.name} logoUrl={p.logo_url} size="lg" className="mx-auto" />
-                    </Link>
-                  </motion.div>
-                ))
+                      <Link
+                        to={`/product/${p.slug}`}
+                        className="glass-card overflow-hidden group block"
+                      >
+                        {/* Screenshot area */}
+                        <div className="aspect-[16/10] bg-muted relative overflow-hidden">
+                          {screenshotUrl ? (
+                            <img
+                              src={screenshotUrl}
+                              alt={`${p.name} screenshot`}
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <ProductLogo name={p.name} logoUrl={p.logo_url} size="lg" />
+                            </div>
+                          )}
+                        </div>
+                        {/* Info */}
+                        <div className="p-4 flex items-center gap-3">
+                          <ProductLogo name={p.name} logoUrl={p.logo_url} size="xs" />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                              {p.name}
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <StarRating rating={Number(p.avg_rating) || 0} size="sm" />
+                              <span className="text-xs text-muted-foreground">
+                                ({p.total_reviews?.toLocaleString() || 0})
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })
               ) : (
                 // Placeholder cards when no products
                 Array.from({ length: 6 }).map((_, i) => (
