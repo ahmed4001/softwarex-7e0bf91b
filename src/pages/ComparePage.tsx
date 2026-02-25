@@ -66,8 +66,8 @@ export default function ComparePage() {
     },
   });
 
-  // Fetch paginated comparisons
-  const { data: comparisons, isLoading: comparisonsLoading } = useQuery({
+  // Fetch paginated comparisons (fetch extra to compensate for filtered-out inactive)
+  const { data: rawComparisons, isLoading: comparisonsLoading } = useQuery({
     queryKey: ["comparisons-directory", dirSearch, dirCategory, dirLetter, dirPage],
     queryFn: async () => {
       let query = supabase
@@ -91,6 +91,41 @@ export default function ComparePage() {
       return data || [];
     },
   });
+
+  // Collect all product IDs from current page comparisons and check which are active
+  const comparisonProductIds = useMemo(() => {
+    if (!rawComparisons) return [];
+    const ids = new Set<string>();
+    rawComparisons.forEach((c) => {
+      const pIds = c.product_ids as string[] | undefined;
+      if (pIds) pIds.forEach((id) => ids.add(id));
+    });
+    return [...ids];
+  }, [rawComparisons]);
+
+  const { data: activeProductIds } = useQuery({
+    queryKey: ["active-product-ids", comparisonProductIds],
+    queryFn: async () => {
+      if (comparisonProductIds.length === 0) return new Set<string>();
+      const { data } = await supabase
+        .from("products")
+        .select("id")
+        .in("id", comparisonProductIds);
+      // RLS already filters to is_active = true
+      return new Set((data || []).map((p) => p.id));
+    },
+    enabled: comparisonProductIds.length > 0,
+  });
+
+  // Filter comparisons to only those where both products are active
+  const comparisons = useMemo(() => {
+    if (!rawComparisons || !activeProductIds) return rawComparisons;
+    return rawComparisons.filter((c) => {
+      const pIds = c.product_ids as string[] | undefined;
+      if (!pIds || pIds.length < 2) return false;
+      return pIds.every((id) => activeProductIds.has(id));
+    });
+  }, [rawComparisons, activeProductIds]);
 
   // Fetch categories for filter
   const { data: categories } = useQuery({
