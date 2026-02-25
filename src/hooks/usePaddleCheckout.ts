@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const PADDLE_CLIENT_TOKEN = "live_2a3b4c5d6e7f8g9h0i1j"; // Will be replaced
+const PADDLE_CLIENT_TOKEN = "live_2585f1ec2188b20237cb9ac7b8a";
 
 let paddleInitialized = false;
 let paddleLoading = false;
