@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { SearchBar } from "./SearchBar";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LayoutDashboard, Store, ChevronDown, BookOpen, BarChart3, GitCompareArrows, Trophy } from "lucide-react";
+import { Menu, X, LayoutDashboard, Store, ChevronDown, BookOpen, BarChart3, GitCompareArrows, Trophy, Activity } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ const resourceLinks = [
   { to: "/blog", label: "nav.blog", icon: BookOpen },
   { to: "/compare", label: "nav.compare", icon: GitCompareArrows },
   { to: "/leaderboard", label: "nav.leaderboard", icon: Trophy },
+  { to: "/activity", label: "nav.activityFeed", icon: Activity },
 ];
 
 export function PublicHeader() {
