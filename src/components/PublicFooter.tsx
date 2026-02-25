@@ -8,12 +8,12 @@ export function PublicFooter() {
     {
       title: t("footer.softwareHub"),
       links: [
-        { to: "/category/all", label: t("footer.browseSoftware") },
+        { to: "/categories", label: t("footer.browseSoftware") },
         { to: "/blog", label: t("footer.learningHub") },
-        { to: "/category/all", label: t("footer.softwareReviews") },
+        { to: "/categories", label: t("footer.softwareReviews") },
         { to: "/search", label: t("footer.researchHub") },
         { to: "/compare", label: t("footer.compareSoftware") },
-        { to: "/category/all", label: t("footer.bestCompanies") },
+        { to: "/categories", label: t("footer.bestCompanies") },
       ],
     },
     {
@@ -28,7 +28,7 @@ export function PublicFooter() {
         { to: "/category/accounting", label: t("categories.accounting") },
         { to: "/category/erp", label: t("categories.erp") },
         { to: "/category/marketing-automation", label: t("categories.marketingAutomation") },
-        { to: "/category/all", label: t("categories.allCategories") },
+        { to: "/categories", label: t("categories.allCategories") },
       ],
     },
     {
