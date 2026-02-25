@@ -39,6 +39,7 @@ const AdminBlogEditorPage = lazy(() => import("./pages/admin/AdminBlogEditorPage
 const AdminBrevoPage = lazy(() => import("./pages/admin/AdminBrevoPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
 const AdminAIPage = lazy(() => import("./pages/admin/AdminAIPage"));
+const AdminProductEditorPage = lazy(() => import("./pages/admin/AdminProductEditorPage"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorProductsPage = lazy(() => import("./pages/vendor/VendorProductsPage"));
@@ -76,6 +77,8 @@ function AppContent() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<ErrorBoundary><AdminDashboard /></ErrorBoundary>} />
           <Route path="products" element={<ErrorBoundary><AdminProductsPage /></ErrorBoundary>} />
+          <Route path="products/new" element={<ErrorBoundary><AdminProductEditorPage /></ErrorBoundary>} />
+          <Route path="products/:id/edit" element={<ErrorBoundary><AdminProductEditorPage /></ErrorBoundary>} />
           <Route path="categories" element={<ErrorBoundary><AdminCategoriesPage /></ErrorBoundary>} />
           <Route path="reviews" element={<ErrorBoundary><AdminReviewsPage /></ErrorBoundary>} />
           <Route path="reviews/pending" element={<ErrorBoundary><AdminReviewsPage /></ErrorBoundary>} />
