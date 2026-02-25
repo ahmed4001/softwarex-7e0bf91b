@@ -37,11 +37,14 @@ export default function ComparePage() {
   // Directory state
   const [dirSearch, setDirSearch] = useState("");
   const [dirCategory, setDirCategory] = useState("all");
+  const [dirLetter, setDirLetter] = useState("all");
   const [dirPage, setDirPage] = useState(0);
+
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   // Fetch total count for pagination
   const { data: totalCount } = useQuery({
-    queryKey: ["comparisons-count", dirSearch, dirCategory],
+    queryKey: ["comparisons-count", dirSearch, dirCategory, dirLetter],
     queryFn: async () => {
       let query = supabase
         .from("comparisons")
@@ -54,6 +57,9 @@ export default function ComparePage() {
       if (dirCategory !== "all") {
         query = query.eq("category_id", dirCategory);
       }
+      if (dirLetter !== "all") {
+        query = query.ilike("title", `${dirLetter}%`);
+      }
 
       const { count } = await query;
       return count || 0;
@@ -62,7 +68,7 @@ export default function ComparePage() {
 
   // Fetch paginated comparisons
   const { data: comparisons, isLoading: comparisonsLoading } = useQuery({
-    queryKey: ["comparisons-directory", dirSearch, dirCategory, dirPage],
+    queryKey: ["comparisons-directory", dirSearch, dirCategory, dirLetter, dirPage],
     queryFn: async () => {
       let query = supabase
         .from("comparisons")
@@ -76,6 +82,9 @@ export default function ComparePage() {
       }
       if (dirCategory !== "all") {
         query = query.eq("category_id", dirCategory);
+      }
+      if (dirLetter !== "all") {
+        query = query.ilike("title", `${dirLetter}%`);
       }
 
       const { data } = await query;
@@ -436,6 +445,35 @@ export default function ComparePage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* A-Z Quick Filter */}
+          <div className="flex flex-wrap items-center gap-1 mb-6">
+            <button
+              onClick={() => { setDirLetter("all"); setDirPage(0); }}
+              className={cn(
+                "h-8 min-w-[2rem] px-2 rounded-lg text-xs font-semibold transition-colors",
+                dirLetter === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              All
+            </button>
+            {ALPHABET.map((letter) => (
+              <button
+                key={letter}
+                onClick={() => { setDirLetter(letter); setDirPage(0); }}
+                className={cn(
+                  "h-8 w-8 rounded-lg text-xs font-semibold transition-colors",
+                  dirLetter === letter
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {letter}
+              </button>
+            ))}
           </div>
 
           {/* Grid */}
