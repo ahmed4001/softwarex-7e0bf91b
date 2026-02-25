@@ -28,17 +28,19 @@ export default function DashboardPage() {
           <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
         </motion.div>
 
-        <Tabs defaultValue="saved" className="space-y-6">
-          <TabsList className="bg-muted/50">
-            <TabsTrigger value="saved" className="gap-1.5"><Bookmark className="h-4 w-4" /> {t("dashboard.saved")}</TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-1.5"><Star className="h-4 w-4" /> {t("dashboard.myReviews")}</TabsTrigger>
-            <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
-          </TabsList>
+        {user && (
+          <Tabs defaultValue="saved" className="space-y-6">
+            <TabsList className="bg-muted/50">
+              <TabsTrigger value="saved" className="gap-1.5"><Bookmark className="h-4 w-4" /> {t("dashboard.saved")}</TabsTrigger>
+              <TabsTrigger value="reviews" className="gap-1.5"><Star className="h-4 w-4" /> {t("dashboard.myReviews")}</TabsTrigger>
+              <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="saved"><SavedProductsTab userId={user!.id} /></TabsContent>
-          <TabsContent value="reviews"><MyReviewsTab userId={user!.id} /></TabsContent>
-          <TabsContent value="profile"><ProfileTab user={user!} onSignOut={signOut} /></TabsContent>
-        </Tabs>
+            <TabsContent value="saved"><SavedProductsTab userId={user.id} /></TabsContent>
+            <TabsContent value="reviews"><MyReviewsTab userId={user.id} /></TabsContent>
+            <TabsContent value="profile"><ProfileTab user={user} onSignOut={signOut} /></TabsContent>
+          </Tabs>
+        )}
       </main>
     </RequireAuth>
   );
