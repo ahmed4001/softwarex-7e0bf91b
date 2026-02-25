@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Star, Eye, MessageSquare, TrendingUp, ExternalLink } from "lucide-react";
+import { Package, Star, Eye, MessageSquare, TrendingUp, ExternalLink, Pencil } from "lucide-react";
 
 export default function VendorProductsPage() {
   const { user } = useAuth();
@@ -69,9 +69,14 @@ export default function VendorProductsPage() {
                         {p.pricing_model && <Badge variant="outline" className="text-[10px] capitalize">{p.pricing_model}</Badge>}
                       </div>
                     </div>
-                    <Link to={`/product/${p.slug}`}>
-                      <Button variant="ghost" size="sm" className="gap-1.5"><ExternalLink className="h-3.5 w-3.5" /> View</Button>
-                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Link to={`/vendor/products/${p.id}/edit`}>
+                        <Button variant="ghost" size="sm" className="gap-1.5"><Pencil className="h-3.5 w-3.5" /> Edit</Button>
+                      </Link>
+                      <Link to={`/product/${p.slug}`}>
+                        <Button variant="ghost" size="sm" className="gap-1.5"><ExternalLink className="h-3.5 w-3.5" /> View</Button>
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-4 gap-3">
