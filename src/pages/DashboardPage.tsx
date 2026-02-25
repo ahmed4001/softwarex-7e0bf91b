@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
 function DashboardSkeleton() {
@@ -60,9 +60,23 @@ export default function DashboardPage() {
                 <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="saved"><SavedProductsTab userId={user.id} /></TabsContent>
-              <TabsContent value="reviews"><MyReviewsTab userId={user.id} /></TabsContent>
-              <TabsContent value="profile"><ProfileTab user={user} onSignOut={signOut} /></TabsContent>
+              <AnimatePresence mode="wait">
+                <TabsContent value="saved" asChild forceMount={undefined}>
+                  <motion.div key="saved" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <SavedProductsTab userId={user.id} />
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="reviews" asChild forceMount={undefined}>
+                  <motion.div key="reviews" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <MyReviewsTab userId={user.id} />
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="profile" asChild forceMount={undefined}>
+                  <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <ProfileTab user={user} onSignOut={signOut} />
+                  </motion.div>
+                </TabsContent>
+              </AnimatePresence>
             </Tabs>
           </>
         )}
