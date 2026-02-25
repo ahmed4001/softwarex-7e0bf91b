@@ -44,6 +44,7 @@ export default function SearchPage() {
         .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .ilike("name", `%${q}%`)
+        .order("is_sponsored", { ascending: false })
         .order("avg_rating", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       return data || [];
