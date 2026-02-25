@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const PADDLE_CLIENT_TOKEN = "live_2585f1ec2188b20237cb9ac7b8a";
+const PADDLE_CLIENT_TOKEN = "pdl_sdbx_apikey_01kjbakh1g042wqh6050p80w6q_p9nTmxBDwKmqq5TYmKgMjt_Az5";
 
 let paddleInitialized = false;
 let paddleLoading = false;
