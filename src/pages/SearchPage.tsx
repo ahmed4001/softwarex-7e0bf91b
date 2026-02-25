@@ -5,6 +5,7 @@ import { SeoHead } from "@/components/SeoHead";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,34 +17,42 @@ export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") || "";
   const [page, setPage] = useState(0);
+  const [tierFilter, setTierFilter] = useState("all");
   const { t } = useTranslation();
 
-  // Reset page when query changes
-  useEffect(() => { setPage(0); }, [q]);
+  useEffect(() => { setPage(0); }, [q, tierFilter]);
 
   const { data: totalCount } = useQuery({
-    queryKey: ["search-count", q],
+    queryKey: ["search-count", q, tierFilter],
     queryFn: async () => {
       if (!q.trim()) return 0;
-      const { count } = await supabase
+      let query = supabase
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true)
         .ilike("name", `%${q}%`);
+      if (tierFilter !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      }
+      const { count } = await query;
       return count ?? 0;
     },
     enabled: q.length > 0,
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["search", q, page],
+    queryKey: ["search", q, page, tierFilter],
     queryFn: async () => {
       if (!q.trim()) return [];
-      const { data } = await supabase
+      let query = supabase
         .from("products")
         .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
-        .ilike("name", `%${q}%`)
+        .ilike("name", `%${q}%`);
+      if (tierFilter !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      }
+      const { data } = await query
         .order("is_sponsored", { ascending: false })
         .order("avg_rating", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -76,7 +85,21 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {q && <p className="text-muted-foreground mb-6">{t("searchPage.resultsFor", { count: totalCount ?? 0, query: q })}</p>}
+        {q && <p className="text-muted-foreground mb-4">{t("searchPage.resultsFor", { count: totalCount ?? 0, query: q })}</p>}
+
+        {q && (
+          <div className="mb-6">
+            <Select value={tierFilter} onValueChange={setTierFilter}>
+              <SelectTrigger className="w-44 rounded-xl"><SelectValue placeholder="Sponsor Tier" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Products</SelectItem>
+                <SelectItem value="gold">🥇 Gold Sponsors</SelectItem>
+                <SelectItem value="silver">🥈 Silver Sponsors</SelectItem>
+                <SelectItem value="bronze">🥉 Bronze Sponsors</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-4">
           {isLoading ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />) :

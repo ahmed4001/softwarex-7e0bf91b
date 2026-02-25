@@ -16,6 +16,7 @@ const PAGE_SIZE = 20;
 export default function CategoryPage() {
   const { slug } = useParams();
   const [sort, setSort] = useState("rating");
+  const [tierFilter, setTierFilter] = useState("all");
   const [page, setPage] = useState(0);
   const isAll = slug === "all";
   const { t } = useTranslation();
@@ -40,10 +41,13 @@ export default function CategoryPage() {
 
   // Total count for pagination
   const { data: totalCount } = useQuery({
-    queryKey: ["products-category-count", slug],
+    queryKey: ["products-category-count", slug, tierFilter],
     queryFn: async () => {
       let query = supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
+      if (tierFilter !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      }
       const { count } = await query;
       return count ?? 0;
     },
@@ -51,10 +55,13 @@ export default function CategoryPage() {
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products-category", slug, sort, page],
+    queryKey: ["products-category", slug, sort, page, tierFilter],
     queryFn: async () => {
       let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
+      if (tierFilter !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      }
       query = query.order("is_sponsored", { ascending: false });
       if (sort === "rating") query = query.order("avg_rating", { ascending: false });
       else if (sort === "reviews") query = query.order("total_reviews", { ascending: false });
@@ -78,6 +85,11 @@ export default function CategoryPage() {
   // Reset page when sort or slug changes
   const handleSortChange = (value: string) => {
     setSort(value);
+    setPage(0);
+  };
+
+  const handleTierFilterChange = (value: string) => {
+    setTierFilter(value);
     setPage(0);
   };
 
@@ -127,15 +139,26 @@ export default function CategoryPage() {
                 </h1>
                 <p className="text-muted-foreground mt-1">{t("categoryPage.productsFound", { count: totalCount ?? 0 })}</p>
               </div>
-              <Select value={sort} onValueChange={handleSortChange}>
-                <SelectTrigger className="w-44 rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
-                  <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
-                  <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
-                  <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={tierFilter} onValueChange={handleTierFilterChange}>
+                  <SelectTrigger className="w-40 rounded-xl"><SelectValue placeholder="Sponsor Tier" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="gold">🥇 Gold Sponsors</SelectItem>
+                    <SelectItem value="silver">🥈 Silver Sponsors</SelectItem>
+                    <SelectItem value="bronze">🥉 Bronze Sponsors</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sort} onValueChange={handleSortChange}>
+                  <SelectTrigger className="w-44 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
+                    <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
+                    <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
+                    <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </motion.div>
 
             <div className="space-y-4">
