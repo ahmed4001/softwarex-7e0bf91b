@@ -38,6 +38,7 @@ const AdminAIImportPage = lazy(() => import("./pages/admin/AdminAIImportPage"));
 const AdminBlogEditorPage = lazy(() => import("./pages/admin/AdminBlogEditorPage"));
 const AdminBrevoPage = lazy(() => import("./pages/admin/AdminBrevoPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
+const AdminAIPage = lazy(() => import("./pages/admin/AdminAIPage"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorProductsPage = lazy(() => import("./pages/vendor/VendorProductsPage"));
@@ -88,6 +89,7 @@ function AppContent() {
           <Route path="translations" element={<ErrorBoundary><AdminTranslationsPage /></ErrorBoundary>} />
           <Route path="brevo" element={<ErrorBoundary><AdminBrevoPage /></ErrorBoundary>} />
           <Route path="analytics" element={<ErrorBoundary><AdminAnalyticsPage /></ErrorBoundary>} />
+          <Route path="ai" element={<ErrorBoundary><AdminAIPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}

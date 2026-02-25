@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.publish-scheduled-posts]
 verify_jwt = false
+
+[functions.ai-playground]
+verify_jwt = false

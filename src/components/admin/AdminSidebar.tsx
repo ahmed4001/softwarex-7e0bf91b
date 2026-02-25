@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
-  BarChart3, Box, ChevronDown, FileText, FolderOpen,
+  BarChart3, Bot, Box, ChevronDown, FileText, FolderOpen,
   Image, LayoutDashboard, LogOut, Megaphone, MessageSquare, Settings,
   Star, Users, Activity, Mail, Database, Sparkles, Globe
 } from "lucide-react";
@@ -51,6 +51,7 @@ const sidebarItems = [
   { label: "Activity Log", icon: Activity, to: "/admin/activity" },
   { label: "Seed Data", icon: Database, to: "/admin/seed" },
   { label: "AI Import", icon: Sparkles, to: "/admin/ai-import" },
+  { label: "AI Integration", icon: Bot, to: "/admin/ai" },
   { label: "Translations", icon: Globe, to: "/admin/translations" },
   { label: "Brevo Email", icon: Mail, to: "/admin/brevo" },
 ];
