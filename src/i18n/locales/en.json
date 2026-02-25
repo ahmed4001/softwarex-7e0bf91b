@@ -9,7 +9,8 @@
     "dashboard": "Dashboard",
     "vendor": "Vendor",
     "submitProduct": "Submit Product",
-    "backToSite": "Back to Site"
+    "backToSite": "Back to Site",
+    "activityFeed": "Activity Feed"
   },
   "hero": {
     "title1": "Find & Compare the",
