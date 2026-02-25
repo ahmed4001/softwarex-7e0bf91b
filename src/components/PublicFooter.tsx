@@ -1,8 +1,29 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function PublicFooter() {
   const { t } = useTranslation();
+
+  const { data: footerPages } = useQuery({
+    queryKey: ["footer-pages"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pages")
+        .select("slug, title")
+        .eq("is_active", true)
+        .eq("show_in_footer", true)
+        .order("title");
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Split dynamic pages into company vs policies by known slugs
+  const policySlugs = ["terms", "privacy", "community-guidelines", "trust"];
+  const companyPages = (footerPages || []).filter(p => !policySlugs.includes(p.slug));
+  const policyPages = (footerPages || []).filter(p => policySlugs.includes(p.slug));
 
   const footerSections = [
     {
@@ -34,20 +55,13 @@ export function PublicFooter() {
     {
       title: t("footer.company"),
       links: [
-        { to: "/page/about", label: t("footer.about") },
-        { to: "/page/contact", label: t("footer.contact") },
+        ...companyPages.map(p => ({ to: `/page/${p.slug}`, label: p.title })),
         { to: "/blog", label: t("footer.news") },
-        { to: "/page/careers", label: t("footer.careers") },
       ],
     },
     {
       title: t("footer.policies"),
-      links: [
-        { to: "/page/community-guidelines", label: t("footer.communityGuidelines") },
-        { to: "/page/terms", label: t("footer.terms") },
-        { to: "/page/privacy", label: t("footer.privacy") },
-        { to: "/page/trust", label: t("footer.trust") },
-      ],
+      links: policyPages.map(p => ({ to: `/page/${p.slug}`, label: p.title })),
     },
   ];
 
