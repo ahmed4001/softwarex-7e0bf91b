@@ -48,6 +48,7 @@ const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage"));
 const AdminMediaPage = lazy(() => import("./pages/admin/AdminMediaPage"));
 const AdminPagesPage = lazy(() => import("./pages/admin/AdminPagesPage"));
 const AdminAlternativesPage = lazy(() => import("./pages/admin/AdminAlternativesPage"));
+const AdminComparisonBuilderPage = lazy(() => import("./pages/admin/AdminComparisonBuilderPage"));
 const AdminBroadcastPage = lazy(() => import("./pages/admin/AdminBroadcastPage"));
 const AdminProductImportExportPage = lazy(() => import("./pages/admin/AdminProductImportExportPage"));
 const AdminSentimentPage = lazy(() => import("./pages/admin/AdminSentimentPage"));
@@ -119,6 +120,7 @@ function AppContent() {
           <Route path="media" element={<ErrorBoundary><AdminMediaPage /></ErrorBoundary>} />
           <Route path="pages" element={<ErrorBoundary><AdminPagesPage /></ErrorBoundary>} />
           <Route path="alternatives" element={<ErrorBoundary><AdminAlternativesPage /></ErrorBoundary>} />
+          <Route path="comparisons" element={<ErrorBoundary><AdminComparisonBuilderPage /></ErrorBoundary>} />
           <Route path="broadcast" element={<ErrorBoundary><AdminBroadcastPage /></ErrorBoundary>} />
           <Route path="import-export" element={<ErrorBoundary><AdminProductImportExportPage /></ErrorBoundary>} />
           <Route path="sentiment" element={<ErrorBoundary><AdminSentimentPage /></ErrorBoundary>} />
