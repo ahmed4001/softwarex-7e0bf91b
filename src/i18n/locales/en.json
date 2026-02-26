@@ -10,7 +10,9 @@
     "vendor": "Vendor",
     "submitProduct": "Submit Product",
     "backToSite": "Back to Site",
-    "activityFeed": "Activity Feed"
+    "activityFeed": "Activity Feed",
+    "awards": "Awards",
+    "comparePricing": "Compare Pricing"
   },
   "hero": {
     "title1": "Find & Compare the",

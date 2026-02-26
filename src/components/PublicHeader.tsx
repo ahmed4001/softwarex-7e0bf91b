@@ -13,6 +13,7 @@ const resourceLinks = [
   { to: "/blog", label: "nav.blog", icon: BookOpen },
   { to: "/leaderboard", label: "nav.leaderboard", icon: Trophy },
   { to: "/activity", label: "nav.activityFeed", icon: Activity },
+  { to: "/awards", label: "nav.awards", icon: Trophy },
 ];
 
 export function PublicHeader() {

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus, Flame, TrendingUp, BarChart3, GitCompareArrows, Users } from "lucide-react";
+import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus, Flame, TrendingUp, BarChart3, GitCompareArrows, Users, Eye } from "lucide-react";
 import { BadgeShowcase } from "@/components/dashboard/BadgeShowcase";
 import { StreakTracker } from "@/components/dashboard/StreakTracker";
 import { WeeklyChallenges } from "@/components/dashboard/WeeklyChallenges";
@@ -157,6 +157,9 @@ export default function DashboardPage() {
                     <TabsTrigger value="community" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
                       <Users className="h-3.5 w-3.5" /> Community
                     </TabsTrigger>
+                    <TabsTrigger value="watchlist" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Eye className="h-3.5 w-3.5" /> Watchlist
+                    </TabsTrigger>
                     <TabsTrigger value="lists" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
                       <List className="h-3.5 w-3.5" /> Lists
                     </TabsTrigger>
@@ -192,6 +195,11 @@ export default function DashboardPage() {
                     <TabsContent value="community" asChild forceMount={undefined}>
                       <motion.div key="community" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                         <CommunityTab />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="watchlist" asChild forceMount={undefined}>
+                      <motion.div key="watchlist" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <WatchlistTab userId={user.id} />
                       </motion.div>
                     </TabsContent>
                     <TabsContent value="lists" asChild forceMount={undefined}>
@@ -549,6 +557,78 @@ function MyListsTab({ userId }: { userId: string }) {
                 </div>
                 <Link to={`/lists/${list.slug}/edit`}>
                   <Button variant="outline" size="sm" className="rounded-lg">Edit</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function WatchlistTab({ userId }: { userId: string }) {
+  const { data: watches, isLoading } = useQuery({
+    queryKey: ["my-watches", userId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_watches")
+        .select("*, products(id, name, slug, logo_url, avg_rating, total_reviews)")
+        .eq("user_id", userId)
+        .eq("watch_type", "product")
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  if (isLoading) {
+    return <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />)}</div>;
+  }
+
+  if (!watches || watches.length === 0) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
+        <div className="relative mx-auto w-20 h-20 mb-5">
+          <div className="absolute inset-0 rounded-2xl bg-primary/5 rotate-6" />
+          <div className="absolute inset-0 rounded-2xl bg-primary/10 -rotate-3" />
+          <div className="relative h-full w-full rounded-2xl bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center">
+            <Eye className="h-8 w-8 text-primary/50" />
+          </div>
+        </div>
+        <h3 className="text-base font-bold text-foreground mb-1">No watched products</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">Watch products to get notified about new reviews.</p>
+        <Link to="/search">
+          <Button className="gap-2 rounded-xl"><Search className="h-4 w-4" /> Browse Products</Button>
+        </Link>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {watches.map((w: any) => (
+        <motion.div key={w.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="border-border/50 hover:border-border transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {w.products?.logo_url ? (
+                    <img src={w.products.logo_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-primary">{w.products?.name?.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Link to={`/product/${w.products?.slug}`} className="font-semibold text-sm text-foreground hover:text-primary transition-colors">
+                    {w.products?.name}
+                  </Link>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                    <span>★ {Number(w.products?.avg_rating || 0).toFixed(1)}</span>
+                    <span>· {w.products?.total_reviews} reviews</span>
+                  </div>
+                </div>
+                <Link to={`/product/${w.products?.slug}`}>
+                  <Button variant="outline" size="sm" className="rounded-lg text-xs">View</Button>
                 </Link>
               </div>
             </CardContent>

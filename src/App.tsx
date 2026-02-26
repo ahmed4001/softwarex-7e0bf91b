@@ -62,6 +62,7 @@ const PricingComparisonPage = lazy(() => import("./pages/PricingComparisonPage")
 const ListsPage = lazy(() => import("./pages/ListsPage"));
 const ListDetailPage = lazy(() => import("./pages/ListDetailPage"));
 const ListEditorPage = lazy(() => import("./pages/ListEditorPage"));
+const AwardsPage = lazy(() => import("./pages/AwardsPage"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorProductsPage = lazy(() => import("./pages/vendor/VendorProductsPage"));
@@ -110,6 +111,7 @@ function AppContent() {
           <Route path="/lists/new" element={<ErrorBoundary><ListEditorPage /></ErrorBoundary>} />
           <Route path="/lists/:slug" element={<ErrorBoundary><ListDetailPage /></ErrorBoundary>} />
           <Route path="/lists/:slug/edit" element={<ErrorBoundary><ListEditorPage /></ErrorBoundary>} />
+          <Route path="/awards" element={<ErrorBoundary><AwardsPage /></ErrorBoundary>} />
         </Route>
 
         {/* Admin routes */}
