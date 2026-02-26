@@ -66,6 +66,7 @@ const directory: { heading: string; links: { label: string; slug: string }[] }[]
   {
     heading: "Artificial Intelligence",
     links: [
+      { label: "AI Agents", slug: "ai-agents" },
       { label: "AI Chatbots Software", slug: "ai-chatbots" },
       { label: "AI Image Generators", slug: "ai-image-generators" },
       { label: "Text to Speech Software", slug: "text-to-speech" },
