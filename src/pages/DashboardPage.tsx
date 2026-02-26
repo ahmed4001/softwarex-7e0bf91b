@@ -12,7 +12,8 @@ import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus, Flame, TrendingUp } from "lucide-react";
 import { BadgeShowcase } from "@/components/dashboard/BadgeShowcase";
 import { StreakTracker } from "@/components/dashboard/StreakTracker";
 import { Link } from "react-router-dom";
@@ -27,6 +28,11 @@ function DashboardSkeleton() {
         <div className="h-8 w-48 bg-muted rounded-lg mb-2" />
         <div className="h-4 w-72 bg-muted/60 rounded-lg" />
       </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-xl bg-muted/40" />
+        ))}
+      </div>
       <div className="h-10 w-80 bg-muted/50 rounded-lg" />
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -37,71 +43,165 @@ function DashboardSkeleton() {
   );
 }
 
+function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+      <Card className="border-border/50 bg-card/80 backdrop-blur-sm hover:border-border transition-colors">
+        <CardContent className="p-4 flex items-center gap-3">
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-2xl font-display font-bold text-foreground leading-none">{value}</p>
+            <p className="text-xs text-muted-foreground font-medium mt-1">{label}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
+  const { savedProductIds } = useSavedProducts();
+
+  const { data: profile } = useQuery({
+    queryKey: ["dashboard-profile-stats", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name, review_count, helpful_votes_received")
+        .eq("user_id", user!.id)
+        .single();
+      return data;
+    },
+  });
+
+  const { data: badgeCounts } = useQuery({
+    queryKey: ["dashboard-badge-counts", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("user_badges")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      return count || 0;
+    },
+  });
 
   return (
     <RequireAuth>
       <SeoHead title={t("dashboard.title")} description={t("dashboard.subtitle")} />
-      <main className="container py-10 max-w-5xl">
+      <main className="container py-8 md:py-10 max-w-6xl">
         {!user ? (
           <DashboardSkeleton />
         ) : (
           <>
             <WelcomeBanner userName={user.email?.split("@")[0]} />
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">{t("dashboard.title")}</h1>
-                <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
+            {/* Header */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-extrabold text-foreground">
+                    {profile?.name || t("dashboard.title")}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </div>
               </div>
               <Button variant="outline" size="sm" onClick={signOut} className="gap-2 text-destructive hover:text-destructive">
-                <LogOut className="h-4 w-4" /> {t("auth.signOut")}
+                <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">{t("auth.signOut")}</span>
               </Button>
             </motion.div>
 
-            <div className="mb-8">
-              <StreakTracker userId={user.id} />
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+              <StatCard icon={Star} label="Reviews" value={profile?.review_count || 0} color="bg-[hsl(var(--star))]/10 text-[hsl(var(--star))]" />
+              <StatCard icon={Bookmark} label="Saved" value={savedProductIds.length} color="bg-primary/10 text-primary" />
+              <StatCard icon={Award} label="Badges" value={badgeCounts || 0} color="bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]" />
+              <StatCard icon={TrendingUp} label="Helpful Votes" value={profile?.helpful_votes_received || 0} color="bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" />
             </div>
 
-            <Tabs defaultValue="saved" className="space-y-6">
-              <TabsList className="bg-muted/50">
-                <TabsTrigger value="saved" className="gap-1.5"><Bookmark className="h-4 w-4" /> {t("dashboard.saved")}</TabsTrigger>
-                <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-4 w-4" /> Activity</TabsTrigger>
-                <TabsTrigger value="reviews" className="gap-1.5"><Star className="h-4 w-4" /> {t("dashboard.myReviews")}</TabsTrigger>
-                <TabsTrigger value="lists" className="gap-1.5"><List className="h-4 w-4" /> My Lists</TabsTrigger>
-                <TabsTrigger value="profile" className="gap-1.5"><Settings className="h-4 w-4" /> {t("dashboard.profile")}</TabsTrigger>
-              </TabsList>
+            {/* Main content: two-column on desktop */}
+            <div className="grid lg:grid-cols-[1fr_300px] gap-8">
+              {/* Left: Tabs */}
+              <div>
+                <Tabs defaultValue="saved" className="space-y-5">
+                  <TabsList className="bg-muted/30 p-1 rounded-xl w-full flex flex-wrap">
+                    <TabsTrigger value="saved" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Bookmark className="h-3.5 w-3.5" /> {t("dashboard.saved")}
+                    </TabsTrigger>
+                    <TabsTrigger value="reviews" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Star className="h-3.5 w-3.5" /> {t("dashboard.myReviews")}
+                    </TabsTrigger>
+                    <TabsTrigger value="lists" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <List className="h-3.5 w-3.5" /> Lists
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Bell className="h-3.5 w-3.5" /> Activity
+                    </TabsTrigger>
+                    <TabsTrigger value="profile" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Settings className="h-3.5 w-3.5" /> {t("dashboard.profile")}
+                    </TabsTrigger>
+                  </TabsList>
 
-              <AnimatePresence mode="wait">
-                <TabsContent value="saved" asChild forceMount={undefined}>
-                  <motion.div key="saved" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <SavedProductsTab userId={user.id} />
-                  </motion.div>
-                </TabsContent>
-                <TabsContent value="notifications" asChild forceMount={undefined}>
-                  <motion.div key="notifications" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <NotificationsTab userId={user.id} />
-                  </motion.div>
-                </TabsContent>
-                <TabsContent value="reviews" asChild forceMount={undefined}>
-                  <motion.div key="reviews" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <MyReviewsTab userId={user.id} />
-                  </motion.div>
-                </TabsContent>
-                <TabsContent value="lists" asChild forceMount={undefined}>
-                  <motion.div key="lists" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <MyListsTab userId={user.id} />
-                  </motion.div>
-                </TabsContent>
-                <TabsContent value="profile" asChild forceMount={undefined}>
-                  <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <ProfileTab user={user} onSignOut={signOut} />
-                  </motion.div>
-                </TabsContent>
-              </AnimatePresence>
-            </Tabs>
+                  <AnimatePresence mode="wait">
+                    <TabsContent value="saved" asChild forceMount={undefined}>
+                      <motion.div key="saved" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <SavedProductsTab userId={user.id} />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="reviews" asChild forceMount={undefined}>
+                      <motion.div key="reviews" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <MyReviewsTab userId={user.id} />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="lists" asChild forceMount={undefined}>
+                      <motion.div key="lists" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <MyListsTab userId={user.id} />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="notifications" asChild forceMount={undefined}>
+                      <motion.div key="notifications" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <NotificationsTab userId={user.id} />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="profile" asChild forceMount={undefined}>
+                      <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <ProfileTab user={user} onSignOut={signOut} />
+                      </motion.div>
+                    </TabsContent>
+                  </AnimatePresence>
+                </Tabs>
+              </div>
+
+              {/* Right: Sidebar widgets */}
+              <aside className="space-y-5 order-first lg:order-last">
+                <StreakTracker userId={user.id} />
+                <Card className="border-border/50">
+                  <CardContent className="p-5">
+                    <BadgeShowcase userId={user.id} />
+                  </CardContent>
+                </Card>
+                <Card className="border-border/50 bg-gradient-to-br from-primary/5 to-accent/5">
+                  <CardContent className="p-5 text-center">
+                    <Sparkles className="h-6 w-6 text-primary mx-auto mb-2" />
+                    <h4 className="text-sm font-bold text-foreground mb-1">Share your experience</h4>
+                    <p className="text-xs text-muted-foreground mb-3">Help others by writing reviews and earn badges.</p>
+                    <Link to="/search">
+                      <Button size="sm" className="rounded-xl gap-1.5 w-full">
+                        <MessageSquarePlus className="h-3.5 w-3.5" /> Write a Review
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </aside>
+            </div>
           </>
         )}
       </main>
@@ -130,36 +230,28 @@ function SavedProductsTab({ userId }: { userId: string }) {
 
   if (isLoading) {
     return (
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+      <div className="grid md:grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
       </div>
     );
   }
 
   if (!products || products.length === 0) {
     return (
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
-        <div className="relative mx-auto w-24 h-24 mb-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
+        <div className="relative mx-auto w-20 h-20 mb-5">
           <div className="absolute inset-0 rounded-2xl bg-primary/5 rotate-6" />
           <div className="absolute inset-0 rounded-2xl bg-primary/10 -rotate-3" />
           <div className="relative h-full w-full rounded-2xl bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center">
-            <Bookmark className="h-10 w-10 text-primary/50" />
-          </div>
-          <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-            <Heart className="h-4 w-4 text-accent-foreground/40" />
+            <Bookmark className="h-8 w-8 text-primary/50" />
           </div>
         </div>
-        <h3 className="text-lg font-bold text-foreground mb-1">{t("dashboard.noSavedProducts")}</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">{t("dashboard.noSavedHint")}</p>
+        <h3 className="text-base font-bold text-foreground mb-1">{t("dashboard.noSavedProducts")}</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">{t("dashboard.noSavedHint")}</p>
         <div className="flex items-center justify-center gap-3">
           <Link to="/search">
             <Button className="gap-2 rounded-xl">
               <Search className="h-4 w-4" /> Browse Software
-            </Button>
-          </Link>
-          <Link to="/categories">
-            <Button variant="outline" className="gap-2 rounded-xl">
-              Explore Categories <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -168,7 +260,7 @@ function SavedProductsTab({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid md:grid-cols-2 gap-4">
       {products.map((p: any) => (
         <ProductCard
           key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline}
@@ -201,31 +293,21 @@ function MyReviewsTab({ userId }: { userId: string }) {
 
   if (!reviews || reviews.length === 0) {
     return (
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
-        <div className="relative mx-auto w-24 h-24 mb-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
+        <div className="relative mx-auto w-20 h-20 mb-5">
           <div className="absolute inset-0 rounded-2xl bg-[hsl(var(--star))]/5 rotate-6" />
           <div className="absolute inset-0 rounded-2xl bg-[hsl(var(--star))]/10 -rotate-3" />
           <div className="relative h-full w-full rounded-2xl bg-gradient-to-br from-[hsl(var(--star))]/15 to-primary/5 flex items-center justify-center">
-            <Star className="h-10 w-10 text-[hsl(var(--star))]/50" />
-          </div>
-          <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-primary/50" />
+            <Star className="h-8 w-8 text-[hsl(var(--star))]/50" />
           </div>
         </div>
-        <h3 className="text-lg font-bold text-foreground mb-1">{t("dashboard.noReviews")}</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">{t("dashboard.noReviewsHint")}</p>
-        <div className="flex items-center justify-center gap-3">
-          <Link to="/search">
-            <Button className="gap-2 rounded-xl">
-              <MessageSquarePlus className="h-4 w-4" /> Write a Review
-            </Button>
-          </Link>
-          <Link to="/leaderboard">
-            <Button variant="outline" className="gap-2 rounded-xl">
-              View Leaderboard <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+        <h3 className="text-base font-bold text-foreground mb-1">{t("dashboard.noReviews")}</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">{t("dashboard.noReviewsHint")}</p>
+        <Link to="/search">
+          <Button className="gap-2 rounded-xl">
+            <MessageSquarePlus className="h-4 w-4" /> Write a Review
+          </Button>
+        </Link>
       </motion.div>
     );
   }
@@ -233,32 +315,42 @@ function MyReviewsTab({ userId }: { userId: string }) {
   return (
     <div className="space-y-3">
       {reviews.map((r: any) => (
-        <motion.div key={r.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {r.products?.logo_url ? (
-                <img src={r.products.logo_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-sm font-bold text-primary">{r.products?.name?.charAt(0)}</span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-sm text-foreground">{r.products?.name}</h3>
-                <span className={`status-badge-${r.status === 'approved' ? 'approved' : r.status === 'rejected' ? 'rejected' : 'pending'}`}>
-                  {r.status}
-                </span>
+        <motion.div key={r.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="border-border/50 hover:border-border transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {r.products?.logo_url ? (
+                    <img src={r.products.logo_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-primary">{r.products?.name?.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Link to={`/product/${r.products?.slug}`} className="font-semibold text-sm text-foreground hover:text-primary transition-colors">
+                      {r.products?.name}
+                    </Link>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      r.status === 'approved' ? 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]' :
+                      r.status === 'rejected' ? 'bg-destructive/10 text-destructive' :
+                      'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]'
+                    }`}>
+                      {r.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground font-medium">{r.title || t("dashboard.untitledReview")}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`h-3 w-3 ${i < r.overall_rating ? 'text-[hsl(var(--star))] fill-[hsl(var(--star))]' : 'text-muted-foreground/20'}`} />
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-2">{new Date(r.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {r.body && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{r.body}</p>}
+                </div>
               </div>
-              <p className="text-sm text-foreground font-medium">{r.title || t("dashboard.untitledReview")}</p>
-              <div className="flex items-center gap-1 mt-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={`h-3 w-3 ${i < r.overall_rating ? 'text-[hsl(var(--star))] fill-[hsl(var(--star))]' : 'text-muted-foreground/20'}`} />
-                ))}
-                <span className="text-xs text-muted-foreground ml-1">{new Date(r.created_at).toLocaleDateString()}</span>
-              </div>
-              {r.body && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{r.body}</p>}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </motion.div>
       ))}
     </div>
@@ -315,53 +407,50 @@ function ProfileTab({ user, onSignOut }: { user: any; onSignOut: () => void }) {
   }
 
   return (
-    <div className="max-w-lg space-y-6">
-      <BadgeShowcase userId={user.id} />
-      <div className="glass-card p-6 space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">{profile?.name || user.email}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.displayName")}</label>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.bio")}</label>
-            <Input value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder={t("dashboard.bioPlaceholder")} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.company")}</label>
-              <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+    <div className="max-w-lg space-y-5">
+      <Card className="border-border/50">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.jobTitle")}</label>
-              <Input value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
+              <p className="font-semibold text-foreground">{profile?.name || user.email}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.industry")}</label>
-            <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.displayName")}</label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.bio")}</label>
+              <Input value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder={t("dashboard.bioPlaceholder")} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.company")}</label>
+                <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.jobTitle")}</label>
+                <Input value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{t("dashboard.industry")}</label>
+              <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
+            </div>
           </div>
-        </div>
 
-        <Button onClick={handleSave} disabled={saving} className="w-full">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          {t("dashboard.saveChanges")}
-        </Button>
-      </div>
-
-      <Button variant="outline" onClick={onSignOut} className="w-full gap-2 text-destructive hover:text-destructive">
-        <LogOut className="h-4 w-4" /> {t("auth.signOut")}
-      </Button>
+          <Button onClick={handleSave} disabled={saving} className="w-full">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            {t("dashboard.saveChanges")}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -385,16 +474,16 @@ function MyListsTab({ userId }: { userId: string }) {
 
   if (!lists || lists.length === 0) {
     return (
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
-        <div className="relative mx-auto w-24 h-24 mb-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
+        <div className="relative mx-auto w-20 h-20 mb-5">
           <div className="absolute inset-0 rounded-2xl bg-primary/5 rotate-6" />
           <div className="absolute inset-0 rounded-2xl bg-primary/10 -rotate-3" />
           <div className="relative h-full w-full rounded-2xl bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center">
-            <List className="h-10 w-10 text-primary/50" />
+            <List className="h-8 w-8 text-primary/50" />
           </div>
         </div>
-        <h3 className="text-lg font-bold text-foreground mb-1">No lists yet</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Create curated software lists to share with the community.</p>
+        <h3 className="text-base font-bold text-foreground mb-1">No lists yet</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">Create curated software lists to share with the community.</p>
         <Link to="/lists/new">
           <Button className="gap-2 rounded-xl"><Plus className="h-4 w-4" /> Create Your First List</Button>
         </Link>
@@ -404,28 +493,32 @@ function MyListsTab({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end mb-2">
-        <Link to="/lists/new"><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> New List</Button></Link>
+      <div className="flex justify-end mb-1">
+        <Link to="/lists/new"><Button size="sm" variant="outline" className="gap-1.5 rounded-xl"><Plus className="h-4 w-4" /> New List</Button></Link>
       </div>
       {lists.map((list: any) => (
-        <motion.div key={list.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link to={`/lists/${list.slug}`} className="font-semibold text-sm text-foreground hover:text-primary transition-colors">
-                {list.title}
-              </Link>
-              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                <span>{list.product_count} products</span>
-                <span>{list.upvote_count} upvotes</span>
-                <span className={list.is_published ? "text-[hsl(var(--success))]" : "text-muted-foreground"}>
-                  {list.is_published ? "Published" : "Draft"}
-                </span>
+        <motion.div key={list.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="border-border/50 hover:border-border transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Link to={`/lists/${list.slug}`} className="font-semibold text-sm text-foreground hover:text-primary transition-colors">
+                    {list.title}
+                  </Link>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <span>{list.product_count} products</span>
+                    <span>{list.upvote_count} upvotes</span>
+                    <span className={list.is_published ? "text-[hsl(var(--success))]" : "text-muted-foreground"}>
+                      {list.is_published ? "Published" : "Draft"}
+                    </span>
+                  </div>
+                </div>
+                <Link to={`/lists/${list.slug}/edit`}>
+                  <Button variant="outline" size="sm" className="rounded-lg">Edit</Button>
+                </Link>
               </div>
-            </div>
-            <Link to={`/lists/${list.slug}/edit`}>
-              <Button variant="outline" size="sm">Edit</Button>
-            </Link>
-          </div>
+            </CardContent>
+          </Card>
         </motion.div>
       ))}
     </div>
