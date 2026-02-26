@@ -1460,6 +1460,51 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_leads: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          notes: string | null
+          product_id: string
+          source: string
+          status: string
+          updated_at: string
+          vendor_user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          notes?: string | null
+          product_id: string
+          source?: string
+          status?: string
+          updated_at?: string
+          vendor_user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          notes?: string | null
+          product_id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          vendor_user_id?: string
+        }
+        Relationships: []
+      }
       vendor_responses: {
         Row: {
           body: string
@@ -1495,6 +1540,42 @@ export type Database = {
           },
         ]
       }
+      vendor_sponsored_requests: {
+        Row: {
+          budget: number | null
+          created_at: string
+          end_date: string | null
+          id: string
+          product_id: string
+          start_date: string | null
+          status: string
+          tier: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          product_id: string
+          start_date?: string | null
+          status?: string
+          tier: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          product_id?: string
+          start_date?: string | null
+          status?: string
+          tier?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vendor_submissions: {
         Row: {
           created_at: string | null
@@ -1521,6 +1602,39 @@ export type Database = {
           review_notes?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["submission_status"] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vendor_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          plan: string
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          plan?: string
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          plan?: string
+          started_at?: string
+          status?: string
           user_id?: string
         }
         Relationships: []

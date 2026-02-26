@@ -1,16 +1,20 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
-import { BarChart3, Package, MessageSquare, ShieldCheck, ArrowLeft, TrendingUp, FileText, Users } from "lucide-react";
+import { BarChart3, Package, MessageSquare, ShieldCheck, ArrowLeft, TrendingUp, FileText, Users, CreditCard, UserPlus, Megaphone, PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const vendorNav = [
   { to: "/vendor", label: "Dashboard", icon: BarChart3, end: true },
   { to: "/vendor/products", label: "Products", icon: Package },
   { to: "/vendor/reviews", label: "Reviews", icon: MessageSquare },
+  { to: "/vendor/leads", label: "Leads", icon: UserPlus },
   { to: "/vendor/analytics", label: "Analytics", icon: TrendingUp },
+  { to: "/vendor/roi", label: "ROI", icon: PieChart },
+  { to: "/vendor/sponsored", label: "Sponsored", icon: Megaphone },
+  { to: "/vendor/plans", label: "Plans", icon: CreditCard },
   { to: "/vendor/templates", label: "Templates", icon: FileText },
   { to: "/vendor/competitors", label: "Competitors", icon: Users },
-  { to: "/vendor/claim", label: "Claim Product", icon: ShieldCheck },
+  { to: "/vendor/claim", label: "Claim", icon: ShieldCheck },
 ];
 
 export function VendorLayout() {
