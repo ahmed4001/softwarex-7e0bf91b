@@ -219,19 +219,70 @@ export default function VendorProductEditorPage() {
 
           <TabsContent value="seo" className="space-y-6">
             <div className="glass-card p-6 space-y-5">
+              {/* Focus Keyword Analyzer */}
+              <div className="space-y-2">
+                <Label>Focus Keyword</Label>
+                <Input
+                  value={form.seo_keywords.split(",")[0]?.trim() || ""}
+                  onChange={(e) => {
+                    const rest = form.seo_keywords.split(",").slice(1).map(k => k.trim()).filter(Boolean);
+                    update("seo_keywords", [e.target.value.trim(), ...rest].filter(Boolean).join(", "));
+                  }}
+                  placeholder="Primary keyword for this product"
+                />
+                {form.seo_keywords.split(",")[0]?.trim() && (() => {
+                  const keyword = form.seo_keywords.split(",")[0].trim().toLowerCase();
+                  const titleHas = (form.seo_title || product?.name || "").toLowerCase().includes(keyword);
+                  const descHas = form.seo_description.toLowerCase().includes(keyword);
+                  const nameHas = (product?.name || "").toLowerCase().includes(keyword);
+                  const bodyHas = form.description.toLowerCase().includes(keyword);
+                  const score = [titleHas, descHas, nameHas, bodyHas].filter(Boolean).length;
+                  return (
+                    <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-1.5">
+                      <p className="text-xs font-semibold text-foreground">Keyword Analysis — "{keyword}"</p>
+                      <div className="grid grid-cols-2 gap-1.5 text-xs">
+                        <span className={titleHas ? "text-emerald-600" : "text-destructive"}>
+                          {titleHas ? "✓" : "✗"} In SEO title
+                        </span>
+                        <span className={descHas ? "text-emerald-600" : "text-destructive"}>
+                          {descHas ? "✓" : "✗"} In meta description
+                        </span>
+                        <span className={nameHas ? "text-emerald-600" : "text-destructive"}>
+                          {nameHas ? "✓" : "✗"} In product name
+                        </span>
+                        <span className={bodyHas ? "text-emerald-600" : "text-destructive"}>
+                          {bodyHas ? "✓" : "✗"} In description
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden mt-1">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${score * 25}%`, backgroundColor: score >= 3 ? "hsl(var(--primary))" : score >= 2 ? "hsl(45, 90%, 50%)" : "hsl(var(--destructive))" }} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{score}/4 checks passed</p>
+                    </div>
+                  );
+                })()}
+              </div>
+
               <div className="space-y-2">
                 <Label>SEO Title</Label>
                 <Input value={form.seo_title} onChange={(e) => update("seo_title", e.target.value)} placeholder="Custom title for search engines (max 60 chars)" maxLength={60} />
-                <p className="text-xs text-muted-foreground">{form.seo_title.length}/60 characters</p>
+                <p className={`text-xs ${(form.seo_title || product?.name || "").length > 60 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {(form.seo_title || product?.name || "").length}/60 characters
+                  {(form.seo_title || product?.name || "").length > 60 && " — too long, may be truncated"}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Meta Description</Label>
                 <Textarea value={form.seo_description} onChange={(e) => update("seo_description", e.target.value)} rows={3} placeholder="Description shown in search results (max 160 chars)" maxLength={160} />
-                <p className="text-xs text-muted-foreground">{form.seo_description.length}/160 characters</p>
+                <p className={`text-xs ${form.seo_description.length > 160 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {form.seo_description.length}/160 characters
+                  {form.seo_description.length > 160 && " — too long, may be truncated"}
+                </p>
               </div>
               <div className="space-y-2">
-                <Label>SEO Keywords</Label>
+                <Label>All Keywords</Label>
                 <Input value={form.seo_keywords} onChange={(e) => update("seo_keywords", e.target.value)} placeholder="keyword1, keyword2, keyword3" maxLength={500} />
+                <p className="text-xs text-muted-foreground">Comma-separated. First keyword is used for focus analysis above.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
