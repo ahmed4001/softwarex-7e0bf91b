@@ -14,19 +14,20 @@ export default {
   	},
   	extend: {
   		fontFamily: {
-  			sans: [
-  				'Lato',
-  				'ui-sans-serif',
-  				'system-ui',
-  				'-apple-system',
-  				'BlinkMacSystemFont',
-  				'Segoe UI',
-  				'Roboto',
-  				'Helvetica Neue',
-  				'Arial',
-  				'Noto Sans',
-  				'sans-serif'
-  			],
+			sans: [
+				'Plus Jakarta Sans',
+				'DM Sans',
+				'ui-sans-serif',
+				'system-ui',
+				'-apple-system',
+				'BlinkMacSystemFont',
+				'Segoe UI',
+				'Roboto',
+				'Helvetica Neue',
+				'Arial',
+				'Noto Sans',
+				'sans-serif'
+			],
   			display: [
   				'Plus Jakarta Sans',
   				'DM Sans',
