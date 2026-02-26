@@ -23,6 +23,9 @@ import { ProductQASection } from "@/components/ProductQASection";
 import { PricingComparisonWidget } from "@/components/PricingComparisonWidget";
 import { AlsoViewedSection } from "@/components/AlsoViewedSection";
 import { ReviewDigestCard } from "@/components/ReviewDigestCard";
+import { RatingTrendChart } from "@/components/RatingTrendChart";
+import { ProductWatchButton } from "@/components/ProductWatchButton";
+import { ProductAIChatbot } from "@/components/ProductAIChatbot";
 
 function ScreenshotGallery({ screenshots, productName }: { screenshots: string[]; productName: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -342,6 +345,7 @@ export default function ProductDetailPage() {
                 )}
                 <Link to={`/product/${slug}/write-review`}><Button variant="outline" className="rounded-xl font-semibold">{t("productDetail.writeReview")}</Button></Link>
                 <Link to={`/compare?products=${product.id}`}><Button variant="ghost" className="rounded-xl font-medium">{t("productDetail.compare")}</Button></Link>
+                <ProductWatchButton productId={product.id} />
               </div>
             </div>
             <div className="flex flex-col gap-4 lg:border-l lg:border-border/50 lg:pl-8 flex-shrink-0">
@@ -581,8 +585,11 @@ export default function ProductDetailPage() {
           </TabsContent>
         </Tabs>
 
+        <RatingTrendChart productId={product.id} />
         <AlsoViewedSection productId={product.id} categoryId={product.category_id} />
       </div>
+
+      <ProductAIChatbot productId={product.id} productName={product.name} />
     </>
   );
 }

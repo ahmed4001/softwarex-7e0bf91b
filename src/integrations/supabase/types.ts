@@ -134,6 +134,114 @@ export type Database = {
           },
         ]
       }
+      award_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      award_nominations: {
+        Row: {
+          award_category_id: string
+          created_at: string
+          id: string
+          nominated_by: string
+          product_id: string
+        }
+        Insert: {
+          award_category_id: string
+          created_at?: string
+          id?: string
+          nominated_by: string
+          product_id: string
+        }
+        Update: {
+          award_category_id?: string
+          created_at?: string
+          id?: string
+          nominated_by?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "award_nominations_award_category_id_fkey"
+            columns: ["award_category_id"]
+            isOneToOne: false
+            referencedRelation: "award_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "award_nominations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      award_votes: {
+        Row: {
+          award_category_id: string
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          award_category_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          award_category_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "award_votes_award_category_id_fkey"
+            columns: ["award_category_id"]
+            isOneToOne: false
+            referencedRelation: "award_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "award_votes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badges: {
         Row: {
           color: string
@@ -509,6 +617,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      digest_logs: {
+        Row: {
+          id: string
+          recipient_count: number
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          recipient_count?: number
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          recipient_count?: number
+          sent_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       email_templates: {
         Row: {
@@ -1028,6 +1157,48 @@ export type Database = {
           },
         ]
       }
+      product_watches: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          product_id: string | null
+          user_id: string
+          watch_type: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          user_id: string
+          watch_type?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          user_id?: string
+          watch_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_watches_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_watches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           avg_rating: number | null
@@ -1209,6 +1380,7 @@ export type Database = {
           is_verified_reviewer: boolean | null
           job_title: string | null
           last_login_at: string | null
+          linkedin_verified: boolean | null
           name: string | null
           preferred_language: string | null
           review_count: number | null
@@ -1229,6 +1401,7 @@ export type Database = {
           is_verified_reviewer?: boolean | null
           job_title?: string | null
           last_login_at?: string | null
+          linkedin_verified?: boolean | null
           name?: string | null
           preferred_language?: string | null
           review_count?: number | null
@@ -1249,6 +1422,7 @@ export type Database = {
           is_verified_reviewer?: boolean | null
           job_title?: string | null
           last_login_at?: string | null
+          linkedin_verified?: boolean | null
           name?: string | null
           preferred_language?: string | null
           review_count?: number | null
@@ -1537,6 +1711,7 @@ export type Database = {
           use_case: string | null
           user_id: string
           value_for_money: number | null
+          verification_method: string | null
           verified_purchase: boolean | null
           verified_reviewer: boolean | null
         }
@@ -1573,6 +1748,7 @@ export type Database = {
           use_case?: string | null
           user_id: string
           value_for_money?: number | null
+          verification_method?: string | null
           verified_purchase?: boolean | null
           verified_reviewer?: boolean | null
         }
@@ -1609,6 +1785,7 @@ export type Database = {
           use_case?: string | null
           user_id?: string
           value_for_money?: number | null
+          verification_method?: string | null
           verified_purchase?: boolean | null
           verified_reviewer?: boolean | null
         }

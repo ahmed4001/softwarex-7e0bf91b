@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.seo-files]
 verify_jwt = false
+
+[functions.product-qa-chat]
+verify_jwt = false
+
+[functions.weekly-digest]
+verify_jwt = false
