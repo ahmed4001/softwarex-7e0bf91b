@@ -20,8 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus, Flame, TrendingUp, BarChart3, GitCompareArrows, Users, Eye, Zap } from "lucide-react";
+import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus, Flame, TrendingUp, BarChart3, GitCompareArrows, Users, Eye, Zap, Link2 } from "lucide-react";
 import { PointsHistory } from "@/components/PointsHistory";
+import { AIRecommendationsWidget } from "@/components/dashboard/AIRecommendationsWidget";
+import { ReferralDashboard } from "@/components/dashboard/ReferralDashboard";
 import { BadgeShowcase } from "@/components/dashboard/BadgeShowcase";
 import { StreakTracker } from "@/components/dashboard/StreakTracker";
 import { WeeklyChallenges } from "@/components/dashboard/WeeklyChallenges";
@@ -168,8 +170,14 @@ export default function DashboardPage() {
                     <TabsTrigger value="notifications" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
                       <Bell className="h-3.5 w-3.5" /> Activity
                     </TabsTrigger>
-                    <TabsTrigger value="points" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                     <TabsTrigger value="points" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
                       <Zap className="h-3.5 w-3.5" /> Points
+                    </TabsTrigger>
+                    <TabsTrigger value="referrals" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Link2 className="h-3.5 w-3.5" /> Referrals
+                    </TabsTrigger>
+                    <TabsTrigger value="ai-recs" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
+                      <Sparkles className="h-3.5 w-3.5" /> For You
                     </TabsTrigger>
                     <TabsTrigger value="profile" className="gap-1.5 flex-1 min-w-0 rounded-lg text-xs sm:text-sm">
                       <Settings className="h-3.5 w-3.5" /> {t("dashboard.profile")}
@@ -225,6 +233,16 @@ export default function DashboardPage() {
                     <TabsContent value="profile" asChild forceMount={undefined}>
                       <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                         <ProfileTab user={user} onSignOut={signOut} />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="referrals" asChild forceMount={undefined}>
+                      <motion.div key="referrals" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <ReferralDashboard userId={user.id} />
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="ai-recs" asChild forceMount={undefined}>
+                      <motion.div key="ai-recs" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                        <AIRecommendationsWidget userId={user.id} />
                       </motion.div>
                     </TabsContent>
                   </AnimatePresence>

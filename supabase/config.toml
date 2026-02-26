@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.generate-landing-pages]
 verify_jwt = false
+
+[functions.generate-recommendations]
+verify_jwt = false
