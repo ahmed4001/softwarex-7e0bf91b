@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { useSeoSettings } from "@/hooks/useSeoSettings";
 
 interface SeoHeadProps {
   title: string;
@@ -25,25 +26,35 @@ export function SeoHead({
   robots = "index, follow",
   lang = "en",
 }: SeoHeadProps) {
-  const fullTitle = `${title} | SoftwareHub`;
+  const settings = useSeoSettings();
+
+  const siteName = settings.siteName || "SoftwareHub";
+  const fullTitle = `${title} | ${siteName}`;
+  const effectiveDescription = description || settings.defaultDescription;
+  const effectiveKeywords = keywords || settings.defaultKeywords;
+  const effectiveOgImage = ogImage || settings.defaultOgImage;
   const jsonLdArray = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
 
   return (
     <Helmet>
       <html lang={lang} />
       <title>{fullTitle}</title>
-      {description && <meta name="description" content={description} />}
-      {keywords && <meta name="keywords" content={keywords} />}
+      {effectiveDescription && <meta name="description" content={effectiveDescription} />}
+      {effectiveKeywords && <meta name="keywords" content={effectiveKeywords} />}
       {author && <meta name="author" content={author} />}
       <meta name="robots" content={robots} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+      {/* Search Console Verification */}
+      {settings.googleVerification && <meta name="google-site-verification" content={settings.googleVerification} />}
+      {settings.bingVerification && <meta name="msvalidate.01" content={settings.bingVerification} />}
+
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
-      {description && <meta property="og:description" content={description} />}
-      {ogImage && <meta property="og:image" content={ogImage} />}
+      {effectiveDescription && <meta property="og:description" content={effectiveDescription} />}
+      {effectiveOgImage && <meta property="og:image" content={effectiveOgImage} />}
       <meta property="og:type" content={type} />
-      <meta property="og:site_name" content="SoftwareHub" />
+      <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content="en_US" />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
 
@@ -51,8 +62,8 @@ export function SeoHead({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@softwarehub" />
       <meta name="twitter:title" content={fullTitle} />
-      {description && <meta name="twitter:description" content={description} />}
-      {ogImage && <meta name="twitter:image" content={ogImage} />}
+      {effectiveDescription && <meta name="twitter:description" content={effectiveDescription} />}
+      {effectiveOgImage && <meta name="twitter:image" content={effectiveOgImage} />}
 
       {/* Canonical */}
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
