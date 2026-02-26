@@ -1,51 +1,62 @@
 
 
-# Add Review Filtering & Sorting to Product Reviews Tab
+# Review Analytics Dashboard for Vendors
 
 ## Overview
 
-Add client-side filtering and sorting controls to the reviews tab on ProductDetailPage. Currently reviews are fetched ordered by `created_at DESC` with a limit of 10. We'll increase the limit, add sorting options, and add a rating filter -- all handled client-side for simplicity.
+Enhance the existing `VendorAnalyticsPage.tsx` with three new analytics sections: a detailed rating breakdown with sub-criteria, sentiment trend analysis over time, and response rate metrics. This builds on the existing charts and stat cards already present.
 
-## Changes
+## What Gets Built
 
-### File: `src/pages/ProductDetailPage.tsx`
+### 1. Sub-Criteria Rating Breakdown
+A horizontal bar chart showing average scores across the multi-criteria ratings: Ease of Use, Customer Support, Value for Money, Features, and Recommendation Likelihood. This gives vendors deeper insight beyond the overall star rating.
 
-1. **Add state variables** for sort and filter:
-   - `reviewSort`: "newest" | "oldest" | "highest" | "lowest" | "most_helpful" (default: "newest")
-   - `reviewRatingFilter`: number | null (null = all, 1-5 = specific star)
+### 2. Sentiment Trend Over Time (Monthly)
+A line/area chart showing the monthly average rating trend and review volume, giving vendors a view of how satisfaction is changing over time. Reviews are bucketed by month from the `created_at` timestamp. This uses existing review data (no AI sentiment API call needed -- that's an admin-only feature).
 
-2. **Increase review fetch limit** from 10 to 50 to have enough data for filtering to be useful.
-
-3. **Add filter/sort UI bar** above the review list inside the "reviews" TabsContent:
-   - A `Select` dropdown for sort order with options: Newest, Oldest, Highest Rated, Lowest Rated, Most Helpful
-   - A row of small star-filter buttons (All, 5, 4, 3, 2, 1) to filter by specific rating
-   - Show count of filtered results
-
-4. **Apply filtering and sorting client-side** using `useMemo`:
-   - Filter: if `reviewRatingFilter` is set, only show reviews matching that `overall_rating`
-   - Sort by the selected option:
-     - newest/oldest: by `created_at`
-     - highest/lowest: by `overall_rating`
-     - most_helpful: by `helpful_count` descending
-
-5. **Render the filtered/sorted list** instead of the raw `reviews` array.
-
-## UI Layout
-
-```text
-+--------------------------------------------------+
-| Sort: [Newest v]    Rating: [All] [5] [4] [3]... |
-| Showing 8 of 12 reviews                          |
-+--------------------------------------------------+
-| ReviewCard ...                                   |
-| ReviewCard ...                                   |
-```
+### 3. Response Rate Analytics
+- **Response Rate**: percentage of reviews that have a vendor response (responses / total reviews)
+- **Avg Response Time**: average time between review `created_at` and response `created_at`
+- **Response Rate Over Time**: a small bar chart showing monthly responded vs unresponded review counts
+- A "response streak" indicator showing how many consecutive recent reviews have been responded to
 
 ## Technical Details
 
-- No database changes needed -- all client-side
-- Imports needed: `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` (already available), `useMemo` from React
-- The `helpful_count` column already exists on the `reviews` table
-- Star filter buttons will use small `Button` components with `variant="outline"` or `variant="default"` for the active one
-- Filter state resets when switching products (tied to component lifecycle)
+### File Changes
+
+**`src/pages/vendor/VendorAnalyticsPage.tsx`** (modify):
+
+1. Expand the reviews query to include sub-criteria fields: `ease_of_use, customer_support, value_for_money, features_rating, recommendation_likelihood`
+2. Fetch `vendor_responses` with `created_at` and `review_id` (not just count) to compute response times
+3. Add `useMemo` computations for:
+   - Sub-criteria averages across all reviews
+   - Monthly sentiment trend (group reviews by month, compute avg rating per month)
+   - Response rate percentage and average response time
+   - Monthly response vs unresponded breakdown
+4. Add three new chart sections after the existing charts:
+   - Horizontal BarChart for sub-criteria averages (5 bars, labeled)
+   - AreaChart for monthly rating trend with review count overlay
+   - Stacked BarChart for monthly responded/unresponded reviews
+5. Add two new StatCards in the existing grid: "Response Rate" (percentage) and "Avg Response Time" (e.g., "2.3 days")
+
+### Data Flow
+- All data comes from existing tables (`reviews`, `vendor_responses`, `products`) -- no new tables or migrations needed
+- All computations are client-side using `useMemo`
+- Uses existing Recharts components already imported in the file
+
+### UI Layout
+```text
+[Existing 6 stat cards row -- add Response Rate % + Avg Response Time]
+
+[Existing 3 charts: Rating Dist | Reviews by Product | Review Status]
+
+[NEW ROW: Sub-Criteria Breakdown | Monthly Rating Trend]
+
+[NEW ROW: Response Rate Over Time (full width)]
+
+[Existing ProductAnalyticsDashboard]
+```
+
+### No Database Changes
+All required data already exists in the `reviews` and `vendor_responses` tables.
 
