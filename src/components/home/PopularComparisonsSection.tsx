@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductLogo } from "@/components/ProductLogo";
 
 export function PopularComparisonsSection() {
   const { data: comparisons } = useQuery({
@@ -20,7 +21,27 @@ export function PopularComparisonsSection() {
     },
   });
 
-  // Fallback static data if no AI-enriched comparisons exist yet
+  // Fetch product logos for dynamic comparisons
+  const productIds = (comparisons || []).flatMap((c: any) => {
+    const ids = Array.isArray(c.product_ids) ? c.product_ids : [];
+    return ids.slice(0, 2);
+  });
+
+  const { data: productLogos = {} } = useQuery({
+    queryKey: ["comparison-logos", productIds],
+    queryFn: async () => {
+      if (productIds.length === 0) return {};
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, logo_url")
+        .in("id", productIds);
+      const map: Record<string, { name: string; logo_url: string | null }> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p; });
+      return map;
+    },
+    enabled: productIds.length > 0,
+  });
+
   const fallbackComparisons = [
     { a: "Slack", b: "Microsoft Teams", category: "Team Communication Software" },
     { a: "Notion", b: "Confluence", category: "Knowledge Management Tools" },
@@ -31,6 +52,11 @@ export function PopularComparisonsSection() {
   ];
 
   const hasDynamic = comparisons && comparisons.length > 0;
+
+  const getLogos = (c: any) => {
+    const ids = Array.isArray(c.product_ids) ? c.product_ids.slice(0, 2) : [];
+    return ids.map((id: string) => productLogos[id] || null).filter(Boolean);
+  };
 
   return (
     <section className="py-20" aria-labelledby="comparisons-heading">
@@ -60,6 +86,7 @@ export function PopularComparisonsSection() {
                 const parts = title.split(" vs ");
                 const a = parts[0] || "";
                 const b = parts[1] || "";
+                const logos = getLogos(c);
                 return (
                   <motion.article
                     key={c.id}
@@ -74,8 +101,17 @@ export function PopularComparisonsSection() {
                       aria-label={`Compare ${a} vs ${b}`}
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="h-10 w-10 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                          <span className="text-xs font-bold text-primary">{a.charAt(0)}</span>
+                        <div className="flex items-center -space-x-2 flex-shrink-0">
+                          {logos.length >= 2 ? (
+                            <>
+                              <ProductLogo name={logos[0].name} logoUrl={logos[0].logo_url} size="sm" className="ring-2 ring-background z-10" />
+                              <ProductLogo name={logos[1].name} logoUrl={logos[1].logo_url} size="sm" className="ring-2 ring-background" />
+                            </>
+                          ) : (
+                            <div className="h-9 w-9 rounded-lg bg-primary/8 flex items-center justify-center" aria-hidden="true">
+                              <span className="text-xs font-bold text-primary">{a.charAt(0)}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">{title}</p>
@@ -101,8 +137,9 @@ export function PopularComparisonsSection() {
                     aria-label={`Compare ${c.a} vs ${c.b} — ${c.category}`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="h-10 w-10 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                        <span className="text-xs font-bold text-primary">{c.a.charAt(0)}</span>
+                      <div className="flex items-center -space-x-2 flex-shrink-0">
+                        <ProductLogo name={c.a} size="sm" className="ring-2 ring-background z-10" />
+                        <ProductLogo name={c.b} size="sm" className="ring-2 ring-background" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">{c.a} vs {c.b}</p>
