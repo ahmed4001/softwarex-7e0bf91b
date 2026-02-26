@@ -37,16 +37,23 @@ export function LeadCaptureForm({ productId, vendorUserId, productName }: LeadCa
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("vendor_leads").insert({
+      const { data: insertedLead, error } = await supabase.from("vendor_leads").insert({
         product_id: productId,
         vendor_user_id: vendorUserId,
         name: parsed.data.name,
         email: parsed.data.email,
         company: parsed.data.company || null,
         message: parsed.data.message || null,
-      });
+      }).select("id").single();
       if (error) throw error;
       setSubmitted(true);
+
+      // Fire-and-forget vendor email notification
+      if (insertedLead?.id) {
+        supabase.functions.invoke("notify-vendor-lead", {
+          body: { leadId: insertedLead.id },
+        }).catch((err) => console.error("Lead notification failed:", err));
+      }
       toast.success("Your inquiry has been sent!");
     } catch (err: any) {
       toast.error(err.message || "Failed to submit");
