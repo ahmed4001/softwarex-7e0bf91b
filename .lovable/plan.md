@@ -1,53 +1,76 @@
 
 
-# Fix: Reviews Not Loading on Product Detail Page + Test AI Summary
+# Add Pricing Comparison Widget to Product Detail Pages
 
-## Problem Found
+## Overview
+Create a self-contained `PricingComparisonWidget` component that appears on the Pricing tab of each product detail page. It lets users quickly pick 1-3 competitor products and see a side-by-side price/feature comparison without leaving the page.
 
-The Reviews tab on product detail pages shows "No reviews yet" even when approved reviews exist in the database. The root cause is a **missing foreign key relationship** between the `reviews` and `profiles` tables.
+## What it does
+- Renders below the existing pricing tiers and TCO calculator on the Pricing tab
+- Shows a compact search bar to add up to 3 competitor products
+- Displays a condensed comparison table: product name, pricing model, starting price, plan count
+- Includes a "Full Comparison" link to `/compare-pricing?products=...` for the deep-dive view
 
-The reviews query in `ProductDetailPage.tsx` uses a PostgREST join:
+## Technical Plan
+
+### 1. Create `src/components/PricingComparisonWidget.tsx`
+
+A new component accepting the current product as a prop:
+
+```typescript
+interface PricingComparisonWidgetProps {
+  currentProduct: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    pricing_model: string | null;
+    starting_price: number | null;
+    pricing_tiers: any;
+  };
+}
 ```
-.from("reviews").select("*, profiles(name, avatar_url)")
+
+**Behavior:**
+- The current product is always shown as the first column (non-removable)
+- A search input allows adding up to 3 more products (same search query pattern as `PricingComparisonPage`)
+- Uses `useQuery` to search products by name from the `products` table
+- Fetches `product_pricing_tiers` for all selected products to show normalized tier counts
+- Renders a compact comparison table with rows: Pricing Model, Starting Price, Plans Available
+- A prominent "Compare in Detail" button links to `/compare-pricing?products=id1,id2,...`
+- Also pre-populates from `alternatives` table: auto-suggest the top 2-3 alternatives as quick-add chips
+
+### 2. Update `src/pages/ProductDetailPage.tsx`
+
+- Import the new `PricingComparisonWidget`
+- Add it to the Pricing tab (lines 540-554), between the TCO calculator and the existing "Compare with Other Products" link
+- Replace the standalone link with the widget, which includes its own "Full Comparison" CTA
+- Pass the current product data as props
+
+### 3. No database changes needed
+All required tables (`products`, `product_pricing_tiers`, `alternatives`) already exist with appropriate public SELECT RLS policies.
+
+## Component Structure
+
+```text
++--------------------------------------------------+
+| Compare Pricing                                   |
+| [Current Product] is always shown                 |
+|                                                   |
+| Quick add: [Alt 1] [Alt 2] [+ Search...]         |
+|                                                   |
+| +------+----------+--------+-------+------+       |
+| |      | Current  | Comp 1 | Comp 2| Comp3|       |
+| +------+----------+--------+-------+------+       |
+| |Model | Freemium | SaaS   | ...   |      |       |
+| |Price | $0/mo    | $29/mo | ...   |      |       |
+| |Plans | 4        | 3      | ...   |      |       |
+| +------+----------+--------+-------+------+       |
+|                                                   |
+| [Compare in Detail ->]                            |
++--------------------------------------------------+
 ```
 
-PostgREST returns a 400 error:
-> "Could not find a relationship between 'reviews' and 'profiles' in the schema cache"
-
-The `reviews` table has a `user_id` column and `profiles` has a `user_id` column, but there is **no foreign key constraint** linking them. Without this, PostgREST cannot perform the join.
-
-## Fix
-
-### 1. Add foreign key constraint (database migration)
-
-Add a FK from `reviews.user_id` to `profiles.user_id` so PostgREST can resolve the relationship:
-
-```sql
-ALTER TABLE public.reviews
-  ADD CONSTRAINT reviews_user_id_profiles_fkey
-  FOREIGN KEY (user_id) REFERENCES public.profiles(user_id);
-```
-
-This also needs a similar FK from `reviews.product_id` to `products.id` if missing (the existing query also joins `products`).
-
-### 2. No code changes needed
-
-The existing `ProductDetailPage.tsx` query is correct -- it just needs the FK to exist.
-
-## After Fix: Testing AI Summary
-
-Once reviews load correctly:
-1. Sign in as an admin user
-2. Navigate to a product with reviews (e.g., Monday.com)
-3. Click the "Reviews" tab
-4. Click "Generate AI Summary" button
-5. Verify the pros/cons summary appears on the product
-
-The button is admin-only (`isAdmin && reviews && reviews.length > 0`), so the user must be logged in with admin privileges.
-
-## Technical Notes
-
-- The `profiles` table uses `user_id` (not `id`) as the column referenced by reviews
-- The `generate-review-summary` edge function fetches approved reviews, calls the AI gateway, and updates the product's `pros_summary` and `cons_summary` columns
-- Both `pros_summary` and `cons_summary` columns already exist on the `products` table
-
+## Files Changed
+- **New**: `src/components/PricingComparisonWidget.tsx`
+- **Modified**: `src/pages/ProductDetailPage.tsx` (add widget to pricing tab)
