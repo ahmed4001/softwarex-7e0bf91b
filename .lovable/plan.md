@@ -1,132 +1,89 @@
 
 
-# Vendor Marketplace
+# Advanced Review System Overhaul
 
-## Overview
-Extend the existing Vendor Portal with subscription plans, lead capture forms, a CRM-lite dashboard for managing leads, sponsored placement management, and ROI reporting -- all integrated with the current claim-based vendor system.
+## Current State Analysis
 
-## Database Changes (Migration)
+After thorough exploration, most requested features **already exist**:
+- Multi-criteria ratings (Ease of Use, Support, Value, Features) -- built in WriteReviewPage and ReviewCard
+- Pros/cons fields -- built as free-text in reviews table and form
+- Media attachments -- review_media table, upload UI, and display all working
+- AI-generated review summaries -- generate-review-summary edge function + display on ProductDetailPage
+- Review comments/threads -- review_comments table with nested replies
+- Vendor responses -- vendor_responses table with display
 
-### Table: `vendor_subscriptions`
-Tracks which plan each vendor is on.
+## What Will Be Built
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| user_id | uuid NOT NULL | vendor |
-| plan | text NOT NULL | 'free', 'starter', 'pro', 'enterprise' |
-| status | text NOT NULL | 'active', 'canceled', 'expired' (default 'active') |
-| started_at | timestamptz | default now() |
-| expires_at | timestamptz | nullable |
-| metadata | jsonb | default '{}' -- store Stripe sub ID etc. |
-| created_at | timestamptz | default now() |
+The genuinely missing pieces are:
 
-RLS: Owner SELECT/UPDATE; Admin ALL.
+### 1. Product Q&A System (review_qa table)
+A dedicated question-and-answer section on product pages where users can ask questions and community members or vendors can answer.
 
-### Table: `vendor_leads`
-Captures inbound interest from product pages.
+**New table: `review_qa`**
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | uuid PK | |
-| product_id | uuid NOT NULL | |
-| vendor_user_id | uuid NOT NULL | owner of the product |
-| name | text NOT NULL | lead's name |
-| email | text NOT NULL | lead's email |
-| company | text | nullable |
-| message | text | nullable |
-| source | text | default 'product_page' |
-| status | text | default 'new' -- new/contacted/qualified/closed |
-| notes | text | vendor private notes |
+| id | uuid PK | gen_random_uuid() |
+| product_id | uuid NOT NULL | which product |
+| user_id | uuid NOT NULL | who asked/answered |
+| parent_id | uuid | null = question, set = answer |
+| body | text NOT NULL | the question or answer text |
+| is_vendor_answer | boolean | default false |
+| upvote_count | integer | default 0 |
+| status | text | default 'active' (active/hidden/flagged) |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
 
-RLS: Vendor owner SELECT/UPDATE (where vendor_user_id = auth.uid()); public INSERT with check (email is not null); Admin ALL.
+**RLS**: Public SELECT (active only); authenticated INSERT (own user_id); owner UPDATE/DELETE; admin ALL.
 
-### Table: `vendor_sponsored_requests`
-Vendors can request/manage their own sponsored placements (admin-approved).
+### 2. Q&A Votes Table (review_qa_votes)
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | |
-| user_id | uuid NOT NULL | vendor |
-| product_id | uuid NOT NULL | |
-| tier | text NOT NULL | 'bronze', 'silver', 'gold' |
-| start_date | date | |
-| end_date | date | |
-| status | text | default 'pending' -- pending/active/expired/rejected |
-| budget | numeric | nullable |
-| created_at | timestamptz | default now() |
+| qa_id | uuid NOT NULL | FK to review_qa |
+| user_id | uuid NOT NULL | voter |
+| created_at | timestamptz | |
 
-RLS: Owner SELECT/INSERT; Admin ALL.
+Unique constraint on (qa_id, user_id). Trigger to sync upvote_count on review_qa.
 
-## New Pages
+**RLS**: Public SELECT; authenticated INSERT/DELETE own votes.
 
-### 1. Vendor Subscription Plans Page (`/vendor/plans`)
-- Displays 4 tiers: Free, Starter ($49/mo), Pro ($149/mo), Enterprise ($499/mo)
-- Feature comparison matrix (lead capture, sponsored slots, analytics depth, response templates, priority support)
-- Current plan badge highlighting
-- CTA buttons (upgrade flow -- initially just records intent; Stripe integration can be layered later)
+### 3. Pros/Cons Tag System
+Enhance the existing free-text pros/cons with structured tags. Add a `pros_tags` and `cons_tags` JSONB column to the reviews table so users can pick from common tags (e.g., "Easy to use", "Great support", "Expensive") in addition to free text.
 
-### 2. Vendor Leads / CRM Page (`/vendor/leads`)
-- Table of captured leads with columns: Name, Email, Company, Product, Status, Date
-- Status pipeline dropdown (New -> Contacted -> Qualified -> Closed)
-- Inline notes editing
-- Search and filter by product/status
-- Lead count stat cards at top
-- CSV export button
+### 4. Q&A UI Components
+- **ProductQASection** component: displayed as a new tab on the ProductDetailPage
+- Question form with authentication gate
+- Threaded answers under each question
+- Upvote buttons on questions and answers
+- Vendor answer badge highlighting
 
-### 3. Vendor Sponsored Placements Page (`/vendor/sponsored`)
-- List of vendor's current/past sponsorship requests with status badges
-- "Request Sponsorship" form: select product, pick tier, date range, budget
-- Shows existing product sponsor status from products table
+## Database Migration
 
-### 4. Vendor ROI Report Page (`/vendor/roi`)
-- Aggregated metrics: views, clicks, CTR, leads captured, reviews received, response rate
-- Time period selector (7d, 30d, 90d, all)
-- Per-product ROI breakdown table
-- Charts: views/clicks over time (area chart), lead funnel (bar chart), review sentiment trend
-- Estimated lead value calculator (configurable $/lead)
-
-## Component: Lead Capture Form (on Product Detail Page)
-- Small card in the product sidebar: "Get a Quote" / "Contact Vendor"
-- Fields: Name, Email, Company (optional), Message (optional)
-- Only shown for claimed products
-- Submits to `vendor_leads` table
-- Success toast confirmation
-
-## Route & Navigation Updates
-
-### New routes under `/vendor`:
-```
-/vendor/plans       -> VendorPlansPage
-/vendor/leads       -> VendorLeadsPage
-/vendor/sponsored   -> VendorSponsoredPage
-/vendor/roi         -> VendorROIPage
-```
-
-### VendorLayout nav additions:
-Add 4 new nav items: Plans (CreditCard icon), Leads (UserPlus icon), Sponsored (Megaphone icon), ROI (PieChart icon).
+Single migration creating:
+- `review_qa` table with RLS
+- `review_qa_votes` table with unique constraint and RLS
+- Trigger `update_qa_upvote_count` to sync vote counts
+- Add `pros_tags` and `cons_tags` JSONB columns to `reviews` table (default '[]')
+- `update_updated_at_column` trigger on `review_qa`
 
 ## Files to Create/Modify
 
 | File | Action |
 |------|--------|
-| Migration SQL | New (3 tables, RLS, trigger) |
-| `src/pages/vendor/VendorPlansPage.tsx` | New |
-| `src/pages/vendor/VendorLeadsPage.tsx` | New |
-| `src/pages/vendor/VendorSponsoredPage.tsx` | New |
-| `src/pages/vendor/VendorROIPage.tsx` | New |
-| `src/components/LeadCaptureForm.tsx` | New |
-| `src/components/VendorLayout.tsx` | Modified (add 4 nav items) |
-| `src/App.tsx` | Modified (add 4 routes) |
-| `src/pages/ProductDetailPage.tsx` | Modified (add LeadCaptureForm in sidebar) |
+| Migration SQL | New -- 2 tables, columns, RLS, triggers |
+| `src/components/ProductQASection.tsx` | New -- Q&A display with question form, answers, votes |
+| `src/hooks/useProductQA.ts` | New -- queries and mutations for Q&A CRUD and voting |
+| `src/pages/ProductDetailPage.tsx` | Modified -- add "Q&A" tab rendering ProductQASection |
+| `src/pages/WriteReviewPage.tsx` | Modified -- add pros/cons tag picker alongside existing text fields |
+| `src/components/ReviewCard.tsx` | Modified -- display pros_tags/cons_tags as badges |
 
 ## Technical Notes
-- Lead capture form uses public INSERT policy so unauthenticated visitors can submit leads
-- `vendor_user_id` in `vendor_leads` is populated by looking up the product's approved claim owner at insert time via the form logic
-- ROI page reuses existing `view_count`/`click_count` from products table and counts from `vendor_leads` and `reviews`
-- Subscription plans are stored locally for now; Stripe checkout can be wired in later via the existing Stripe integration tooling
-- All new tables get an `update_updated_at_column` trigger where applicable
-- Charts use Recharts (already installed)
+
+- Q&A uses a self-referencing `parent_id` pattern (same as review_comments) for question/answer threading
+- Vendor answers are highlighted with a badge; determined by checking if the answerer has an approved claim on the product (checked client-side)
+- The trigger for upvote_count follows the same pattern as the existing `update_list_upvote_count` function
+- Pros/cons tags are stored as JSONB arrays alongside the existing free-text fields for backward compatibility
+- Common tag suggestions will be hardcoded in the frontend (e.g., "Easy Setup", "Good Value", "Steep Learning Curve")
 
