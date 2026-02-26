@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Download, Users, UserPlus, UserCheck, CheckCircle } from "lucide-react";
+import { Search, Download, Users, UserPlus, UserCheck, CheckCircle, BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -103,9 +104,16 @@ export default function VendorLeadsPage() {
           <h1 className="text-2xl font-display font-bold">Leads</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage your inbound leads</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={exportCSV}>
-          <Download className="h-4 w-4" /> Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/vendor/leads/analytics">
+            <Button variant="outline" size="sm" className="gap-1.5 rounded-lg">
+              <BarChart3 className="h-4 w-4" /> Analytics
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={exportCSV}>
+            <Download className="h-4 w-4" /> Export CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
