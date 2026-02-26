@@ -10,6 +10,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { VendorLayout } from "@/components/VendorLayout";
 import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { QuickCompareBar } from "@/components/QuickCompareBar";
 import NotFound from "./pages/NotFound";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -180,6 +181,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <QuickCompareBar />
             <AppContent />
           </BrowserRouter>
         </TooltipProvider>

@@ -23,6 +23,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, Heart, Sparkles, MessageSquarePlus, Bell, Award, List, Plus, Flame, TrendingUp, BarChart3, GitCompareArrows, Users } from "lucide-react";
 import { BadgeShowcase } from "@/components/dashboard/BadgeShowcase";
 import { StreakTracker } from "@/components/dashboard/StreakTracker";
+import { WeeklyChallenges } from "@/components/dashboard/WeeklyChallenges";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -214,6 +215,7 @@ export default function DashboardPage() {
               {/* Right: Sidebar widgets */}
               <aside className="space-y-5 order-first lg:order-last">
                 <StreakTracker userId={user.id} />
+                <WeeklyChallenges userId={user.id} />
                 <Card className="border-border/50">
                   <CardContent className="p-5">
                     <BadgeShowcase userId={user.id} />

@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { StarRating } from "./StarRating";
 import { ProductLogo } from "./ProductLogo";
-import { ArrowUpRight, Sparkles, Bookmark } from "lucide-react";
+import { ArrowUpRight, Sparkles, Bookmark, ArrowLeftRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import { useSavedProducts } from "@/hooks/useSavedProducts";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompareStore } from "@/components/QuickCompareBar";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -33,6 +34,8 @@ export function ProductCard({ id, slug, name, tagline, logo_url, avg_rating, tot
   const { user } = useAuth();
   const { isSaved, toggleSave, isToggling } = useSavedProducts();
   const saved = user ? isSaved(id) : false;
+  const { addItem, items: compareItems } = useCompareStore();
+  const isInCompare = compareItems.some((i) => i.id === id);
 
   return (
     <motion.div
@@ -41,21 +44,35 @@ export function ProductCard({ id, slug, name, tagline, logo_url, avg_rating, tot
       transition={{ duration: 0.25 }}
       className="relative"
     >
-      {user && (
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
         <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSave(id); }}
-          disabled={isToggling}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem({ id, name, logo_url, slug }); }}
           className={cn(
-            "absolute top-3 right-3 z-10 p-1.5 rounded-lg transition-all duration-200",
-            saved
-              ? "bg-primary/10 text-primary"
-              : "bg-muted/80 text-muted-foreground/40 hover:text-primary hover:bg-primary/10"
+            "p-1.5 rounded-lg transition-all duration-200",
+            isInCompare
+              ? "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]"
+              : "bg-muted/80 text-muted-foreground/40 hover:text-[hsl(var(--info))] hover:bg-[hsl(var(--info))]/10"
           )}
-          aria-label={saved ? "Remove from saved" : "Save product"}
+          aria-label="Add to compare"
         >
-          <Bookmark className={cn("h-4 w-4", saved && "fill-current")} />
+          <ArrowLeftRight className="h-3.5 w-3.5" />
         </button>
-      )}
+        {user && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSave(id); }}
+            disabled={isToggling}
+            className={cn(
+              "p-1.5 rounded-lg transition-all duration-200",
+              saved
+                ? "bg-primary/10 text-primary"
+                : "bg-muted/80 text-muted-foreground/40 hover:text-primary hover:bg-primary/10"
+            )}
+            aria-label={saved ? "Remove from saved" : "Save product"}
+          >
+            <Bookmark className={cn("h-4 w-4", saved && "fill-current")} />
+          </button>
+        )}
+      </div>
       <Link to={`/product/${slug}`} className={cn("glass-card p-5 group block relative", is_sponsored && "ring-1 ring-primary/15 bg-primary/[0.02]")}>
         {is_sponsored && (
           <TooltipProvider delayDuration={200}>
