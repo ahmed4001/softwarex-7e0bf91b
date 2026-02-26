@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Upload, X, Loader2, ArrowLeft, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const CRITERIA = [
   { key: "overall_rating", label: "Overall Rating", required: true },
@@ -25,6 +27,9 @@ const CRITERIA = [
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5000+"];
 const USAGE_DURATIONS = ["Less than 6 months", "6-12 months", "1-2 years", "2+ years"];
+
+const PRO_TAG_OPTIONS = ["Easy Setup", "Great UI/UX", "Good Value", "Excellent Support", "Feature Rich", "Fast Performance", "Good Integrations", "Active Development"];
+const CON_TAG_OPTIONS = ["Steep Learning Curve", "Expensive", "Limited Features", "Slow Support", "Buggy", "Poor Documentation", "Limited Integrations", "Outdated UI"];
 
 export default function WriteReviewPage() {
   const { slug } = useParams();
@@ -53,6 +58,12 @@ export default function WriteReviewPage() {
   const [recommendation, setRecommendation] = useState(8);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
+  const [prosTags, setProsTags] = useState<string[]>([]);
+  const [consTags, setConsTags] = useState<string[]>([]);
+
+  const toggleTag = (tag: string, list: string[], setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setter(list.includes(tag) ? list.filter((t) => t !== tag) : [...list, tag]);
+  };
 
   const setRating = (key: string, val: number) => setRatings((r) => ({ ...r, [key]: val }));
 
@@ -91,6 +102,8 @@ export default function WriteReviewPage() {
         body: body.trim() || null,
         pros: pros.trim() || null,
         cons: cons.trim() || null,
+        pros_tags: prosTags,
+        cons_tags: consTags,
         reviewer_role: reviewerRole.trim() || null,
         company_size: companySize || null,
         industry: industry.trim() || null,
@@ -189,11 +202,41 @@ export default function WriteReviewPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="pros" className="text-[hsl(var(--success))]">👍 Pros</Label>
-                  <Textarea id="pros" value={pros} onChange={(e) => setPros(e.target.value)} placeholder="What did you like?" rows={3} className="mt-1.5" />
+                  <div className="flex flex-wrap gap-1.5 mt-1.5 mb-2">
+                    {PRO_TAG_OPTIONS.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant={prosTags.includes(tag) ? "default" : "outline"}
+                        className={cn(
+                          "cursor-pointer text-xs transition-colors",
+                          prosTags.includes(tag) ? "bg-[hsl(var(--success))] text-white hover:bg-[hsl(var(--success)/0.9)]" : "hover:border-[hsl(var(--success)/0.5)]"
+                        )}
+                        onClick={() => toggleTag(tag, prosTags, setProsTags)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <Textarea id="pros" value={pros} onChange={(e) => setPros(e.target.value)} placeholder="What did you like?" rows={3} />
                 </div>
                 <div>
                   <Label htmlFor="cons" className="text-destructive">👎 Cons</Label>
-                  <Textarea id="cons" value={cons} onChange={(e) => setCons(e.target.value)} placeholder="What could be improved?" rows={3} className="mt-1.5" />
+                  <div className="flex flex-wrap gap-1.5 mt-1.5 mb-2">
+                    {CON_TAG_OPTIONS.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant={consTags.includes(tag) ? "default" : "outline"}
+                        className={cn(
+                          "cursor-pointer text-xs transition-colors",
+                          consTags.includes(tag) ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "hover:border-destructive/50"
+                        )}
+                        onClick={() => toggleTag(tag, consTags, setConsTags)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <Textarea id="cons" value={cons} onChange={(e) => setCons(e.target.value)} placeholder="What could be improved?" rows={3} />
                 </div>
               </div>
               <div>

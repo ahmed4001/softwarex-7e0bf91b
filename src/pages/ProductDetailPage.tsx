@@ -8,7 +8,7 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, CheckCircle, Globe, Calendar, Users, Building2, Sparkles, ArrowLeft, X, ChevronLeft, ChevronRight, MessageSquare, Loader2, Wand2, ArrowLeftRight } from "lucide-react";
+import { ExternalLink, CheckCircle, Globe, Calendar, Users, Building2, Sparkles, ArrowLeft, X, ChevronLeft, ChevronRight, MessageSquare, Loader2, Wand2, ArrowLeftRight, HelpCircle } from "lucide-react";
 import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { PricingTiersDisplay } from "@/components/PricingTiersDisplay";
 import { TCOCalculator } from "@/components/TCOCalculator";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
+import { ProductQASection } from "@/components/ProductQASection";
 
 function ScreenshotGallery({ screenshots, productName }: { screenshots: string[]; productName: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -314,6 +315,7 @@ export default function ProductDetailPage() {
             <TabsTrigger value="reviews" className="rounded-lg font-medium">{t("productDetail.reviews", { count: product.total_reviews })}</TabsTrigger>
             <TabsTrigger value="pricing" className="rounded-lg font-medium">{t("productDetail.pricing")}</TabsTrigger>
             <TabsTrigger value="alternatives" className="rounded-lg font-medium">{t("productDetail.alternatives")}</TabsTrigger>
+            <TabsTrigger value="qa" className="rounded-lg font-medium gap-1"><HelpCircle className="h-3.5 w-3.5" />Q&A</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -400,6 +402,8 @@ export default function ProductDetailPage() {
                     verified_purchase={r.verified_purchase}
                     created_at={r.created_at}
                     media={mediaByReview.get(r.id)}
+                    pros_tags={Array.isArray(r.pros_tags) ? r.pros_tags as string[] : []}
+                    cons_tags={Array.isArray(r.cons_tags) ? r.cons_tags as string[] : []}
                   />
                   {vendorResponse && (
                     <div className="ml-8 mt-2 p-4 rounded-xl bg-primary/5 border border-primary/10">
@@ -470,6 +474,10 @@ export default function ProductDetailPage() {
             ) : (
               <div className="glass-card p-12 text-center text-muted-foreground">No alternatives listed yet.</div>
             )}
+          </TabsContent>
+
+          <TabsContent value="qa">
+            <ProductQASection productId={product.id} />
           </TabsContent>
         </Tabs>
       </div>
