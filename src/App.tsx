@@ -69,6 +69,10 @@ const VendorAnalyticsPage = lazy(() => import("./pages/vendor/VendorAnalyticsPag
 const VendorProductEditorPage = lazy(() => import("./pages/vendor/VendorProductEditorPage"));
 const VendorCompetitorsPage = lazy(() => import("./pages/vendor/VendorCompetitorsPage"));
 const VendorResponseTemplatesPage = lazy(() => import("./pages/vendor/VendorResponseTemplatesPage"));
+const VendorPlansPage = lazy(() => import("./pages/vendor/VendorPlansPage"));
+const VendorLeadsPage = lazy(() => import("./pages/vendor/VendorLeadsPage"));
+const VendorSponsoredPage = lazy(() => import("./pages/vendor/VendorSponsoredPage"));
+const VendorROIPage = lazy(() => import("./pages/vendor/VendorROIPage"));
 
 const queryClient = new QueryClient();
 
@@ -152,6 +156,10 @@ function AppContent() {
           <Route path="products/:productId/edit" element={<ErrorBoundary><VendorProductEditorPage /></ErrorBoundary>} />
           <Route path="competitors" element={<ErrorBoundary><VendorCompetitorsPage /></ErrorBoundary>} />
           <Route path="templates" element={<ErrorBoundary><VendorResponseTemplatesPage /></ErrorBoundary>} />
+          <Route path="plans" element={<ErrorBoundary><VendorPlansPage /></ErrorBoundary>} />
+          <Route path="leads" element={<ErrorBoundary><VendorLeadsPage /></ErrorBoundary>} />
+          <Route path="sponsored" element={<ErrorBoundary><VendorSponsoredPage /></ErrorBoundary>} />
+          <Route path="roi" element={<ErrorBoundary><VendorROIPage /></ErrorBoundary>} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

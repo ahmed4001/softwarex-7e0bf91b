@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { PricingTiersDisplay } from "@/components/PricingTiersDisplay";
 import { TCOCalculator } from "@/components/TCOCalculator";
+import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 
 function ScreenshotGallery({ screenshots, productName }: { screenshots: string[]; productName: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -145,7 +146,22 @@ export default function ProductDetailPage() {
     mediaByReview.get(m.review_id)!.push({ url: m.url, file_type: m.file_type });
   });
 
-  // Fetch alternatives
+  // Fetch claim owner for lead capture
+  const { data: claimOwner } = useQuery({
+    queryKey: ["product-claim-owner", product?.id],
+    enabled: !!product?.id && !!product?.is_claimed,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_claims")
+        .select("user_id")
+        .eq("product_id", product!.id)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+      return data?.user_id || null;
+    },
+  });
+
   const { data: alternatives = [] } = useQuery({
     queryKey: ["product-alternatives", product?.id],
     queryFn: async () => {
@@ -284,6 +300,9 @@ export default function ProductDetailPage() {
                   </div>
                 ) : null;
               })()}
+              {product.is_claimed && claimOwner && (
+                <LeadCaptureForm productId={product.id} vendorUserId={claimOwner} productName={product.name} />
+              )}
             </div>
           </div>
         </motion.div>
