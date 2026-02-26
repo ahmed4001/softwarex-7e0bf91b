@@ -34,9 +34,11 @@ interface ReviewCardProps {
   verified_purchase?: boolean;
   created_at: string;
   media?: { url: string; file_type?: string }[];
+  pros_tags?: string[];
+  cons_tags?: string[];
 }
 
-export function ReviewCard({ id, title, body, pros, cons, overall_rating, ease_of_use, customer_support, value_for_money, features_rating, reviewer_name, reviewer_user_id, reviewer_role, company_size, verified_reviewer, verified_purchase, created_at, media }: ReviewCardProps) {
+export function ReviewCard({ id, title, body, pros, cons, overall_rating, ease_of_use, customer_support, value_for_money, features_rating, reviewer_name, reviewer_user_id, reviewer_role, company_size, verified_reviewer, verified_purchase, created_at, media, pros_tags, cons_tags }: ReviewCardProps) {
   const { user } = useAuth();
   const { up, down, userVote, vote, isVoting } = useReviewVotes(id);
   const { data: reviewerBadges = [] } = useUserBadges(reviewer_user_id);
@@ -96,16 +98,30 @@ export function ReviewCard({ id, title, body, pros, cons, overall_rating, ease_o
         )}
       </div>
 
-      {pros && (
+      {(pros || (pros_tags && pros_tags.length > 0)) && (
         <div className="mb-3 p-3 rounded-xl bg-[hsl(var(--success)/0.05)] border border-[hsl(var(--success)/0.1)]">
           <span className="text-xs font-bold text-[hsl(var(--success))] uppercase tracking-wider">Pros</span>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{pros}</p>
+          {pros_tags && pros_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5 mb-1">
+              {pros_tags.map((tag, i) => (
+                <span key={i} className="inline-flex items-center rounded-full bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] text-[10px] font-semibold px-2 py-0.5">{tag}</span>
+              ))}
+            </div>
+          )}
+          {pros && <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{pros}</p>}
         </div>
       )}
-      {cons && (
+      {(cons || (cons_tags && cons_tags.length > 0)) && (
         <div className="mb-3 p-3 rounded-xl bg-[hsl(var(--destructive)/0.05)] border border-[hsl(var(--destructive)/0.1)]">
           <span className="text-xs font-bold text-destructive uppercase tracking-wider">Cons</span>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{cons}</p>
+          {cons_tags && cons_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5 mb-1">
+              {cons_tags.map((tag, i) => (
+                <span key={i} className="inline-flex items-center rounded-full bg-destructive/10 text-destructive text-[10px] font-semibold px-2 py-0.5">{tag}</span>
+              ))}
+            </div>
+          )}
+          {cons && <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{cons}</p>}
         </div>
       )}
       {body && <p className="text-sm text-muted-foreground leading-relaxed mb-4">{body}</p>}

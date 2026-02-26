@@ -1179,6 +1179,82 @@ export type Database = {
           },
         ]
       }
+      review_qa: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_vendor_answer: boolean
+          parent_id: string | null
+          product_id: string
+          status: string
+          updated_at: string
+          upvote_count: number
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_vendor_answer?: boolean
+          parent_id?: string | null
+          product_id: string
+          status?: string
+          updated_at?: string
+          upvote_count?: number
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_vendor_answer?: boolean
+          parent_id?: string | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+          upvote_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_qa_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "review_qa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_qa_votes: {
+        Row: {
+          created_at: string
+          id: string
+          qa_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qa_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qa_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_qa_votes_qa_id_fkey"
+            columns: ["qa_id"]
+            isOneToOne: false
+            referencedRelation: "review_qa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_votes: {
         Row: {
           created_at: string
@@ -1216,6 +1292,7 @@ export type Database = {
           body: string | null
           company_size: string | null
           cons: string | null
+          cons_tags: Json
           created_at: string | null
           customer_support: number | null
           ease_of_use: number | null
@@ -1232,6 +1309,7 @@ export type Database = {
           overall_rating: number
           product_id: string
           pros: string | null
+          pros_tags: Json
           recommendation_likelihood: number | null
           rejection_reason: string | null
           reviewer_role: string | null
@@ -1250,6 +1328,7 @@ export type Database = {
           body?: string | null
           company_size?: string | null
           cons?: string | null
+          cons_tags?: Json
           created_at?: string | null
           customer_support?: number | null
           ease_of_use?: number | null
@@ -1266,6 +1345,7 @@ export type Database = {
           overall_rating: number
           product_id: string
           pros?: string | null
+          pros_tags?: Json
           recommendation_likelihood?: number | null
           rejection_reason?: string | null
           reviewer_role?: string | null
@@ -1284,6 +1364,7 @@ export type Database = {
           body?: string | null
           company_size?: string | null
           cons?: string | null
+          cons_tags?: Json
           created_at?: string | null
           customer_support?: number | null
           ease_of_use?: number | null
@@ -1300,6 +1381,7 @@ export type Database = {
           overall_rating?: number
           product_id?: string
           pros?: string | null
+          pros_tags?: Json
           recommendation_likelihood?: number | null
           rejection_reason?: string | null
           reviewer_role?: string | null
