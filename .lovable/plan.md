@@ -1,18 +1,23 @@
 
 
-# Widen the Search Input in the Pricing Comparison Widget
+# Add Product Logos to the Comparisons Directory Page
 
 ## Problem
-The search bar in the Pricing Comparison Widget on product detail pages is too narrow (`w-48` = 12rem / 192px), making it difficult to type and read product names.
+The `/compare` directory page shows only a single letter initial (e.g., "A", "L") for each comparison card instead of actual product logos/photos.
 
 ## Solution
-Increase the width of the search input from `w-48` to `w-64` (16rem / 256px), and on smaller screens use `w-full` so it takes the available space.
+Fetch product logos from the `products` table using the `product_ids` stored in each comparison, then display two overlapping logos per card using the existing `ProductLogo` component -- matching the style already used on the homepage.
 
 ## Changes
 
-### File: `src/components/PricingComparisonWidget.tsx`
-- **Line 161**: Change the Input className from `w-48` to `w-64` for a wider search field
-- **Line 158**: Update the search container wrapper to allow more flexible sizing on mobile by adding `flex-1 min-w-[200px]`
+### File: `src/pages/ComparePage.tsx`
 
-This gives approximately 33% more typing space while keeping the layout clean.
+1. **Import `ProductLogo`** component at the top of the file
 
+2. **Add a query to fetch product logos** for the current page of comparisons. Extract all `product_ids` from the loaded comparisons, then batch-fetch `id, name, logo_url` from `products`. Build a lookup map (same pattern used in `PopularComparisonsSection`).
+
+3. **Replace the single-letter avatar** (lines 533-536) with two overlapping `ProductLogo` components showing the logos for Product A and Product B:
+   - Use `-space-x-2` overlap with `ring-2 ring-background` styling
+   - Fall back to the letter initial if logos aren't found
+
+This is a UI-only change with one additional lightweight query. No database changes needed.
