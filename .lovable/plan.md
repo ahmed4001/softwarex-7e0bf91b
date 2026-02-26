@@ -1,62 +1,53 @@
 
 
-# Review Analytics Dashboard for Vendors
+# Fix: Reviews Not Loading on Product Detail Page + Test AI Summary
 
-## Overview
+## Problem Found
 
-Enhance the existing `VendorAnalyticsPage.tsx` with three new analytics sections: a detailed rating breakdown with sub-criteria, sentiment trend analysis over time, and response rate metrics. This builds on the existing charts and stat cards already present.
+The Reviews tab on product detail pages shows "No reviews yet" even when approved reviews exist in the database. The root cause is a **missing foreign key relationship** between the `reviews` and `profiles` tables.
 
-## What Gets Built
-
-### 1. Sub-Criteria Rating Breakdown
-A horizontal bar chart showing average scores across the multi-criteria ratings: Ease of Use, Customer Support, Value for Money, Features, and Recommendation Likelihood. This gives vendors deeper insight beyond the overall star rating.
-
-### 2. Sentiment Trend Over Time (Monthly)
-A line/area chart showing the monthly average rating trend and review volume, giving vendors a view of how satisfaction is changing over time. Reviews are bucketed by month from the `created_at` timestamp. This uses existing review data (no AI sentiment API call needed -- that's an admin-only feature).
-
-### 3. Response Rate Analytics
-- **Response Rate**: percentage of reviews that have a vendor response (responses / total reviews)
-- **Avg Response Time**: average time between review `created_at` and response `created_at`
-- **Response Rate Over Time**: a small bar chart showing monthly responded vs unresponded review counts
-- A "response streak" indicator showing how many consecutive recent reviews have been responded to
-
-## Technical Details
-
-### File Changes
-
-**`src/pages/vendor/VendorAnalyticsPage.tsx`** (modify):
-
-1. Expand the reviews query to include sub-criteria fields: `ease_of_use, customer_support, value_for_money, features_rating, recommendation_likelihood`
-2. Fetch `vendor_responses` with `created_at` and `review_id` (not just count) to compute response times
-3. Add `useMemo` computations for:
-   - Sub-criteria averages across all reviews
-   - Monthly sentiment trend (group reviews by month, compute avg rating per month)
-   - Response rate percentage and average response time
-   - Monthly response vs unresponded breakdown
-4. Add three new chart sections after the existing charts:
-   - Horizontal BarChart for sub-criteria averages (5 bars, labeled)
-   - AreaChart for monthly rating trend with review count overlay
-   - Stacked BarChart for monthly responded/unresponded reviews
-5. Add two new StatCards in the existing grid: "Response Rate" (percentage) and "Avg Response Time" (e.g., "2.3 days")
-
-### Data Flow
-- All data comes from existing tables (`reviews`, `vendor_responses`, `products`) -- no new tables or migrations needed
-- All computations are client-side using `useMemo`
-- Uses existing Recharts components already imported in the file
-
-### UI Layout
-```text
-[Existing 6 stat cards row -- add Response Rate % + Avg Response Time]
-
-[Existing 3 charts: Rating Dist | Reviews by Product | Review Status]
-
-[NEW ROW: Sub-Criteria Breakdown | Monthly Rating Trend]
-
-[NEW ROW: Response Rate Over Time (full width)]
-
-[Existing ProductAnalyticsDashboard]
+The reviews query in `ProductDetailPage.tsx` uses a PostgREST join:
+```
+.from("reviews").select("*, profiles(name, avatar_url)")
 ```
 
-### No Database Changes
-All required data already exists in the `reviews` and `vendor_responses` tables.
+PostgREST returns a 400 error:
+> "Could not find a relationship between 'reviews' and 'profiles' in the schema cache"
+
+The `reviews` table has a `user_id` column and `profiles` has a `user_id` column, but there is **no foreign key constraint** linking them. Without this, PostgREST cannot perform the join.
+
+## Fix
+
+### 1. Add foreign key constraint (database migration)
+
+Add a FK from `reviews.user_id` to `profiles.user_id` so PostgREST can resolve the relationship:
+
+```sql
+ALTER TABLE public.reviews
+  ADD CONSTRAINT reviews_user_id_profiles_fkey
+  FOREIGN KEY (user_id) REFERENCES public.profiles(user_id);
+```
+
+This also needs a similar FK from `reviews.product_id` to `products.id` if missing (the existing query also joins `products`).
+
+### 2. No code changes needed
+
+The existing `ProductDetailPage.tsx` query is correct -- it just needs the FK to exist.
+
+## After Fix: Testing AI Summary
+
+Once reviews load correctly:
+1. Sign in as an admin user
+2. Navigate to a product with reviews (e.g., Monday.com)
+3. Click the "Reviews" tab
+4. Click "Generate AI Summary" button
+5. Verify the pros/cons summary appears on the product
+
+The button is admin-only (`isAdmin && reviews && reviews.length > 0`), so the user must be logged in with admin privileges.
+
+## Technical Notes
+
+- The `profiles` table uses `user_id` (not `id`) as the column referenced by reviews
+- The `generate-review-summary` edge function fetches approved reviews, calls the AI gateway, and updates the product's `pros_summary` and `cons_summary` columns
+- Both `pros_summary` and `cons_summary` columns already exist on the `products` table
 
