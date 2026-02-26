@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeftRight, BarChart3, Bot, Box, ChevronDown, FileText, FolderOpen,
+  ArrowLeftRight, BarChart3, Bot, Box, ChevronDown, DollarSign, FileText, FolderOpen,
   Image, LayoutDashboard, LogOut, Megaphone, MessageSquare, Settings,
   Star, Users, Activity, Mail, Database, Sparkles, Globe, Inbox
 } from "lucide-react";
@@ -44,6 +44,7 @@ const sidebarItems = [
   },
   { label: "Media Library", icon: Image, to: "/admin/media" },
   { label: "Advertisements", icon: Megaphone, to: "/admin/ads" },
+  { label: "Pricing", icon: DollarSign, to: "/admin/pricing" },
   { label: "Comparisons", icon: ArrowLeftRight, to: "/admin/comparisons" },
   { label: "Submissions", icon: MessageSquare, to: "/admin/submissions" },
   { label: "Email Templates", icon: Mail, to: "/admin/emails" },

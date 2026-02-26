@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
@@ -71,12 +71,135 @@ export default function PricingComparisonPage() {
 
   const removeProduct = (id: string) => setSelectedProducts((prev) => prev.filter((p) => p.id !== id));
 
-  // Build feature matrix
-  const allFeatures = Array.from(
-    new Set(selectedProducts.flatMap((p) => (Array.isArray(p.features) ? p.features.filter((f: any) => typeof f === "string") : [])))
-  ).sort();
+  // Fetch normalized pricing tiers for selected products
+  const selectedIds = selectedProducts.map((p) => p.id);
+  const { data: normalizedTiers = [] } = useQuery({
+    queryKey: ["pricing-normalized-tiers", selectedIds],
+    enabled: selectedIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_pricing_tiers")
+        .select("*")
+        .in("product_id", selectedIds)
+        .order("sort_order");
+      return data || [];
+    },
+  });
+
+  // Fetch normalized pricing features for selected products
+  const { data: normalizedFeatures = [] } = useQuery({
+    queryKey: ["pricing-normalized-features", selectedIds],
+    enabled: selectedIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pricing_features")
+        .select("*")
+        .in("product_id", selectedIds)
+        .order("sort_order");
+      return data || [];
+    },
+  });
+
+  // Fetch tier-feature mappings
+  const normalizedTierIds = normalizedTiers.map((t: any) => t.id);
+  const { data: tierFeatureMappings = [] } = useQuery({
+    queryKey: ["pricing-tier-feature-map", normalizedTierIds],
+    enabled: normalizedTierIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pricing_tier_features")
+        .select("*")
+        .in("tier_id", normalizedTierIds);
+      return data || [];
+    },
+  });
+
+  // Check if any selected product has normalized data
+  const hasNormalizedData = normalizedTiers.length > 0;
+
+  // Build normalized tiers grouped by product for display
+  const normalizedTiersByProduct = useMemo(() => {
+    const map = new Map<string, any[]>();
+    normalizedTiers.forEach((t: any) => {
+      if (!map.has(t.product_id)) map.set(t.product_id, []);
+      map.get(t.product_id)!.push(t);
+    });
+    return map;
+  }, [normalizedTiers]);
+
+  // Build tier-feature lookup
+  const tierFeatureSet = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    (tierFeatureMappings as any[]).forEach((tf: any) => {
+      if (!map.has(tf.tier_id)) map.set(tf.tier_id, new Set());
+      map.get(tf.tier_id)!.add(tf.feature_id);
+    });
+    return map;
+  }, [tierFeatureMappings]);
+
+  // For TCO: merge normalized tiers into product format
+  const productsWithMergedTiers = useMemo(() => {
+    return selectedProducts.map((p) => {
+      const nTiers = normalizedTiersByProduct.get(p.id);
+      if (nTiers && nTiers.length > 0) {
+        return {
+          ...p,
+          pricing_tiers: nTiers.map((t: any) => ({
+            name: t.name,
+            price: Number(t.price),
+            period: t.period,
+            description: t.description,
+            is_popular: t.is_popular,
+            features: (normalizedFeatures as any[])
+              .filter((f: any) => f.product_id === p.id && tierFeatureSet.get(t.id)?.has(f.id))
+              .map((f: any) => f.name),
+          })),
+        };
+      }
+      return p;
+    });
+  }, [selectedProducts, normalizedTiersByProduct, normalizedFeatures, tierFeatureSet]);
+
+  // Build feature matrix: combine JSON features + normalized features
+  const allFeatures = useMemo(() => {
+    const featureSet = new Set<string>();
+    selectedProducts.forEach((p) => {
+      if (Array.isArray(p.features)) p.features.forEach((f: any) => { if (typeof f === "string") featureSet.add(f); });
+    });
+    // Add normalized feature names
+    (normalizedFeatures as any[]).forEach((f: any) => featureSet.add(f.name));
+    return Array.from(featureSet).sort();
+  }, [selectedProducts, normalizedFeatures]);
+
+  // Feature check: does product have this feature (JSON or normalized)?
+  const productHasFeature = (product: SelectedProduct, featureName: string) => {
+    // Check JSON features
+    if (Array.isArray(product.features) && product.features.includes(featureName)) return true;
+    // Check normalized: if any tier of this product has this feature
+    const productTiers = normalizedTiersByProduct.get(product.id) || [];
+    const nFeature = (normalizedFeatures as any[]).find((f: any) => f.product_id === product.id && f.name === featureName);
+    if (!nFeature) return false;
+    return productTiers.some((t: any) => tierFeatureSet.get(t.id)?.has(nFeature.id));
+  };
 
   const parsedTiers = (p: SelectedProduct) => {
+    // Prefer normalized tiers
+    const nTiers = normalizedTiersByProduct.get(p.id);
+    if (nTiers && nTiers.length > 0) {
+      return nTiers.map((t: any) => ({
+        name: t.name,
+        price: Number(t.price),
+        period: t.period,
+        description: t.description,
+        is_popular: t.is_popular,
+        cta_label: t.cta_label,
+        cta_url: t.cta_url,
+        features: (normalizedFeatures as any[])
+          .filter((f: any) => f.product_id === p.id && tierFeatureSet.get(t.id)?.has(f.id))
+          .map((f: any) => f.name),
+      }));
+    }
+    // Fall back to JSON tiers
     const tiers = Array.isArray(p.pricing_tiers) ? p.pricing_tiers : [];
     return tiers.filter((t: any) => t && typeof t === "object" && t.name);
   };
@@ -103,6 +226,9 @@ export default function PricingComparisonPage() {
                   {p.logo_url ? <img src={p.logo_url} alt="" className="h-full w-full object-cover" /> : <span className="text-[10px] font-bold text-primary flex items-center justify-center h-full">{p.name.charAt(0)}</span>}
                 </div>
                 {p.name}
+                {normalizedTiersByProduct.has(p.id) && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1">Structured</Badge>
+                )}
                 <button onClick={() => removeProduct(p.id)} className="ml-1 hover:text-destructive transition-colors">
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -187,7 +313,12 @@ export default function PricingComparisonPage() {
                               <div className="h-9 w-9 rounded-xl bg-muted overflow-hidden flex-shrink-0">
                                 {p.logo_url ? <img src={p.logo_url} alt="" className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-primary flex items-center justify-center h-full">{p.name.charAt(0)}</span>}
                               </div>
-                              <span className="font-semibold text-foreground">{p.name}</span>
+                              <div>
+                                <span className="font-semibold text-foreground">{p.name}</span>
+                                {normalizedTiersByProduct.has(p.id) && (
+                                  <Badge variant="outline" className="text-[9px] ml-2 px-1.5 py-0">Structured</Badge>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-5 py-4 text-center">
@@ -196,6 +327,8 @@ export default function PricingComparisonPage() {
                           <td className="px-5 py-4 text-center">
                             {p.starting_price ? (
                               <span className="text-lg font-display font-bold">${p.starting_price}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                            ) : tiers.length > 0 ? (
+                              <span className="text-lg font-display font-bold">${Math.min(...tiers.map((t: any) => typeof t.price === "number" ? t.price : 0))}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
@@ -241,7 +374,7 @@ export default function PricingComparisonPage() {
                         <tr key={feature} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
                           <td className="px-5 py-3 text-sm text-foreground font-medium">{feature}</td>
                           {selectedProducts.map((p) => {
-                            const has = Array.isArray(p.features) && p.features.includes(feature);
+                            const has = productHasFeature(p, feature);
                             return (
                               <td key={p.id} className="px-5 py-3 text-center">
                                 {has ? (
@@ -281,7 +414,7 @@ export default function PricingComparisonPage() {
 
             {/* TCO Calculator */}
             <TabsContent value="tco">
-              <TCOCalculator products={selectedProducts} />
+              <TCOCalculator products={productsWithMergedTiers} />
             </TabsContent>
           </Tabs>
         )}

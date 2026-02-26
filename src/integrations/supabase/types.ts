@@ -818,6 +818,80 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_features: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          product_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          product_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          product_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_features_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_tier_features: {
+        Row: {
+          created_at: string
+          feature_id: string
+          id: string
+          tier_id: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          feature_id: string
+          id?: string
+          tier_id: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          feature_id?: string
+          id?: string
+          tier_id?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_tier_features_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_tier_features_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "product_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_claims: {
         Row: {
           admin_note: string | null
@@ -855,6 +929,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_claims_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_pricing_tiers: {
+        Row: {
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          description: string | null
+          id: string
+          is_enterprise: boolean | null
+          is_popular: boolean | null
+          name: string
+          period: string | null
+          price: number | null
+          product_id: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          description?: string | null
+          id?: string
+          is_enterprise?: boolean | null
+          is_popular?: boolean | null
+          name: string
+          period?: string | null
+          price?: number | null
+          product_id: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          description?: string | null
+          id?: string
+          is_enterprise?: boolean | null
+          is_popular?: boolean | null
+          name?: string
+          period?: string | null
+          price?: number | null
+          product_id?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_pricing_tiers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
