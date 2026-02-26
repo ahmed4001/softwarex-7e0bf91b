@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export function NotificationBell() {
   const { user } = useAuth();
@@ -38,7 +39,28 @@ export function NotificationBell() {
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+          // Show live toast for new notification
+          if (payload.new?.title) {
+            toast(payload.new.title, {
+              description: payload.new.message || undefined,
+              action: payload.new.link
+                ? { label: "View", onClick: () => window.location.href = payload.new.link }
+                : undefined,
+            });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
           schema: "public",
           table: "notifications",
           filter: `user_id=eq.${user.id}`,

@@ -728,6 +728,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          badge_earned: boolean
+          created_at: string
+          id: string
+          new_followers: boolean
+          product_updates: boolean
+          review_replies: boolean
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean
+        }
+        Insert: {
+          badge_earned?: boolean
+          created_at?: string
+          id?: string
+          new_followers?: boolean
+          product_updates?: boolean
+          review_replies?: boolean
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean
+        }
+        Update: {
+          badge_earned?: boolean
+          created_at?: string
+          id?: string
+          new_followers?: boolean
+          product_updates?: boolean
+          review_replies?: boolean
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
