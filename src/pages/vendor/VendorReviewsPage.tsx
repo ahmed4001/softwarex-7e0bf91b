@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,10 +10,14 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { MessageSquare, Send, Loader2, CheckCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const PAGE_SIZE = 20;
 
 export default function VendorReviewsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(0);
 
   // Get claimed product IDs
   const { data: claims = [] } = useQuery({
@@ -31,9 +35,25 @@ export default function VendorReviewsPage() {
 
   const productIds = claims.map((c: any) => c.product_id);
 
-  // Get reviews for those products
+  // Get total count for pagination
+  const { data: reviewCount = 0 } = useQuery({
+    queryKey: ["vendor-reviews-count", productIds],
+    enabled: productIds.length > 0,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("reviews")
+        .select("id", { count: "exact", head: true })
+        .in("product_id", productIds)
+        .eq("status", "approved");
+      return count || 0;
+    },
+  });
+
+  const totalPages = Math.ceil(reviewCount / PAGE_SIZE);
+
+  // Get reviews for those products (paginated)
   const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ["vendor-reviews", productIds],
+    queryKey: ["vendor-reviews", productIds, page],
     enabled: productIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
@@ -41,7 +61,8 @@ export default function VendorReviewsPage() {
         .select("*, profiles!reviews_user_id_fkey(name), products!reviews_product_id_fkey(name)")
         .in("product_id", productIds)
         .eq("status", "approved")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       return data || [];
     },
   });
@@ -80,7 +101,7 @@ export default function VendorReviewsPage() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-6">
           <h1 className="text-2xl font-display font-bold text-foreground">Customer Reviews</h1>
-          <p className="text-muted-foreground mt-1">{reviews.length} review{reviews.length !== 1 ? "s" : ""} across your products</p>
+          <p className="text-muted-foreground mt-1">{reviewCount} review{reviewCount !== 1 ? "s" : ""} across your products</p>
         </div>
 
         {isLoading ? (
@@ -88,17 +109,20 @@ export default function VendorReviewsPage() {
         ) : reviews.length === 0 ? (
           <div className="glass-card p-12 text-center text-muted-foreground">No reviews yet</div>
         ) : (
-          <div className="space-y-4">
-            {reviews.map((r: any) => (
-              <ReviewResponseCard
-                key={r.id}
-                review={r}
-                existingResponse={responseMap.get(r.id)}
-                userId={user!.id}
-                onResponded={() => queryClient.invalidateQueries({ queryKey: ["vendor-responses"] })}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-4">
+              {reviews.map((r: any) => (
+                <ReviewResponseCard
+                  key={r.id}
+                  review={r}
+                  existingResponse={responseMap.get(r.id)}
+                  userId={user!.id}
+                  onResponded={() => queryClient.invalidateQueries({ queryKey: ["vendor-responses"] })}
+                />
+              ))}
+            </div>
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-6" />
+          </>
         )}
       </motion.div>
     </>
