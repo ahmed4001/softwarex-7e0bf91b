@@ -158,7 +158,7 @@ export function PricingComparisonWidget({ currentProduct }: PricingComparisonWid
           )}
 
           {selectedProducts.length < 3 && (
-            <div ref={searchRef} className="relative">
+            <div ref={searchRef} className="relative flex-1 min-w-[200px]">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
@@ -169,7 +169,7 @@ export function PricingComparisonWidget({ currentProduct }: PricingComparisonWid
                   }}
                   onFocus={() => searchQuery.length >= 2 && setIsSearchOpen(true)}
                   placeholder="Search products..."
-                  className="h-7 w-48 pl-8 text-xs rounded-lg"
+                  className="h-7 w-full pl-8 text-xs rounded-lg"
                 />
               </div>
               {isSearchOpen && searchResults.length > 0 && (
