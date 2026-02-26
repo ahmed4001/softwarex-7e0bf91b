@@ -72,6 +72,7 @@ const VendorCompetitorsPage = lazy(() => import("./pages/vendor/VendorCompetitor
 const VendorResponseTemplatesPage = lazy(() => import("./pages/vendor/VendorResponseTemplatesPage"));
 const VendorPlansPage = lazy(() => import("./pages/vendor/VendorPlansPage"));
 const VendorLeadsPage = lazy(() => import("./pages/vendor/VendorLeadsPage"));
+const VendorLeadAnalyticsPage = lazy(() => import("./pages/vendor/VendorLeadAnalyticsPage"));
 const VendorSponsoredPage = lazy(() => import("./pages/vendor/VendorSponsoredPage"));
 const VendorROIPage = lazy(() => import("./pages/vendor/VendorROIPage"));
 
@@ -160,6 +161,7 @@ function AppContent() {
           <Route path="templates" element={<ErrorBoundary><VendorResponseTemplatesPage /></ErrorBoundary>} />
           <Route path="plans" element={<ErrorBoundary><VendorPlansPage /></ErrorBoundary>} />
           <Route path="leads" element={<ErrorBoundary><VendorLeadsPage /></ErrorBoundary>} />
+          <Route path="leads/analytics" element={<ErrorBoundary><VendorLeadAnalyticsPage /></ErrorBoundary>} />
           <Route path="sponsored" element={<ErrorBoundary><VendorSponsoredPage /></ErrorBoundary>} />
           <Route path="roi" element={<ErrorBoundary><VendorROIPage /></ErrorBoundary>} />
         </Route>
