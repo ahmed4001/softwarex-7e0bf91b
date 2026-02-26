@@ -27,6 +27,7 @@ import { RatingTrendChart } from "@/components/RatingTrendChart";
 import { ProductWatchButton } from "@/components/ProductWatchButton";
 import { ProductAIChatbot } from "@/components/ProductAIChatbot";
 import { IntegrationGraph } from "@/components/IntegrationGraph";
+import { ProductChangelog } from "@/components/ProductChangelog";
 
 function ScreenshotGallery({ screenshots, productName }: { screenshots: string[]; productName: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -384,6 +385,7 @@ export default function ProductDetailPage() {
             <TabsTrigger value="alternatives" className="rounded-lg font-medium">{t("productDetail.alternatives")}</TabsTrigger>
             <TabsTrigger value="qa" className="rounded-lg font-medium gap-1"><HelpCircle className="h-3.5 w-3.5" />Q&A</TabsTrigger>
             <TabsTrigger value="integrations" className="rounded-lg font-medium">Integrations</TabsTrigger>
+            <TabsTrigger value="changelog" className="rounded-lg font-medium">Changelog</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -588,6 +590,10 @@ export default function ProductDetailPage() {
 
           <TabsContent value="integrations">
             <IntegrationGraph productId={product.id} />
+          </TabsContent>
+
+          <TabsContent value="changelog">
+            <ProductChangelog productId={product.id} />
           </TabsContent>
         </Tabs>
 
