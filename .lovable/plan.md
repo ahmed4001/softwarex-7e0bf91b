@@ -1,55 +1,54 @@
 
 
-# Dynamic robots.txt and sitemap.xml Edge Function
+# Wire Default SEO Settings into SeoHead Component
 
 ## Overview
-Create a single edge function `seo-files` that serves both `/robots.txt` and `/sitemap.xml` dynamically, reading configuration from the `site_settings` table and querying products, categories, blog posts, and comparisons for sitemap generation.
+Update the `SeoHead` component to automatically fetch and apply default SEO settings from the `site_settings` database table as fallbacks. This means every page will inherit the admin-configured defaults (title suffix, description, keywords, OG image, verification tags) without requiring changes to any of the 47+ pages that use `SeoHead`.
 
-## Architecture
+## Approach
 
-The function receives a `type` query parameter (`robots` or `sitemap`) and returns the appropriate content.
+### 1. Create a `useSeoSettings` hook (`src/hooks/useSeoSettings.ts`)
+A shared hook that fetches SEO-related settings from `site_settings` once and caches them via TanStack Query with a long `staleTime` (since these rarely change).
 
-**File:** `supabase/functions/seo-files/index.ts`
+Fetched keys:
+- `site_name` -- used as the title suffix (replacing hardcoded "SoftwareHub")
+- `seo_default_title` -- fallback page title
+- `seo_default_description` -- fallback meta description
+- `seo_default_keywords` -- fallback keywords
+- `seo_default_og_image` -- fallback OG image
+- `seo_google_verification` -- Google Search Console verification tag
+- `seo_bing_verification` -- Bing Webmaster verification tag
 
-### robots.txt Handler
-- Reads `robots_txt` from `site_settings` table
-- Falls back to the default value if not configured
-- Returns `text/plain` content type
+### 2. Update `SeoHead` component (`src/components/SeoHead.tsx`)
+- Import and call the `useSeoSettings` hook
+- Replace the hardcoded `"SoftwareHub"` suffix with the `site_name` setting
+- Replace the hardcoded `"SoftwareHub"` in `og:site_name` similarly
+- Apply fallbacks: if no `description` prop is passed, use `seo_default_description`; same for `keywords` and `ogImage`
+- Render Google/Bing verification meta tags when configured
+- All changes are backward-compatible -- existing props always take priority
 
-### sitemap.xml Handler
-- Reads `sitemap_include_products`, `sitemap_include_categories`, `sitemap_include_blog`, `sitemap_include_comparisons` toggles from `site_settings`
-- Conditionally queries each table:
-  - `products` where `is_active = true` -- uses `/product/{slug}`
-  - `categories` where `is_active = true` -- uses `/category/{slug}`
-  - `blog_posts` where `status = 'published'` -- uses `/blog/{slug}`
-  - `comparisons` where `is_published = true` -- uses `/compare/{slug}`
-- Builds XML sitemap with `<lastmod>` from `updated_at` where available
-- Includes static pages (/, /categories, /compare, /blog, /leaderboard)
-- Returns `application/xml` content type
-
-### Config
-Add to `supabase/config.toml`:
-```toml
-[functions.seo-files]
-verify_jwt = false
-```
-
-This must be public (no auth) since search engine crawlers need access.
-
-### Frontend Integration
-No frontend changes needed initially. The function can be called at:
-```
-https://{project}.supabase.co/functions/v1/seo-files?type=robots
-https://{project}.supabase.co/functions/v1/seo-files?type=sitemap
-```
-
-The admin can point their domain's `/robots.txt` and `/sitemap.xml` to these URLs, or they can be referenced directly in the robots.txt Sitemap directive.
+### 3. No changes needed to individual pages
+Since `SeoHead` already receives optional props, the fallback logic lives entirely inside the component. All 47+ pages that use `<SeoHead>` will automatically benefit.
 
 ## Technical Details
 
-- Uses `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (already configured) to query the database
-- No new secrets required
-- No database changes required
-- Responses are cached-friendly with appropriate headers
-- The base URL for sitemap entries will be derived from the request's origin or a configurable setting
+**`useSeoSettings` hook:**
+```typescript
+// Fetches all SEO keys in a single query using .in()
+// Returns { siteName, defaultDescription, defaultKeywords, defaultOgImage, googleVerification, bingVerification }
+// staleTime: 10 minutes, to avoid refetching on every navigation
+```
+
+**`SeoHead` changes:**
+- `const fullTitle = \`\${title} | \${settings.siteName || "SoftwareHub"}\``
+- `const effectiveDescription = description || settings.defaultDescription`
+- `const effectiveKeywords = keywords || settings.defaultKeywords`
+- `const effectiveOgImage = ogImage || settings.defaultOgImage`
+- Add `<meta name="google-site-verification">` and `<meta name="msvalidate.01">` when values exist
+
+**Files changed:**
+1. `src/hooks/useSeoSettings.ts` (new)
+2. `src/components/SeoHead.tsx` (modified)
+
+No database changes required -- uses existing `site_settings` table with public read RLS.
 
