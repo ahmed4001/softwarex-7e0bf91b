@@ -24,6 +24,7 @@ import { Bookmark, Star, Settings, User, LogOut, Loader2, Search, ArrowRight, He
 import { BadgeShowcase } from "@/components/dashboard/BadgeShowcase";
 import { StreakTracker } from "@/components/dashboard/StreakTracker";
 import { WeeklyChallenges } from "@/components/dashboard/WeeklyChallenges";
+import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -565,6 +566,7 @@ function AnalyticsTab({ userId }: { userId: string }) {
         <h3 className="text-base font-bold text-foreground mb-1">Your Analytics</h3>
         <p className="text-sm text-muted-foreground">Track your review activity and engagement over time.</p>
       </div>
+      <NotificationPreferences />
       <ReviewImpactScore userId={userId} />
       <div className="grid md:grid-cols-2 gap-4">
         <ReviewActivityChart userId={userId} />

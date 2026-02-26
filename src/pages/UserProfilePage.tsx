@@ -6,7 +6,9 @@ import { StarRating } from "@/components/StarRating";
 import { BadgeIcon } from "@/components/BadgeDisplay";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
-import { User, MessageSquare, ThumbsUp, Calendar, Award } from "lucide-react";
+import { User, MessageSquare, ThumbsUp, Calendar, Award, Users } from "lucide-react";
+import { FollowButton } from "@/components/FollowButton";
+import { useFollow } from "@/hooks/useFollow";
 
 export default function UserProfilePage() {
   const { id } = useParams();
@@ -67,11 +69,13 @@ export default function UserProfilePage() {
     );
   }
 
+  const { followerCount, followingCount } = useFollow(id!);
+
   const stats = [
     { icon: MessageSquare, label: "Reviews", value: profile.review_count || 0 },
     { icon: ThumbsUp, label: "Helpful Votes", value: profile.helpful_votes_received || 0 },
-    { icon: Award, label: "Badges", value: badges.length },
-    { icon: Calendar, label: "Member Since", value: profile.created_at ? new Date(profile.created_at).getFullYear() : "—" },
+    { icon: Users, label: "Followers", value: followerCount },
+    { icon: Award, label: "Following", value: followingCount },
   ];
 
   return (
@@ -98,6 +102,7 @@ export default function UserProfilePage() {
                 {profile.is_verified_reviewer && (
                   <span className="text-[10px] font-semibold text-[hsl(var(--success))] bg-[hsl(var(--success)/0.08)] px-2 py-0.5 rounded-full">Verified</span>
                 )}
+                <FollowButton targetUserId={id!} />
               </div>
               {(profile.job_title || profile.company) && (
                 <p className="text-sm text-muted-foreground mb-2">
