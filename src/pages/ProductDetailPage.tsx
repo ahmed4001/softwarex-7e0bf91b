@@ -21,6 +21,7 @@ import { TCOCalculator } from "@/components/TCOCalculator";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import { ProductQASection } from "@/components/ProductQASection";
 import { PricingComparisonWidget } from "@/components/PricingComparisonWidget";
+import { AlsoViewedSection } from "@/components/AlsoViewedSection";
 
 function ScreenshotGallery({ screenshots, productName }: { screenshots: string[]; productName: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -599,6 +600,8 @@ export default function ProductDetailPage() {
             <ProductQASection productId={product.id} />
           </TabsContent>
         </Tabs>
+
+        <AlsoViewedSection productId={product.id} categoryId={product.category_id} />
       </div>
     </>
   );

@@ -29,6 +29,7 @@ import { ResearchDirectorySection } from "@/components/home/ResearchDirectorySec
 import { ProductShowcaseSection } from "@/components/home/ProductShowcaseSection";
 import { TrendingProductsSection } from "@/components/home/TrendingProductsSection";
 import { LiveStatsCounter } from "@/components/home/LiveStatsCounter";
+import { ProductFinderQuiz } from "@/components/home/ProductFinderQuiz";
 
 const SITE_URL = "https://softwarehub.com";
 
@@ -247,6 +248,7 @@ export default function HomePage() {
         </section>
 
         <TrendingProductsSection />
+        <ProductFinderQuiz />
         <PopularComparisonsSection />
 
         <div className="section-gradient-divider" aria-hidden="true" />
