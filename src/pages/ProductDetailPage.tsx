@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExternalLink, CheckCircle, Globe, Calendar, Users, Building2, Sparkles, ArrowLeft, X, ChevronLeft, ChevronRight, MessageSquare, Loader2, Wand2, ArrowLeftRight, HelpCircle } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Star } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -121,7 +123,7 @@ export default function ProductDetailPage() {
         .eq("product_id", product!.id)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(50);
       return data || [];
     },
     enabled: !!product?.id,
@@ -206,6 +208,27 @@ export default function ProductDetailPage() {
     enabled: reviewIds.length > 0,
   });
   const responseMap = new Map((vendorResponses as any[]).map((r: any) => [r.review_id, r]));
+
+  const [reviewSort, setReviewSort] = useState<"newest" | "oldest" | "highest" | "lowest" | "most_helpful">("newest");
+  const [reviewRatingFilter, setReviewRatingFilter] = useState<number | null>(null);
+
+  const filteredAndSortedReviews = useMemo(() => {
+    let result = [...(reviews || [])];
+    if (reviewRatingFilter) {
+      result = result.filter((r: any) => r.overall_rating === reviewRatingFilter);
+    }
+    result.sort((a: any, b: any) => {
+      switch (reviewSort) {
+        case "newest": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "highest": return (b.overall_rating || 0) - (a.overall_rating || 0);
+        case "lowest": return (a.overall_rating || 0) - (b.overall_rating || 0);
+        case "most_helpful": return (b.helpful_count || 0) - (a.helpful_count || 0);
+        default: return 0;
+      }
+    });
+    return result;
+  }, [reviews, reviewSort, reviewRatingFilter]);
 
   if (isLoading) return <div className="container py-20 text-center text-muted-foreground">{t("common.loading")}</div>;
   if (!product) return <div className="container py-20 text-center text-muted-foreground">{t("productDetail.notFound")}</div>;
@@ -386,7 +409,54 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
             )}
-            {reviews?.map((r: any) => {
+
+            {/* Filter & Sort Bar */}
+            {reviews && reviews.length > 0 && (
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Sort:</span>
+                    <Select value={reviewSort} onValueChange={(v) => setReviewSort(v as any)}>
+                      <SelectTrigger className="w-[160px] h-8 text-sm rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest</SelectItem>
+                        <SelectItem value="oldest">Oldest</SelectItem>
+                        <SelectItem value="highest">Highest Rated</SelectItem>
+                        <SelectItem value="lowest">Lowest Rated</SelectItem>
+                        <SelectItem value="most_helpful">Most Helpful</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-muted-foreground mr-1">Rating:</span>
+                    <Button
+                      variant={reviewRatingFilter === null ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 px-2.5 text-xs rounded-lg"
+                      onClick={() => setReviewRatingFilter(null)}
+                    >All</Button>
+                    {[5, 4, 3, 2, 1].map((star) => (
+                      <Button
+                        key={star}
+                        variant={reviewRatingFilter === star ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs rounded-lg gap-0.5"
+                        onClick={() => setReviewRatingFilter(reviewRatingFilter === star ? null : star)}
+                      >
+                        {star}<Star className="h-3 w-3 fill-current" />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Showing {filteredAndSortedReviews.length} of {reviews.length} reviews
+                </p>
+              </div>
+            )}
+
+            {filteredAndSortedReviews.map((r: any) => {
               const vendorResponse = responseMap.get(r.id);
               return (
                 <div key={r.id}>
@@ -417,6 +487,12 @@ export default function ProductDetailPage() {
                 </div>
               );
             })}
+            {filteredAndSortedReviews.length === 0 && reviews && reviews.length > 0 && reviewRatingFilter !== null && (
+              <div className="glass-card p-8 text-center text-muted-foreground">
+                No reviews match this filter.
+                <Button variant="link" className="ml-1" onClick={() => setReviewRatingFilter(null)}>Clear filter</Button>
+              </div>
+            )}
             {(!reviews || reviews.length === 0) && (
               <div className="glass-card p-12 text-center">
                 <p className="text-muted-foreground mb-4">{t("productDetail.noReviews")}</p>
