@@ -1,54 +1,113 @@
 
 
-# Wire Default SEO Settings into SeoHead Component
+# User-Generated Lists & Collections
 
 ## Overview
-Update the `SeoHead` component to automatically fetch and apply default SEO settings from the `site_settings` database table as fallbacks. This means every page will inherit the admin-configured defaults (title suffix, description, keywords, OG image, verification tags) without requiring changes to any of the 47+ pages that use `SeoHead`.
+Allow authenticated users to create, share, and vote on curated software lists (e.g., "Best Tools for Startups 2026"). Lists are public and browsable, with upvote/downvote support and a dedicated browse page.
 
-## Approach
+## Database Schema (Migration)
 
-### 1. Create a `useSeoSettings` hook (`src/hooks/useSeoSettings.ts`)
-A shared hook that fetches SEO-related settings from `site_settings` once and caches them via TanStack Query with a long `staleTime` (since these rarely change).
+### Table: `lists`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | default gen_random_uuid() |
+| user_id | uuid NOT NULL | creator |
+| title | text NOT NULL | e.g. "Best Tools for Startups 2026" |
+| slug | text NOT NULL UNIQUE | URL-friendly |
+| description | text | optional longer description |
+| cover_image | text | optional |
+| is_published | boolean | default true |
+| upvote_count | integer | default 0 (denormalized) |
+| product_count | integer | default 0 (denormalized) |
+| view_count | integer | default 0 |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
 
-Fetched keys:
-- `site_name` -- used as the title suffix (replacing hardcoded "SoftwareHub")
-- `seo_default_title` -- fallback page title
-- `seo_default_description` -- fallback meta description
-- `seo_default_keywords` -- fallback keywords
-- `seo_default_og_image` -- fallback OG image
-- `seo_google_verification` -- Google Search Console verification tag
-- `seo_bing_verification` -- Bing Webmaster verification tag
+### Table: `list_items`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| list_id | uuid NOT NULL | FK to lists |
+| product_id | uuid NOT NULL | FK to products |
+| note | text | optional curator note |
+| sort_order | integer | default 0 |
+| created_at | timestamptz | default now() |
+| UNIQUE(list_id, product_id) | | prevent duplicates |
 
-### 2. Update `SeoHead` component (`src/components/SeoHead.tsx`)
-- Import and call the `useSeoSettings` hook
-- Replace the hardcoded `"SoftwareHub"` suffix with the `site_name` setting
-- Replace the hardcoded `"SoftwareHub"` in `og:site_name` similarly
-- Apply fallbacks: if no `description` prop is passed, use `seo_default_description`; same for `keywords` and `ogImage`
-- Render Google/Bing verification meta tags when configured
-- All changes are backward-compatible -- existing props always take priority
+### Table: `list_votes`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| list_id | uuid NOT NULL | FK to lists |
+| user_id | uuid NOT NULL | voter |
+| created_at | timestamptz | default now() |
+| UNIQUE(list_id, user_id) | | one vote per user |
 
-### 3. No changes needed to individual pages
-Since `SeoHead` already receives optional props, the fallback logic lives entirely inside the component. All 47+ pages that use `<SeoHead>` will automatically benefit.
+### RLS Policies
+- **lists**: Public SELECT where `is_published = true`; authenticated INSERT with `auth.uid() = user_id`; owner UPDATE/DELETE
+- **list_items**: Public SELECT (via published list join); owner INSERT/UPDATE/DELETE
+- **list_votes**: Public SELECT; authenticated INSERT/DELETE for own votes
+- Admin override on all three tables
 
-## Technical Details
+### Trigger
+- `update_updated_at_column` trigger on `lists`
 
-**`useSeoSettings` hook:**
-```typescript
-// Fetches all SEO keys in a single query using .in()
-// Returns { siteName, defaultDescription, defaultKeywords, defaultOgImage, googleVerification, bingVerification }
-// staleTime: 10 minutes, to avoid refetching on every navigation
+## New Pages & Routes
+
+### 1. Browse Lists Page (`/lists`)
+- Grid of published lists sorted by upvotes/newest
+- Each card shows: title, description snippet, product count, upvote count, creator name/avatar
+- Search/filter bar
+- "Create New List" CTA button (links to `/lists/new`)
+
+### 2. List Detail Page (`/lists/:slug`)
+- Header with title, description, creator info, upvote button, share button
+- Product grid showing all items in the list with curator notes
+- Owner sees edit/delete controls inline
+- Visitors can upvote the list (toggle)
+
+### 3. Create/Edit List Page (`/lists/new` and `/lists/:slug/edit`)
+- Form: title, description, cover image URL
+- Product picker (search products, add with optional note, drag to reorder)
+- Save as draft or publish
+- Protected route (requires auth)
+
+## New Components
+
+### `ListCard.tsx`
+Card component for the browse grid showing list title, description, product thumbnails (first 3-4), upvote count, and creator badge.
+
+### `ListVoteButton.tsx`
+Toggle upvote button that checks auth state, optimistically updates count, and syncs with `list_votes` table.
+
+## Hooks
+
+### `useListVote(listId)`
+Manages vote state: checks if user voted, handles toggle with optimistic updates, invalidates queries.
+
+## Route Registration (App.tsx)
+Add within the PublicLayout routes:
+```
+/lists              -> ListsPage
+/lists/new          -> ListEditorPage (auth required)
+/lists/:slug        -> ListDetailPage
+/lists/:slug/edit   -> ListEditorPage (auth required, owner only)
 ```
 
-**`SeoHead` changes:**
-- `const fullTitle = \`\${title} | \${settings.siteName || "SoftwareHub"}\``
-- `const effectiveDescription = description || settings.defaultDescription`
-- `const effectiveKeywords = keywords || settings.defaultKeywords`
-- `const effectiveOgImage = ogImage || settings.defaultOgImage`
-- Add `<meta name="google-site-verification">` and `<meta name="msvalidate.01">` when values exist
+## Dashboard Integration
+Add a "My Lists" tab to the existing DashboardPage tabs so users can manage their lists alongside saved products and reviews.
 
-**Files changed:**
-1. `src/hooks/useSeoSettings.ts` (new)
-2. `src/components/SeoHead.tsx` (modified)
+## Files Changed/Created
 
-No database changes required -- uses existing `site_settings` table with public read RLS.
+| File | Action |
+|------|--------|
+| Migration SQL | New (3 tables, RLS, trigger) |
+| `src/pages/ListsPage.tsx` | New |
+| `src/pages/ListDetailPage.tsx` | New |
+| `src/pages/ListEditorPage.tsx` | New |
+| `src/components/ListCard.tsx` | New |
+| `src/components/ListVoteButton.tsx` | New |
+| `src/hooks/useListVote.ts` | New |
+| `src/App.tsx` | Modified (add 4 routes) |
+| `src/pages/DashboardPage.tsx` | Modified (add My Lists tab) |
 
