@@ -9,6 +9,8 @@ import { Crown, Trophy, ArrowRight, ThumbsUp, ThumbsDown, Target, ExternalLink }
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { FeatureMatrix } from "@/components/FeatureMatrix";
+import { TCOCalculator } from "@/components/TCOCalculator";
 
 export default function ComparisonDetailPage() {
   const { slug } = useParams();
@@ -252,6 +254,20 @@ export default function ComparisonDetailPage() {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-8 mb-8">
             <h3 className="font-bold text-foreground mb-4 text-lg">{t("comparisonDetail.detailedSummary")}</h3>
             <div className="text-muted-foreground leading-relaxed whitespace-pre-line">{comparison.summary}</div>
+          </motion.div>
+        )}
+
+        {/* Feature Matrix */}
+        {productA && productB && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-8">
+            <FeatureMatrix products={[productA, productB]} />
+          </motion.div>
+        )}
+
+        {/* TCO Calculator */}
+        {productA && productB && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-6 mb-8">
+            <TCOCalculator products={[productA, productB]} />
           </motion.div>
         )}
 

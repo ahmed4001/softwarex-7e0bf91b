@@ -16,6 +16,7 @@ import { Upload, X, Loader2, ArrowLeft, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ReviewTemplateSelector } from "@/components/ReviewTemplateSelector";
 
 const CRITERIA = [
   { key: "overall_rating", label: "Overall Rating", required: true },
@@ -176,6 +177,15 @@ export default function WriteReviewPage() {
           </div>
 
           <div className="space-y-8">
+            {/* Review template */}
+            <div className="glass-card p-6">
+              <ReviewTemplateSelector onSelect={(prompts) => {
+                if (prompts.pros) setPros(prompts.pros);
+                if (prompts.cons) setCons(prompts.cons);
+                if (prompts.body) setBody(prompts.body);
+              }} />
+            </div>
+
             {/* Multi-criteria ratings */}
             <div className="glass-card p-6 space-y-5">
               <h2 className="font-display font-bold text-lg text-foreground">Ratings</h2>

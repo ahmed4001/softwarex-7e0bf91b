@@ -18,7 +18,7 @@ interface TCOProduct {
   logo_url?: string | null;
   starting_price?: number | null;
   pricing_model?: string | null;
-  pricing_tiers?: PricingTier[];
+  pricing_tiers?: any;
 }
 
 interface TCOCalculatorProps {
