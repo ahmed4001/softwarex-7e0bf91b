@@ -202,7 +202,6 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <StatsSection stats={stats} />
-        <LiveStatsCounter />
         <TrustedBySection />
 
         {/* Real Product Screenshots Showcase */}
