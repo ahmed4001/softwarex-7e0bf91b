@@ -14,8 +14,9 @@ export function QuickCompareSection() {
         .from("comparisons")
         .select("id, slug, title, product_ids, product_a_score, product_b_score, view_count")
         .eq("is_published", true)
+        .not("slug", "is", null)
         .order("view_count", { ascending: false })
-        .limit(6);
+        .limit(30);
 
       if (!data || data.length === 0) return [];
 
@@ -31,6 +32,7 @@ export function QuickCompareSection() {
       const { data: products } = await supabase
         .from("products")
         .select("id, name, slug, logo_url, avg_rating")
+        .eq("is_active", true)
         .in("id", Array.from(allProductIds));
 
       const productMap: Record<string, any> = {};
@@ -43,7 +45,7 @@ export function QuickCompareSection() {
           productA: productMap[ids[0]] || null,
           productB: productMap[ids[1]] || null,
         };
-      }).filter((c: any) => c.productA && c.productB);
+      }).filter((c: any) => c.productA && c.productB).slice(0, 6);
     },
   });
 
