@@ -58,6 +58,7 @@ export function ProductFinderQuiz() {
       if (answers.pricing === "free") query = query.eq("pricing_model", "free");
       else if (answers.pricing === "freemium") query = query.in("pricing_model", ["free", "freemium"]);
 
+      query = query.order("info_score", { ascending: false });
       if (answers.priority === "rating") query = query.order("avg_rating", { ascending: false });
       else if (answers.priority === "value") query = query.order("avg_rating", { ascending: false });
       else query = query.order("total_reviews", { ascending: false });

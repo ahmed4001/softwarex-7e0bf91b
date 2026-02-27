@@ -15,6 +15,7 @@ export function RecentlyAddedSection() {
         .from("products")
         .select("id, slug, name, tagline, logo_url, created_at, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
+        .order("info_score", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(6);
       return data || [];

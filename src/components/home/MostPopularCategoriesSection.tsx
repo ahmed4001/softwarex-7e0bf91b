@@ -54,6 +54,7 @@ export function MostPopularCategoriesSection() {
           .select("id, slug, name, logo_url, avg_rating, total_reviews, screenshots")
           .eq("category_id", (activeCat as any).id)
           .eq("is_active", true)
+          .order("info_score", { ascending: false })
           .order("avg_rating", { ascending: false })
           .limit(9);
         return data || [];

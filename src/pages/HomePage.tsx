@@ -149,6 +149,7 @@ export default function HomePage() {
         .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .eq("is_featured", true)
+        .order("info_score", { ascending: false })
         .order("avg_rating", { ascending: false })
         .limit(6);
       return data || [];
@@ -162,6 +163,7 @@ export default function HomePage() {
         .from("products")
         .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
+        .order("info_score", { ascending: false })
         .order("avg_rating", { ascending: false })
         .limit(8);
       return data || [];

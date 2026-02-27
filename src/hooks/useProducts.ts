@@ -37,6 +37,9 @@ export function useProducts({
       if (categoryId) query = query.eq("category_id", categoryId);
       if (search) query = query.ilike("name", `%${search}%`);
 
+      // Always prioritize full-info products
+      query = query.order("info_score", { ascending: false });
+
       switch (sort) {
         case "rating":
           query = query.order("avg_rating", { ascending: false });
