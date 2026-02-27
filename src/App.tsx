@@ -96,6 +96,7 @@ const AlternativesPage = lazy(() => import("./pages/AlternativesPage"));
 const GlossaryPage = lazy(() => import("./pages/GlossaryPage"));
 const GlossaryTermPage = lazy(() => import("./pages/GlossaryTermPage"));
 const PartnerLinksPage = lazy(() => import("./pages/PartnerLinksPage"));
+const AdminPartnerLinksPage = lazy(() => import("./pages/admin/AdminPartnerLinksPage"));
 
 const queryClient = new QueryClient();
 
@@ -186,6 +187,7 @@ function AppContent() {
           <Route path="glossary" element={<ErrorBoundary><AdminGlossaryPage /></ErrorBoundary>} />
           <Route path="trend-reports" element={<ErrorBoundary><AdminTrendReportsPage /></ErrorBoundary>} />
           <Route path="cohort" element={<ErrorBoundary><AdminCohortPage /></ErrorBoundary>} />
+          <Route path="partner-links" element={<ErrorBoundary><AdminPartnerLinksPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}
