@@ -70,16 +70,27 @@ export function ProductShowcaseSection() {
                   className="glass-card group block overflow-hidden"
                 >
                   {/* Screenshot */}
-                  <div className="relative aspect-video bg-muted overflow-hidden">
-                    <img
-                      src={screenshot}
-                      alt={`${p.name} screenshot`}
-                      className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
+                  <div className="relative aspect-video bg-muted overflow-hidden flex items-center justify-center">
+                    {screenshot ? (
+                      <img
+                        src={screenshot}
+                        alt={`${p.name} screenshot`}
+                        className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        onError={(e) => {
+                          const container = e.currentTarget.parentElement;
+                          e.currentTarget.style.display = "none";
+                          if (container) {
+                            const fallback = container.querySelector('.screenshot-fallback') as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div className="screenshot-fallback absolute inset-0 flex-col items-center justify-center gap-2 bg-muted" style={{ display: screenshot ? "none" : "flex" }}>
+                      <ProductLogo name={p.name} logoUrl={p.logo_url} size="lg" />
+                      <span className="text-xs text-muted-foreground font-medium">{p.name}</span>
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="bg-background/90 backdrop-blur-sm text-foreground text-[10px] font-medium px-2 py-1 rounded-md flex items-center gap-1">
