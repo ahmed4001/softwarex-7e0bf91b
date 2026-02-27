@@ -205,10 +205,6 @@ export default function HomePage() {
         <LiveStatsCounter />
         <TrustedBySection />
 
-        <StatsSection stats={stats} />
-        <LiveStatsCounter />
-        <TrustedBySection />
-
         {/* Real Product Screenshots Showcase */}
         <ProductShowcaseSection />
 
