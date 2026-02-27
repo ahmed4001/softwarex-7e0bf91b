@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Award, TrendingUp, CheckCircle } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
+import softwareCollage from "@/assets/software-collage.jpg";
 import { Link } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
 
@@ -121,6 +122,22 @@ export function HeroSection() {
             <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("hero.trending")}
           </Link>
         </motion.nav>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          className="mt-12 max-w-5xl mx-auto"
+        >
+          <div className="rounded-2xl overflow-hidden shadow-xl border border-border/20">
+            <img
+              src={softwareCollage}
+              alt="Software ecosystem showcasing popular business tools like Salesforce, Slack, Adobe, AWS, and more"
+              className="w-full h-auto object-cover"
+              loading="lazy"
+            />
+          </div>
+        </motion.div>
       </div>
     </section>
   );

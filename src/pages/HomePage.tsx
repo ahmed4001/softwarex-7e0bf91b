@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Star, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import softwareCollage from "@/assets/software-collage.jpg";
 
 import { HeroSection } from "@/components/home/HeroSection";
 import { StatsSection } from "@/components/home/StatsSection";
@@ -202,20 +201,9 @@ export default function HomePage() {
 
       <main>
         <HeroSection />
-
-        {/* Software Ecosystem Visual */}
-        <section className="py-8 bg-muted/20">
-          <div className="container">
-            <div className="rounded-2xl overflow-hidden shadow-lg border border-border/30">
-              <img
-                src={softwareCollage}
-                alt="Software ecosystem showcasing popular business tools like Salesforce, Slack, Adobe, AWS, and more"
-                className="w-full h-auto object-cover"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </section>
+        <StatsSection stats={stats} />
+        <LiveStatsCounter />
+        <TrustedBySection />
 
         <StatsSection stats={stats} />
         <LiveStatsCounter />
