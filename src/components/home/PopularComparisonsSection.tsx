@@ -14,20 +14,9 @@ export function PopularComparisonsSection() {
         .from("comparisons")
         .select("id, title, slug, product_ids, view_count, summary")
         .eq("is_published", true)
-        .not("summary", "is", null)
-        .not("summary", "eq", "")
-        .not("summary", "ilike", "%limited information%")
-        .not("summary", "ilike", "%extremely limited%")
-        .not("summary", "ilike", "%inherently limited%")
-        .not("summary", "ilike", "%impossible to recommend%")
-        .not("summary", "ilike", "%lack of differentiating%")
-        .not("summary", "ilike", "%severely limited%")
-        .not("summary", "ilike", "%placeholder%")
-        .not("summary", "ilike", "%identical, plac%")
-        .not("summary", "ilike", "%identical, generic%")
-        .not("summary", "ilike", "%absence of reviews%")
+        .not("slug", "is", null)
         .order("view_count", { ascending: false })
-        .limit(30);
+        .limit(50);
       
       // Filter to only comparisons where both products have logos
       if (!data || data.length === 0) return [];
