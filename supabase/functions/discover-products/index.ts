@@ -222,10 +222,17 @@ Deno.serve(async (req) => {
                   .replace(/^Top \d+\s+/i, "")
                   .replace(/\s+Alternatives?\s*(&|and)?\s*Competitors?\s*(in\s+\d+)?\s*-?\s*G2\s*$/i, "")
                   .replace(/\s+Competitors?\s*\d*\s*-?\s*G2\s*$/i, "")
-                  .replace(/\s+Reviews?\s*\d*\s*-?\s*G2\s*$/i, "")
+                  .replace(/\s+Reviews?\s*(&\s*Product\s*Details)?\s*\d*\s*:?[^|]*?-?\s*G2\s*$/i, "")
+                  .replace(/\s+Reviews?\s*\d{4}\s*:.*$/i, "")
+                  .replace(/\s+Reviews?\s*(&\s*Product\s*Details)\s*$/i, "")
                   .replace(/\s*\|\s*G2\s*$/i, "")
                   .replace(/\s*-\s*G2\s*$/i, "")
                   .trim();
+                
+                // If name still looks like a page title, use the g2_slug to derive a clean name
+                if (name.includes("Reviews") || name.includes("Details") || name.includes("Pricing")) {
+                  name = g2Slug.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+                }
                 
                 if (!name || name.length < 2) name = g2Slug;
                 
