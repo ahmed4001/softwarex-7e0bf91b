@@ -18,9 +18,45 @@ export function PopularComparisonsSection() {
         .not("summary", "eq", "")
         .not("summary", "ilike", "%limited information%")
         .not("summary", "ilike", "%extremely limited%")
+        .not("summary", "ilike", "%inherently limited%")
+        .not("summary", "ilike", "%impossible to recommend%")
+        .not("summary", "ilike", "%lack of differentiating%")
+        .not("summary", "ilike", "%severely limited%")
+        .not("summary", "ilike", "%placeholder%")
+        .not("summary", "ilike", "%identical, plac%")
+        .not("summary", "ilike", "%identical, generic%")
+        .not("summary", "ilike", "%absence of reviews%")
         .order("view_count", { ascending: false })
-        .limit(6);
-      return data || [];
+        .limit(30);
+      
+      // Filter to only comparisons where both products have logos
+      if (!data || data.length === 0) return [];
+      
+      const allIds = data.flatMap((c: any) => {
+        const ids = Array.isArray(c.product_ids) ? c.product_ids : [];
+        return ids.slice(0, 2);
+      });
+      
+      if (allIds.length === 0) return data.slice(0, 6);
+      
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, info_score, logo_url")
+        .in("id", allIds);
+      
+      const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
+      
+      // Only keep comparisons where both products have info_score >= 3 and a logo
+      const quality = data.filter((c: any) => {
+        const ids = Array.isArray(c.product_ids) ? c.product_ids.slice(0, 2) : [];
+        if (ids.length < 2) return false;
+        return ids.every((id: string) => {
+          const p = prodMap.get(id);
+          return p && p.info_score >= 3 && p.logo_url;
+        });
+      });
+      
+      return quality.slice(0, 6);
     },
   });
 
