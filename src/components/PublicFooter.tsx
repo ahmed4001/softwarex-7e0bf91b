@@ -28,7 +28,7 @@ export function PublicFooter() {
         .select("slug, name")
         .eq("is_active", true)
         .order("product_count", { ascending: false })
-        .limit(20);
+        .limit(10);
       return data || [];
     },
     staleTime: 1000 * 60 * 10,
@@ -79,14 +79,14 @@ export function PublicFooter() {
       <div className="container py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {footerSections.map((section) => (
-            <div key={section.title}>
+            <div key={section.title} className={section.title === t("footer.topCategories") ? "col-span-2 md:col-span-1" : ""}>
               <div className="flex items-center gap-2 mb-5">
                 <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-[8px] font-bold text-white">★</span>
                 </div>
                 <h4 className="font-bold text-white text-sm">{section.title}</h4>
               </div>
-              <div className="space-y-2.5">
+              <div className={section.title === t("footer.topCategories") ? "grid grid-cols-2 gap-x-6 gap-y-2.5" : "space-y-2.5"}>
                 {section.links.map((l, i) => (
                   <Link
                     key={`${l.label}-${i}`}
