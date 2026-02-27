@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { PaginationControls } from "@/components/PaginationControls";
+import { CategoryGrid } from "@/components/CategoryGrid";
 
 const PAGE_SIZE = 20;
 
@@ -62,16 +63,16 @@ export default function CategoryPage() {
       if (tierFilter !== "all") {
         query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
       }
-      query = query.order("is_sponsored", { ascending: false });
-      query = query.order("info_score", { ascending: false });
+      const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
       if (sort === "rating") query = query.order("avg_rating", { ascending: false });
       else if (sort === "reviews") query = query.order("total_reviews", { ascending: false });
       else if (sort === "newest") query = query.order("created_at", { ascending: false });
       else query = query.order("name");
       const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-      // Sort sponsored products by tier priority (gold > silver > bronze)
-      const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
-      return (data || []).sort((a: any, b: any) => {
+      const results = data || [];
+      return results.sort((a: any, b: any) => {
+        if (a.is_sponsored && !b.is_sponsored) return -1;
+        if (!a.is_sponsored && b.is_sponsored) return 1;
         if (a.is_sponsored && b.is_sponsored) {
           return (tierOrder[a.sponsor_tier] ?? 3) - (tierOrder[b.sponsor_tier] ?? 3);
         }
@@ -79,6 +80,20 @@ export default function CategoryPage() {
       });
     },
     enabled: !!category,
+  });
+
+  // Fetch all products for the Grid (no pagination)
+  const { data: allGridProducts } = useQuery({
+    queryKey: ["products-grid", slug],
+    queryFn: async () => {
+      let query = supabase.from("products")
+        .select("id, name, slug, logo_url, avg_rating, total_reviews, click_count, view_count, comparison_count")
+        .eq("is_active", true);
+      if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
+      const { data } = await query.order("avg_rating", { ascending: false }).limit(50);
+      return data || [];
+    },
+    enabled: !!category && !isAll,
   });
 
   const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
@@ -185,6 +200,11 @@ export default function CategoryPage() {
                 </Select>
               </div>
             </motion.div>
+
+            {/* G2-style Category Grid */}
+            {allGridProducts && allGridProducts.length >= 3 && (
+              <CategoryGrid products={allGridProducts} categoryName={category?.name || undefined} />
+            )}
 
             <div className="space-y-4">
               {isLoading ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={i} />) :
