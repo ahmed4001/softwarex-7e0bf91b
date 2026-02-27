@@ -16,7 +16,7 @@ export default function PartnerLinksPage() {
   const { data: partners, isLoading } = useQuery({
     queryKey: ["partner-links"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("partner_links")
         .select("*")
         .eq("is_active", true)
