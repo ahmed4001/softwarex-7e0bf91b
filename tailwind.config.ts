@@ -14,20 +14,19 @@ export default {
   	},
   	extend: {
   		fontFamily: {
-			sans: [
-				'Plus Jakarta Sans',
-				'DM Sans',
-				'ui-sans-serif',
-				'system-ui',
-				'-apple-system',
-				'BlinkMacSystemFont',
-				'Segoe UI',
-				'Roboto',
-				'Helvetica Neue',
-				'Arial',
-				'Noto Sans',
-				'sans-serif'
-			],
+  			sans: [
+  				'Work Sans',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'Segoe UI',
+  				'Roboto',
+  				'Helvetica Neue',
+  				'Arial',
+  				'Noto Sans',
+  				'sans-serif'
+  			],
   			display: [
   				'Plus Jakarta Sans',
   				'DM Sans',
@@ -35,7 +34,7 @@ export default {
   				'sans-serif'
   			],
   			serif: [
-  				'EB Garamond',
+  				'Lora',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -44,7 +43,7 @@ export default {
   				'serif'
   			],
   			mono: [
-  				'Fira Code',
+  				'Inconsolata',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
