@@ -5,13 +5,14 @@ import { SeoHead } from "@/components/SeoHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, UserPlus, Mail, Lock, User, Shield, Star, Zap, Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, UserPlus, Mail, Lock, User, Eye, EyeOff, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import softwareCollage from "@/assets/software-collage.jpg";
 
 export default function LoginPage() {
+  const [isLogin, setIsLogin] = useState(true);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -22,8 +23,6 @@ export default function LoginPage() {
   const [regPassword, setRegPassword] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [showRegPass, setShowRegPass] = useState(false);
-
-  const [activeTab, setActiveTab] = useState("login");
 
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -55,200 +54,214 @@ export default function LoginPage() {
     toast.success(t("login.checkEmail"));
   };
 
-  const benefits = [
-    { icon: Star, label: "Trusted Reviews" },
-    { icon: Zap, label: "Smart Comparisons" },
-    { icon: Shield, label: "Verified Data" },
-  ];
+  const strengthScore = regPassword.length === 0 ? 0 : regPassword.length < 4 ? 1 : regPassword.length < 8 ? 2 : regPassword.length < 12 ? 3 : 4;
+  const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
+  const strengthColors = ["", "hsl(0 72% 50%)", "hsl(38 92% 50%)", "hsl(152 60% 52%)", "hsl(152 60% 42%)"];
 
   return (
     <>
-      <SeoHead title={`${t("login.signIn")} — SoftwareHub`} description={t("login.subtitle")} />
-      <div className="min-h-screen flex relative overflow-hidden">
-        {/* Left panel — branding */}
-        <div className="hidden lg:flex lg:w-[45%] relative items-center justify-center p-12 overflow-hidden">
-          {/* Background layers */}
-          <div className="absolute inset-0 bg-primary" />
-          <div className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: `radial-gradient(circle at 30% 20%, hsl(280 60% 60% / 0.4) 0%, transparent 50%),
-                                radial-gradient(circle at 70% 80%, hsl(213 90% 50% / 0.3) 0%, transparent 50%)`,
-            }}
+      <SeoHead title={`${isLogin ? t("login.signIn") : t("login.register")} — SoftwareHub`} description={t("login.subtitle")} />
+      <div className="min-h-screen grid lg:grid-cols-2">
+        {/* Left — editorial image + overlay */}
+        <div className="hidden lg:block relative overflow-hidden">
+          <img
+            src={softwareCollage}
+            alt="Software tools workspace"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* Floating shapes */}
-          <div className="absolute top-20 left-16 w-24 h-24 rounded-3xl border border-primary-foreground/10 rotate-12 animate-float" />
-          <div className="absolute bottom-32 right-20 w-16 h-16 rounded-2xl border border-primary-foreground/10 -rotate-12 animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/3 right-16 w-8 h-8 rounded-full bg-primary-foreground/10 animate-float" style={{ animationDelay: '4s' }} />
+          <div className="absolute inset-0 bg-gradient-to-br from-foreground/80 via-foreground/60 to-primary/40" />
+          <div className="absolute inset-0 mix-blend-multiply opacity-30"
+            style={{ background: "url('data:image/svg+xml,%3Csvg width=\"40\" height=\"40\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M0 0h40v40H0z\" fill=\"none\"/%3E%3Cpath d=\"M0 40L40 0\" stroke=\"rgba(255,255,255,0.06)\" stroke-width=\"1\"/%3E%3C/svg%3E')" }}
+          />
 
-          <div className="relative z-10 max-w-md text-primary-foreground">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 backdrop-blur-sm mb-8 text-sm font-medium">
-                <Shield className="h-4 w-4" />
-                Trusted by 50,000+ professionals
+          <div className="relative z-10 flex flex-col justify-between h-full p-10 xl:p-14">
+            <Link to="/" className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors w-fit">
+              <div className="h-9 w-9 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                <span className="text-sm font-bold tracking-tight text-white">S</span>
               </div>
-              <h1 className="text-4xl xl:text-5xl font-extrabold leading-[1.1] tracking-tight mb-6">
-                Discover the<br />
-                <span className="opacity-80">best software</span><br />
-                for your stack.
-              </h1>
-              <p className="text-lg text-primary-foreground/70 leading-relaxed mb-10 max-w-sm">
-                Join a community of buyers and builders making smarter software decisions every day.
-              </p>
-              <div className="flex flex-col gap-4">
-                {benefits.map((b, i) => (
-                  <motion.div
-                    key={b.label}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + i * 0.15 }}
-                    className="flex items-center gap-3"
-                  >
-                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center">
-                      <b.icon className="h-5 w-5" />
-                    </div>
-                    <span className="font-medium">{b.label}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+              <span className="font-semibold text-lg tracking-tight">SoftwareHub</span>
+            </Link>
+
+            <div className="max-w-md">
+              <motion.blockquote
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="space-y-6"
+              >
+                <p className="text-2xl xl:text-3xl font-serif text-white leading-snug" style={{ fontFamily: "'EB Garamond', serif" }}>
+                  "We found three tools that cut our costs by 40% — all from reading reviews here."
+                </p>
+                <footer className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-semibold text-sm border border-white/10">
+                    MK
+                  </div>
+                  <div>
+                    <p className="text-white/90 font-medium text-sm">Maria Kovacs</p>
+                    <p className="text-white/50 text-xs">CTO, Meridian Labs</p>
+                  </div>
+                </footer>
+              </motion.blockquote>
+            </div>
+
+            <div className="flex items-center gap-6 text-white/40 text-xs font-medium tracking-wider uppercase">
+              <span>50K+ Users</span>
+              <span className="w-px h-3 bg-white/20" />
+              <span>12K+ Reviews</span>
+              <span className="w-px h-3 bg-white/20" />
+              <span>3K+ Products</span>
+            </div>
           </div>
         </div>
 
-        {/* Right panel — form */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative">
-          <div className="absolute inset-0 mesh-gradient opacity-50" />
+        {/* Right — form */}
+        <div className="flex items-center justify-center px-6 py-12 sm:px-12 bg-background relative">
+          {/* Subtle corner accent */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/3 rounded-bl-[120px]" />
 
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-[420px] relative z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-[380px] relative z-10"
           >
-            {/* Logo + heading */}
-            <div className="text-center mb-8">
-              <div className="h-14 w-14 rounded-2xl gradient-hero flex items-center justify-center mx-auto mb-5 animate-pulse-glow">
-                <span className="text-xl font-extrabold text-primary-foreground tracking-tight">S</span>
+            {/* Mobile logo */}
+            <Link to="/" className="lg:hidden inline-flex items-center gap-2 mb-10">
+              <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-sm font-bold text-primary-foreground">S</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-                {activeTab === "login" ? t("login.welcome") : "Create your account"}
-              </h2>
-              <p className="text-muted-foreground mt-2 text-sm">
-                {activeTab === "login" ? t("login.subtitle") : "Start discovering the best software tools"}
+              <span className="font-semibold text-lg text-foreground tracking-tight">SoftwareHub</span>
+            </Link>
+
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                {isLogin ? "Welcome back" : "Get started"}
+              </h1>
+              <p className="text-muted-foreground mt-2 text-[15px]">
+                {isLogin
+                  ? "Sign in to access your dashboard and reviews."
+                  : "Create a free account to start discovering software."}
               </p>
             </div>
 
-            {/* Card */}
-            <div className="rounded-2xl border bg-card p-7 sm:p-8" style={{ boxShadow: "var(--shadow-lg)" }}>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full mb-7 h-12 rounded-xl bg-muted p-1">
-                  <TabsTrigger value="login" className="flex-1 rounded-lg h-full text-sm font-semibold data-[state=active]:shadow-md transition-all">
-                    {t("login.signIn")}
-                  </TabsTrigger>
-                  <TabsTrigger value="register" className="flex-1 rounded-lg h-full text-sm font-semibold data-[state=active]:shadow-md transition-all">
-                    {t("login.register")}
-                  </TabsTrigger>
-                </TabsList>
+            {/* Form */}
+            <motion.div
+              key={isLogin ? "login" : "register"}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {isLogin ? (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("login.email")}</Label>
+                    <div className="relative group">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
+                      <Input id="login-email" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required placeholder="you@company.com" className="h-11 pl-9 bg-transparent border-border hover:border-foreground/20 focus:border-primary transition-colors rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("login.password")}</Label>
+                      <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{t("login.forgotPassword")}</Link>
+                    </div>
+                    <div className="relative group">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
+                      <Input id="login-password" type={showLoginPass ? "text" : "password"} value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required placeholder="••••••••" className="h-11 pl-9 pr-9 bg-transparent border-border hover:border-foreground/20 focus:border-primary transition-colors rounded-lg" />
+                      <button type="button" onClick={() => setShowLoginPass(!showLoginPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors" tabIndex={-1}>
+                        {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full h-11 rounded-lg font-semibold gap-2 mt-2" disabled={loginLoading}>
+                    {loginLoading ? (
+                      <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> Signing in…</span>
+                    ) : (
+                      <>Sign in <ArrowRight className="h-4 w-4" /></>
+                    )}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reg-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("login.fullName")}</Label>
+                    <div className="relative group">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
+                      <Input id="reg-name" value={regName} onChange={(e) => setRegName(e.target.value)} required maxLength={100} placeholder="Jane Smith" className="h-11 pl-9 bg-transparent border-border hover:border-foreground/20 focus:border-primary transition-colors rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reg-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("login.email")}</Label>
+                    <div className="relative group">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
+                      <Input id="reg-email" type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} required placeholder="you@company.com" className="h-11 pl-9 bg-transparent border-border hover:border-foreground/20 focus:border-primary transition-colors rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reg-password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("login.password")}</Label>
+                    <div className="relative group">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
+                      <Input id="reg-password" type={showRegPass ? "text" : "password"} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className="h-11 pl-9 pr-9 bg-transparent border-border hover:border-foreground/20 focus:border-primary transition-colors rounded-lg" />
+                      <button type="button" onClick={() => setShowRegPass(!showRegPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors" tabIndex={-1}>
+                        {showRegPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {regPassword.length > 0 && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="flex gap-1 flex-1">
+                          {[1, 2, 3, 4].map((level) => (
+                            <div
+                              key={level}
+                              className="h-0.5 flex-1 rounded-full transition-all duration-500"
+                              style={{ background: strengthScore >= level ? strengthColors[strengthScore] : "hsl(var(--border))" }}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] font-medium" style={{ color: strengthColors[strengthScore] }}>
+                          {strengthLabels[strengthScore]}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Button type="submit" className="w-full h-11 rounded-lg font-semibold gap-2 mt-2" disabled={regLoading}>
+                    {regLoading ? (
+                      <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> Creating account…</span>
+                    ) : (
+                      <><UserPlus className="h-4 w-4" /> Create account</>
+                    )}
+                  </Button>
+                  <p className="text-[11px] text-center text-muted-foreground pt-1">
+                    {t("login.verifyEmail")}
+                  </p>
+                </form>
+              )}
+            </motion.div>
 
-                <AnimatePresence mode="wait">
-                  <TabsContent value="login" key="login" asChild>
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }}>
-                      <form onSubmit={handleLogin} className="space-y-5">
-                        <div className="space-y-2">
-                          <Label htmlFor="login-email" className="text-sm font-semibold">{t("login.email")}</Label>
-                          <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="login-email" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required placeholder="you@example.com" className="h-12 rounded-xl pl-10 bg-muted/40 border-border/60 focus:bg-background transition-colors" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="login-password" className="text-sm font-semibold">{t("login.password")}</Label>
-                            <Link to="/forgot-password" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">{t("login.forgotPassword")}</Link>
-                          </div>
-                          <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="login-password" type={showLoginPass ? "text" : "password"} value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required placeholder="••••••••" className="h-12 rounded-xl pl-10 pr-10 bg-muted/40 border-border/60 focus:bg-background transition-colors" />
-                            <button type="button" onClick={() => setShowLoginPass(!showLoginPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                              {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </div>
-                        <Button type="submit" className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2 text-[15px]" disabled={loginLoading}>
-                          {loginLoading ? (
-                            <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> {t("login.signingIn")}</span>
-                          ) : (
-                            <>{t("login.signIn")} <ArrowRight className="h-4 w-4" /></>
-                          )}
-                        </Button>
-                      </form>
-                    </motion.div>
-                  </TabsContent>
-
-                  <TabsContent value="register" key="register" asChild>
-                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
-                      <form onSubmit={handleRegister} className="space-y-5">
-                        <div className="space-y-2">
-                          <Label htmlFor="reg-name" className="text-sm font-semibold">{t("login.fullName")}</Label>
-                          <div className="relative">
-                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="reg-name" value={regName} onChange={(e) => setRegName(e.target.value)} required maxLength={100} placeholder="John Doe" className="h-12 rounded-xl pl-10 bg-muted/40 border-border/60 focus:bg-background transition-colors" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reg-email" className="text-sm font-semibold">{t("login.email")}</Label>
-                          <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="reg-email" type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} required placeholder="you@example.com" className="h-12 rounded-xl pl-10 bg-muted/40 border-border/60 focus:bg-background transition-colors" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reg-password" className="text-sm font-semibold">{t("login.password")}</Label>
-                          <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="reg-password" type={showRegPass ? "text" : "password"} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className="h-12 rounded-xl pl-10 pr-10 bg-muted/40 border-border/60 focus:bg-background transition-colors" />
-                            <button type="button" onClick={() => setShowRegPass(!showRegPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                              {showRegPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                          {/* Password strength indicator */}
-                          {regPassword.length > 0 && (
-                            <div className="flex gap-1.5 pt-1">
-                              {[1, 2, 3, 4].map((level) => (
-                                <div
-                                  key={level}
-                                  className="h-1 flex-1 rounded-full transition-all duration-300"
-                                  style={{
-                                    background: regPassword.length >= level * 3
-                                      ? level <= 2
-                                        ? "hsl(var(--warning))"
-                                        : "hsl(var(--success))"
-                                      : "hsl(var(--muted))",
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <Button type="submit" className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2 text-[15px]" disabled={regLoading}>
-                          {regLoading ? (
-                            <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> {t("login.creatingAccount")}</span>
-                          ) : (
-                            <><UserPlus className="h-4 w-4" /> {t("auth.createAccount")}</>
-                          )}
-                        </Button>
-                        <p className="text-xs text-center text-muted-foreground">
-                          {t("login.verifyEmail")}
-                        </p>
-                      </form>
-                    </motion.div>
-                  </TabsContent>
-                </AnimatePresence>
-              </Tabs>
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
             </div>
 
-            {/* Footer trust text */}
-            <p className="text-xs text-center text-muted-foreground mt-6">
-              By continuing, you agree to our <Link to="/page/terms" className="underline hover:text-foreground transition-colors">Terms</Link> and <Link to="/page/privacy" className="underline hover:text-foreground transition-colors">Privacy Policy</Link>.
+            {/* Toggle */}
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-border hover:border-foreground/15 bg-muted/30 hover:bg-muted/60 transition-all group text-sm"
+            >
+              <span className="text-muted-foreground">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+              </span>
+              <span className="flex items-center gap-1 font-semibold text-foreground group-hover:text-primary transition-colors">
+                {isLogin ? "Sign up" : "Sign in"}
+                <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </button>
+
+            {/* Footer */}
+            <p className="text-[11px] text-center text-muted-foreground/60 mt-8">
+              By continuing, you agree to our{" "}
+              <Link to="/page/terms" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">Terms</Link>{" & "}
+              <Link to="/page/privacy" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">Privacy</Link>.
             </p>
           </motion.div>
         </div>
