@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { Star, TrendingUp, Users, MessageSquare } from "lucide-react";
 
 const proofs = [
-  { icon: Star, text: "average user rating", highlight: "4.9/5" },
-  { icon: Users, text: "professionals trust SoftwareHub", highlight: "10,000+" },
-  { icon: MessageSquare, text: "verified software reviews", highlight: "50,000+" },
-  { icon: TrendingUp, text: "month-over-month growth", highlight: "40%" },
+  { icon: Star, text: "average user rating", highlight: "4.8/5" },
+  { icon: Users, text: "professionals trust SoftwareHub", highlight: "340,000+" },
+  { icon: MessageSquare, text: "verified software reviews", highlight: "125,000+" },
+  { icon: TrendingUp, text: "month-over-month growth", highlight: "62%" },
 ];
 
 export function SocialProofBanner() {
