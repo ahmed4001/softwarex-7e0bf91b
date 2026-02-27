@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExternalLink, CheckCircle, Globe, Calendar, Users, Building2, ArrowLeft, X, ChevronLeft, ChevronRight, MessageSquare, Loader2, Wand2, ArrowLeftRight, HelpCircle } from "lucide-react";
 import React, { useState, useMemo } from "react";
+import { useAffiliateClick } from "@/hooks/useAffiliateClick";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Star } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -255,6 +256,7 @@ export default function ProductDetailPage() {
 
   const [reviewSort, setReviewSort] = useState<"newest" | "oldest" | "highest" | "lowest" | "most_helpful">("newest");
   const [reviewRatingFilter, setReviewRatingFilter] = useState<number | null>(null);
+  const { handleAffiliateClick } = useAffiliateClick();
 
   const filteredAndSortedReviews = useMemo(() => {
     let result = [...(reviews || [])];
@@ -376,9 +378,12 @@ export default function ProductDetailPage() {
               </div>
               <div className="flex flex-wrap gap-3">
                 {product.website_url && (
-                  <a href={product.website_url} target="_blank" rel="noopener noreferrer">
-                    <Button className="btn-premium rounded-xl text-primary-foreground gap-2 font-semibold"><Globe className="h-4 w-4" />{t("productDetail.visitWebsite")}</Button>
-                  </a>
+                  <Button
+                    className="btn-premium rounded-xl text-primary-foreground gap-2 font-semibold"
+                    onClick={() => handleAffiliateClick(product.id, product.website_url!, (product as any).affiliate_url)}
+                  >
+                    <Globe className="h-4 w-4" />{t("productDetail.visitWebsite")}
+                  </Button>
                 )}
                 <Link to={`/product/${slug}/write-review`}><Button variant="outline" className="rounded-xl font-semibold">{t("productDetail.writeReview")}</Button></Link>
                 <Link to={`/compare?products=${product.id}`}><Button variant="ghost" className="rounded-xl font-medium">{t("productDetail.compare")}</Button></Link>

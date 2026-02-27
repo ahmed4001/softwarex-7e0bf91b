@@ -5,7 +5,7 @@ import {
   ArrowLeftRight, BarChart3, Bot, Box, ChevronDown, DollarSign, FileText, FolderOpen,
   Image, LayoutDashboard, LogOut, Megaphone, MessageSquare, Settings,
   Star, Users, Activity, Mail, Database, Sparkles, Globe, Inbox, Compass, Shield,
-  BookOpen, TrendingUp, UserCheck, Handshake
+  BookOpen, TrendingUp, UserCheck, Handshake, MousePointerClick
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -69,6 +69,7 @@ const sidebarItems = [
   { label: "Trend Reports", icon: TrendingUp, to: "/admin/trend-reports" },
   { label: "Cohort Analysis", icon: UserCheck, to: "/admin/cohort" },
   { label: "Partner Links", icon: Handshake, to: "/admin/partner-links" },
+  { label: "Affiliate Clicks", icon: MousePointerClick, to: "/admin/affiliate-analytics" },
 ];
 
 interface SidebarItemProps {

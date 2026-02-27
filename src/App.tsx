@@ -97,6 +97,7 @@ const GlossaryPage = lazy(() => import("./pages/GlossaryPage"));
 const GlossaryTermPage = lazy(() => import("./pages/GlossaryTermPage"));
 const PartnerLinksPage = lazy(() => import("./pages/PartnerLinksPage"));
 const AdminPartnerLinksPage = lazy(() => import("./pages/admin/AdminPartnerLinksPage"));
+const AdminAffiliateAnalyticsPage = lazy(() => import("./pages/admin/AdminAffiliateAnalyticsPage"));
 
 const queryClient = new QueryClient();
 
@@ -188,6 +189,7 @@ function AppContent() {
           <Route path="trend-reports" element={<ErrorBoundary><AdminTrendReportsPage /></ErrorBoundary>} />
           <Route path="cohort" element={<ErrorBoundary><AdminCohortPage /></ErrorBoundary>} />
           <Route path="partner-links" element={<ErrorBoundary><AdminPartnerLinksPage /></ErrorBoundary>} />
+          <Route path="affiliate-analytics" element={<ErrorBoundary><AdminAffiliateAnalyticsPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}

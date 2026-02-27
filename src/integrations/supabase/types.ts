@@ -98,6 +98,47 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_clicks: {
+        Row: {
+          created_at: string
+          destination_url: string
+          id: string
+          ip_hash: string | null
+          product_id: string
+          referrer_url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          destination_url: string
+          id?: string
+          ip_hash?: string | null
+          product_id: string
+          referrer_url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          destination_url?: string
+          id?: string
+          ip_hash?: string | null
+          product_id?: string
+          referrer_url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_history: {
         Row: {
           alert_id: string
@@ -1989,6 +2030,7 @@ export type Database = {
       }
       products: {
         Row: {
+          affiliate_url: string | null
           avg_rating: number | null
           canonical_url: string | null
           category_id: string | null
@@ -2039,6 +2081,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          affiliate_url?: string | null
           avg_rating?: number | null
           canonical_url?: string | null
           category_id?: string | null
@@ -2089,6 +2132,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          affiliate_url?: string | null
           avg_rating?: number | null
           canonical_url?: string | null
           category_id?: string | null
