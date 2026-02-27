@@ -46,6 +46,49 @@ export function HeroSection() {
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
         aria-hidden="true"
       />
+      {/* Extra 3D-style shapes */}
+      <motion.div
+        className="absolute top-[30%] left-[-25px] w-28 h-28 rounded-full"
+        style={{ background: "linear-gradient(135deg, hsl(280 70% 55%), hsl(320 70% 50%))" }}
+        animate={{ y: [0, -20, 10, 0], scale: [1, 1.08, 0.95, 1], rotate: [0, 10, -5, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+        aria-hidden="true"
+      />
+      <motion.div
+        className="absolute top-[15%] right-[15%] w-20 h-20 rounded-xl"
+        style={{ background: "linear-gradient(145deg, hsl(40 90% 55%), hsl(25 85% 50%))" }}
+        animate={{ rotate: [0, 25, -10, 0], y: [0, -18, 12, 0], x: [0, 8, -6, 0] }}
+        transition={{ duration: 7.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        aria-hidden="true"
+      />
+      <motion.div
+        className="absolute bottom-[30%] left-[12%] w-16 h-16 rounded-full"
+        style={{ background: "linear-gradient(180deg, hsl(190 80% 50%), hsl(210 85% 55%))" }}
+        animate={{ scale: [1, 1.15, 0.9, 1], y: [0, 15, -10, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        aria-hidden="true"
+      />
+      <motion.div
+        className="absolute top-[40%] right-[-15px] w-24 h-24 rounded-2xl"
+        style={{ background: "linear-gradient(160deg, hsl(350 75% 55%), hsl(10 80% 50%))" }}
+        animate={{ rotate: [-15, 10, -20, -15], x: [0, -10, 8, 0], scale: [1, 1.06, 0.94, 1] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+        aria-hidden="true"
+      />
+      <motion.div
+        className="absolute bottom-[10%] left-[40%] w-14 h-14 rounded-full"
+        style={{ background: "linear-gradient(135deg, hsl(140 70% 45%), hsl(165 75% 50%))" }}
+        animate={{ y: [0, -12, 8, 0], x: [0, 10, -6, 0], rotate: [0, 15, -8, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
+        aria-hidden="true"
+      />
+      <motion.div
+        className="absolute top-[60%] left-[25%] w-10 h-10 rounded-lg"
+        style={{ background: "linear-gradient(120deg, hsl(50 85% 55%), hsl(35 80% 50%))" }}
+        animate={{ rotate: [0, 30, -15, 0], scale: [1, 1.2, 0.85, 1] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
+        aria-hidden="true"
+      />
       <motion.div
         className="absolute bottom-[20px] right-[-20px] w-36 h-36 rounded-2xl"
         style={{ background: "hsl(165 80% 48%)" }}
