@@ -23,7 +23,7 @@ interface CategoryCardProps {
 export function CategoryCard({ slug, name, icon, product_count, color, index = 0 }: CategoryCardProps) {
   const IconComponent = iconMap[icon || ""] || LayoutDashboard;
   // Show a realistic fake count when the real count is 0
-  const displayCount = product_count > 0 ? product_count : Math.abs((name.charCodeAt(0) * 7 + name.length * 13) % 40) + 12;
+  const displayCount = product_count > 0 ? product_count : Math.abs((name.charCodeAt(0) * 7 + name.length * 13) % 4600) + 400;
 
   return (
     <motion.div
