@@ -78,28 +78,74 @@ export function PublicFooter() {
   return (
     <footer className="bg-foreground text-white/70">
       <div className="container py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
-          {footerSections.map((section) => (
-            <div key={section.title} className={section.title === t("footer.topCategories") ? "col-span-2 md:col-span-1" : ""}>
-              <div className="flex items-center gap-2 mb-5">
-                <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">
-                  <span className="text-[8px] font-bold text-white">★</span>
-                </div>
-                <h4 className="font-bold text-white text-sm">{section.title}</h4>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-x-8 gap-y-10 mb-12">
+          {/* SoftwareHub - 1 col */}
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="text-[8px] font-bold text-white">★</span>
               </div>
-              <div className={section.title === t("footer.topCategories") ? "grid grid-cols-2 gap-x-6 gap-y-2.5" : "space-y-2.5"}>
-                {section.links.map((l, i) => (
-                  <Link
-                    key={`${l.label}-${i}`}
-                    to={l.to}
-                    className="block text-sm text-white/50 hover:text-white transition-colors"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
+              <h4 className="font-bold text-white text-sm">{footerSections[0].title}</h4>
             </div>
-          ))}
+            <div className="space-y-2.5">
+              {footerSections[0].links.map((l, i) => (
+                <Link key={`${l.label}-${i}`} to={l.to} className="block text-sm text-white/50 hover:text-white transition-colors">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Categories - 2 cols */}
+          <div className="col-span-2">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="text-[8px] font-bold text-white">★</span>
+              </div>
+              <h4 className="font-bold text-white text-sm">{footerSections[1].title}</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2.5">
+              {footerSections[1].links.map((l, i) => (
+                <Link key={`${l.label}-${i}`} to={l.to} className="block text-sm text-white/50 hover:text-white transition-colors">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Company - 1 col */}
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="text-[8px] font-bold text-white">★</span>
+              </div>
+              <h4 className="font-bold text-white text-sm">{footerSections[2].title}</h4>
+            </div>
+            <div className="space-y-2.5">
+              {footerSections[2].links.map((l, i) => (
+                <Link key={`${l.label}-${i}`} to={l.to} className="block text-sm text-white/50 hover:text-white transition-colors">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Policies - 1 col */}
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="text-[8px] font-bold text-white">★</span>
+              </div>
+              <h4 className="font-bold text-white text-sm">{footerSections[3].title}</h4>
+            </div>
+            <div className="space-y-2.5">
+              {footerSections[3].links.map((l, i) => (
+                <Link key={`${l.label}-${i}`} to={l.to} className="block text-sm text-white/50 hover:text-white transition-colors">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/30">
