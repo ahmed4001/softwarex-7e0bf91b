@@ -286,6 +286,7 @@ export default function AdminProductsPage() {
                   </th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Product</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Category</th>
+                  <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Website</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Rating</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Reviews</th>
                   <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Active</th>
@@ -312,6 +313,11 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{p.categories?.name || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">
+                      {p.website_url ? (
+                        <a href={p.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{p.website_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>
+                      ) : <span className="text-destructive">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium">★ {Number(p.avg_rating).toFixed(1)}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{p.total_reviews}</td>
                     <td className="px-4 py-3 text-center">
@@ -346,8 +352,8 @@ export default function AdminProductsPage() {
                     </td>
                   </tr>
                 ))}
-                {isLoading && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>}
-                {!isLoading && products?.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">No products found.</td></tr>}
+                {isLoading && <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>}
+                {!isLoading && products?.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">No products found.</td></tr>}
               </tbody>
             </table>
           </div>
