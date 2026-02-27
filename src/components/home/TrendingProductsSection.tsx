@@ -27,6 +27,7 @@ export function TrendingProductsSection() {
           .from("products")
           .select("id, name, slug, logo_url, avg_rating, total_reviews, tagline, view_count, categories!products_category_id_fkey(name)")
           .eq("is_active", true)
+          .order("info_score", { ascending: false })
           .order("view_count", { ascending: false })
           .limit(6);
         return (data || []).map((p: any) => ({ ...p, recentReviewCount: 0 }));

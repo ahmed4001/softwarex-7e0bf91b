@@ -17,6 +17,7 @@ export function ProductShowcaseSection() {
         .eq("is_active", true)
         .not("screenshots", "eq", "[]")
         .not("screenshots", "is", null)
+        .order("info_score", { ascending: false })
         .order("total_reviews", { ascending: false })
         .limit(8);
       return (data || []).filter((p: any) => {

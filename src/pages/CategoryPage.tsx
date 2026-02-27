@@ -63,6 +63,7 @@ export default function CategoryPage() {
         query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
       }
       query = query.order("is_sponsored", { ascending: false });
+      query = query.order("info_score", { ascending: false });
       if (sort === "rating") query = query.order("avg_rating", { ascending: false });
       else if (sort === "reviews") query = query.order("total_reviews", { ascending: false });
       else if (sort === "newest") query = query.order("created_at", { ascending: false });

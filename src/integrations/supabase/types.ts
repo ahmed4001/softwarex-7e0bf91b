@@ -1938,6 +1938,7 @@ export type Database = {
           founded_year: number | null
           headquarters: string | null
           id: string
+          info_score: number
           integrations: Json | null
           is_active: boolean | null
           is_claimed: boolean | null
@@ -1987,6 +1988,7 @@ export type Database = {
           founded_year?: number | null
           headquarters?: string | null
           id?: string
+          info_score?: number
           integrations?: Json | null
           is_active?: boolean | null
           is_claimed?: boolean | null
@@ -2036,6 +2038,7 @@ export type Database = {
           founded_year?: number | null
           headquarters?: string | null
           id?: string
+          info_score?: number
           integrations?: Json | null
           is_active?: boolean | null
           is_claimed?: boolean | null
