@@ -13,7 +13,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, ArrowLeftRight, Loader2 } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Plus, Search, Trash2, ArrowLeftRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 type AlternativeRow = {
@@ -35,6 +38,9 @@ export default function AdminAlternativesPage() {
   const [selectedProduct, setSelectedProduct] = useState<{ id: string; name: string } | null>(null);
   const [selectedAlt, setSelectedAlt] = useState<{ id: string; name: string } | null>(null);
   const [similarity, setSimilarity] = useState([75]);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiCategory, setAiCategory] = useState<string>("all");
+  const [aiLimit, setAiLimit] = useState([10]);
 
   const { data: alternatives = [], isLoading } = useQuery({
     queryKey: ["admin-alternatives"],
@@ -65,12 +71,37 @@ export default function AdminAlternativesPage() {
     },
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["admin-categories-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("id, name").eq("is_active", true).order("name");
+      return data || [];
+    },
+  });
+
   const filtered = search.trim()
     ? alternatives.filter((a) =>
         (a.product?.name || "").toLowerCase().includes(search.toLowerCase()) ||
         (a.alternative?.name || "").toLowerCase().includes(search.toLowerCase())
       )
     : alternatives;
+
+  const aiGenerateMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generate-alternatives", {
+        body: { categoryId: aiCategory === "all" ? null : aiCategory, limit: aiLimit[0] },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-alternatives"] });
+      setAiDialogOpen(false);
+      toast.success(`Generated ${data.inserted} alternative pairs`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -156,9 +187,14 @@ export default function AdminAlternativesPage() {
             </h1>
             <p className="text-muted-foreground">{alternatives.length} alternative pairs</p>
           </div>
-          <Button className="gap-1" onClick={() => setEditorOpen(true)}>
-            <Plus className="h-4 w-4" /> Add Pair
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-1" onClick={() => setAiDialogOpen(true)}>
+              <Sparkles className="h-4 w-4" /> AI Generate
+            </Button>
+            <Button className="gap-1" onClick={() => setEditorOpen(true)}>
+              <Plus className="h-4 w-4" /> Add Pair
+            </Button>
+          </div>
         </div>
 
         <div className="relative max-w-md">
@@ -252,6 +288,38 @@ export default function AdminAlternativesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Generate Dialog */}
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> AI Generate Alternatives</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Category (optional)</Label>
+              <Select value={aiCategory} onValueChange={setAiCategory}>
+                <SelectTrigger><SelectValue placeholder="All categories" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Number of pairs: {aiLimit[0]}</Label>
+              <Slider value={aiLimit} onValueChange={setAiLimit} min={5} max={30} step={5} />
+            </div>
+            <p className="text-xs text-muted-foreground">AI will analyze your products and suggest genuine alternative pairs based on similar features and use cases.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => aiGenerateMutation.mutate()} disabled={aiGenerateMutation.isPending} className="gap-1">
+              {aiGenerateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
