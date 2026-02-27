@@ -40,6 +40,7 @@ const EXTERNAL_PROVIDERS = [
   { id: "mistral", label: "Mistral AI", secretKey: "MISTRAL_API_KEY", description: "Access to Mistral models", docsUrl: "https://console.mistral.ai/api-keys" },
   { id: "groq", label: "Groq", secretKey: "GROQ_API_KEY", description: "Ultra-fast inference for open models", docsUrl: "https://console.groq.com/keys" },
   { id: "perplexity", label: "Perplexity AI", secretKey: "PERPLEXITY_API_KEY", description: "AI-powered search and answers", docsUrl: "https://www.perplexity.ai/settings/api" },
+  { id: "firecrawl", label: "Firecrawl", secretKey: "FIRECRAWL_API_KEY", description: "AI-powered web scraping, search & crawling", docsUrl: "https://www.firecrawl.dev/app/api-keys" },
 ];
 
 const CONTENT_TEMPLATES = [
