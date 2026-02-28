@@ -46,6 +46,7 @@ export function ProductCard({ id, slug, name, tagline, logo_url, avg_rating, tot
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -3 }}
       transition={{ duration: 0.25 }}
       className="relative"
     >

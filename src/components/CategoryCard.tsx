@@ -27,16 +27,22 @@ export function CategoryCard({ slug, name, icon, product_count, color, index = 0
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2, scale: 1.01 }}
       transition={{ duration: 0.3, delay: index * 0.04 }}
     >
       <Link
         to={`/category/${slug}`}
-        className="glass-card group flex items-center gap-4 p-5 hover:shadow-md transition-all duration-300"
+        className="glass-card group flex items-center gap-4 p-5 hover:shadow-md transition-all duration-300 hover:border-primary/20"
       >
-        <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/15 group-hover:scale-105 transition-all duration-300">
-          <IconComponent className="h-5 w-5 text-primary" />
+        <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:scale-105 transition-all duration-300">
+          <IconComponent className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors" />
         </div>
-        <h3 className="font-bold text-foreground text-[15px] tracking-tight group-hover:text-primary transition-colors truncate">{name}</h3>
+        <div className="min-w-0">
+          <h3 className="font-bold text-foreground text-[15px] tracking-tight group-hover:text-primary transition-colors truncate">{name}</h3>
+          {product_count > 0 && (
+            <p className="text-xs text-muted-foreground mt-0.5">{product_count} tools</p>
+          )}
+        </div>
       </Link>
     </motion.div>
   );
