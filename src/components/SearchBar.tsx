@@ -73,22 +73,28 @@ export function SearchBar({ variant = "compact", className }: SearchBarProps) {
         </div>
       </form>
       {isOpen && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-xl shadow-xl border border-border z-50 overflow-hidden">
-          {results.map((r) => (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-xl shadow-xl border border-border z-50 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-200">
+          {results.map((r, i) => (
             <Link
               key={r.id}
               to={`/product/${r.slug}`}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary/5 transition-colors group"
+              style={{ animationDelay: `${i * 30}ms` }}
             >
               <ProductLogo name={r.name} logoUrl={r.logo_url} size="sm" />
-              <div>
-                <p className="text-sm font-medium text-foreground">{r.name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{r.name}</p>
                 {r.tagline && <p className="text-xs text-muted-foreground line-clamp-1">{r.tagline}</p>}
               </div>
+              {r.avg_rating > 0 && (
+                <span className="text-xs font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full flex-shrink-0">
+                  ★ {Number(r.avg_rating).toFixed(1)}
+                </span>
+              )}
             </Link>
           ))}
-          <Link to={`/search?q=${encodeURIComponent(query)}`} onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-sm text-primary font-medium hover:bg-muted text-center border-t border-border">
+          <Link to={`/search?q=${encodeURIComponent(query)}`} onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-sm text-primary font-medium hover:bg-primary/5 text-center border-t border-border transition-colors">
             View all results →
           </Link>
         </div>
