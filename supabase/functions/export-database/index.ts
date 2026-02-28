@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// All public tables to export
+// ALL 81 public tables to export (ordered by dependency)
 const TABLES = [
   "categories",
   "products",
@@ -15,6 +15,7 @@ const TABLES = [
   "alternative_pages",
   "advertisements",
   "activity_logs",
+  "price_alerts",
   "alert_history",
   "award_categories",
   "award_nominations",
@@ -44,12 +45,49 @@ const TABLES = [
   "notifications",
   "pages",
   "point_transactions",
-  "price_alerts",
   "pricing_features",
   "pricing_tier_features",
   "product_changelogs",
   "product_pricing_tiers",
   "profiles",
+  // New tables added for complete migration
+  "affiliate_clicks",
+  "partner_applications",
+  "partner_links",
+  "product_claims",
+  "product_integrations",
+  "product_watches",
+  "referral_links",
+  "referral_events",
+  "referral_payouts",
+  "referrals",
+  "review_comments",
+  "review_digests",
+  "review_media",
+  "review_qa",
+  "review_qa_votes",
+  "review_reactions",
+  "review_votes",
+  "reviewer_verifications",
+  "saved_products",
+  "seo_landing_pages",
+  "site_settings",
+  "sponsored_bids",
+  "tech_stacks",
+  "tech_stack_items",
+  "tech_stack_votes",
+  "ui_translations",
+  "user_achievements",
+  "user_badges",
+  "user_follows",
+  "user_recommendations",
+  "user_roles",
+  "vendor_deals",
+  "vendor_leads",
+  "vendor_responses",
+  "vendor_sponsored_requests",
+  "vendor_submissions",
+  "vendor_subscriptions",
 ];
 
 function escapeSQL(value: unknown): string {
@@ -82,28 +120,27 @@ Deno.serve(async (req) => {
 
     // MODE: list_storage — list all files in product-images bucket
     if (mode === "list_storage") {
-      const allFiles: { name: string; url: string }[] = [];
-      let storageOffset = 0;
-      const storageLimit = 1000;
+      const buckets = ["product-images", "review-media", "email-assets"];
+      const allFiles: { bucket: string; name: string; url: string }[] = [];
 
-      while (true) {
-        const { data: files, error } = await supabase.storage
-          .from("product-images")
-          .list("", { limit: storageLimit, offset: storageOffset });
-
-        if (error) throw error;
-        if (!files || files.length === 0) break;
-
-        for (const f of files) {
-          if (f.id) {
-            const { data: urlData } = supabase.storage
-              .from("product-images")
-              .getPublicUrl(f.name);
-            allFiles.push({ name: f.name, url: urlData.publicUrl });
+      for (const bucket of buckets) {
+        let storageOffset = 0;
+        const storageLimit = 1000;
+        while (true) {
+          const { data: files, error } = await supabase.storage
+            .from(bucket)
+            .list("", { limit: storageLimit, offset: storageOffset });
+          if (error) { console.error(`Storage error for ${bucket}:`, error); break; }
+          if (!files || files.length === 0) break;
+          for (const f of files) {
+            if (f.id) {
+              const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(f.name);
+              allFiles.push({ bucket, name: f.name, url: urlData.publicUrl });
+            }
           }
+          storageOffset += storageLimit;
+          if (files.length < storageLimit) break;
         }
-        storageOffset += storageLimit;
-        if (files.length < storageLimit) break;
       }
 
       return new Response(JSON.stringify({ files: allFiles, count: allFiles.length }), {
@@ -117,11 +154,8 @@ Deno.serve(async (req) => {
         .from(singleTable)
         .select("*", { count: "exact" })
         .range(offset, offset + limit - 1);
-
       if (error) throw error;
-
       const inserts = (data || []).map((row: Record<string, unknown>) => rowToInsert(singleTable, row));
-
       return new Response(
         JSON.stringify({
           table: singleTable,
@@ -138,22 +172,15 @@ Deno.serve(async (req) => {
     // MODE: summary — show row counts for all tables
     if (mode === "summary") {
       const summary: { table: string; count: number }[] = [];
-
       for (const t of TABLES) {
         try {
           const { count, error } = await supabase.from(t).select("*", { count: "exact", head: true });
-          if (!error) {
-            summary.push({ table: t, count: count || 0 });
-          } else {
-            summary.push({ table: t, count: -1 });
-          }
+          summary.push({ table: t, count: error ? -1 : (count || 0) });
         } catch {
           summary.push({ table: t, count: -1 });
         }
       }
-
       const total = summary.reduce((s, t) => s + Math.max(t.count, 0), 0);
-
       return new Response(
         JSON.stringify({ tables: summary, total_rows: total, table_count: summary.length }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -168,19 +195,10 @@ Deno.serve(async (req) => {
       try {
         let tableOffset = 0;
         let tableRows = 0;
-
         while (true) {
-          const { data, error } = await supabase
-            .from(t)
-            .select("*")
-            .range(tableOffset, tableOffset + 999);
-
-          if (error) {
-            console.error(`Error exporting ${t}:`, error.message);
-            break;
-          }
+          const { data, error } = await supabase.from(t).select("*").range(tableOffset, tableOffset + 999);
+          if (error) { console.error(`Error exporting ${t}:`, error.message); break; }
           if (!data || data.length === 0) break;
-
           for (const row of data) {
             allSQL.push(rowToInsert(t, row as Record<string, unknown>));
           }
@@ -188,7 +206,6 @@ Deno.serve(async (req) => {
           tableOffset += 1000;
           if (data.length < 1000) break;
         }
-
         stats.push({ table: t, rows: tableRows });
       } catch (e) {
         console.error(`Failed on table ${t}:`, e);
@@ -197,11 +214,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({
-        stats,
-        total_inserts: allSQL.length,
-        sql: allSQL.join("\n"),
-      }),
+      JSON.stringify({ stats, total_inserts: allSQL.length, sql: allSQL.join("\n") }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
