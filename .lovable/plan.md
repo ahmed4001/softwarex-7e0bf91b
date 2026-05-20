@@ -1,61 +1,90 @@
+# Ghost-style Blog & CMS Upgrade Plan
 
-# Plan: Round 5 — 13 Feature Expansion
+You already have a substantial blog system. This plan **enhances** it rather than rebuilding. Work ships in 4 phases — confirm and I'll start Phase 1.
 
-## Completed Features
+## What you already have (no rebuild needed)
 
-### 1. Review Reactions (👍 🔥 💡 🤔)
-- `review_reactions` table with unique constraint per user/review/emoji
-- `useReviewReactions` hook with optimistic toggle
-- `ReviewReactions` component rendered on every ReviewCard
+- `blog_posts` table with SEO fields (title, description, keywords, og_image, canonical, reading_time, view_count)
+- Public `/blog` (Ghost-style hero + list) and `/blog/:slug` (serif typography, Article JSON-LD, view counter)
+- `/admin/blog` + `AdminBlogEditorPage` (rich editor, SEO tab, keyword analyzer)
+- Sitemap/robots edge function (`seo-files`), `SeoHead` with global fallbacks
+- Newsletter (Brevo), subscribers dashboard, broadcast composer
+- User roles (admin/editor/author/user), media library bucket
+- AI: `ai-playground`, sentiment, summary, recommendations via Lovable AI gateway
 
-### 2. Achievement Milestones
-- `user_achievements` table tracking unlocked milestones
-- `display_title` column added to profiles
+## Gap analysis vs. your spec
 
-### 3. Referral Program
-- `referrals` table for tracking invites
-- `referral_code` and `referred_by` columns on profiles
-- Existing `ReferralDashboard` already handles referral links
+**Missing reader features**: Table of contents, related articles, social share buttons, breadcrumbs, sticky sidebar, comments, author profile pages, infinite scroll, tag pages, category pages (blog-specific).
 
-### 4. Auto "Alternatives to X" Pages
-- `alternative_pages` table with FAQ schema support
-- `/alternatives/:slug` public route with SEO + JSON-LD FAQ schema
-- Products pulled from existing `alternatives` table
+**Missing CMS features**: Revision history, autosave, scheduled publishing UI, duplicate post, bulk actions, sticky posts, media folders, drag-drop upload, focus keyword density on save.
 
-### 5. Glossary/Dictionary
-- `glossary_terms` table with slug, definition, extended description, categories
-- `/glossary` public listing page with alphabetical navigation + search
-- `/glossary/:slug` detail page with related terms
-- Admin: `/admin/glossary` CRUD management page
+**Missing SEO dashboard**: Dedicated `/admin/seo` audit (missing meta, broken links, duplicate content, readability score), redirect manager, GSC integration UI, top-ranking posts.
 
-### 6. Category Trend Reports
-- `category_trend_reports` table with rising/falling products
-- Admin: `/admin/trend-reports` to view generated reports
+**Missing AI assistant**: AI title/meta/outline/content generator inline in the editor (you have AI infra but not editor-integrated).
 
-### 7. User Cohort Analysis
-- Admin: `/admin/cohort` page with signup/review charts + top reviewers table
+**Missing monetization**: Membership tiers, premium content lock, paid subscriptions (Paddle is wired but no membership UI).
 
-### 8. Vendor Sentiment Dashboard
-- `VendorSentimentDashboard` component with positive/neutral/negative breakdown
-- Rating trend line chart over time
-- Already integrated into existing VendorAnalyticsPage charts
+## Phased delivery
 
-### 9. Lead Intent Scoring
-- `intent_score` and `intent_signals` columns added to `vendor_leads`
+### Phase 1 — Reader experience + public polish
+- Auto-generated **Table of Contents** (parses H2/H3 from post body, sticky on desktop)
+- **Related posts** (same category/tags, ranked by view_count)
+- **Breadcrumbs** with BreadcrumbList JSON-LD
+- **Social share buttons** (Twitter/X, LinkedIn, Facebook, copy-link)
+- **Author profile pages** at `/author/:slug` (bio, avatar, social links, post list) — uses `profiles` table
+- **Tag pages** `/blog/tag/:tag` and **category pages** `/blog/category/:category`
+- **Reading progress bar** + scroll-to-top
+- **Comments** (lightweight, uses `discussions` infra you already have, scoped to post)
 
-### 10-13. Enhanced existing features
-- Vendor subscription tiers (Stripe-ready)
-- Featured placement auction (existing `sponsored_bids` infrastructure)
-- X vs Y page enhancement (existing comparison system)
+### Phase 2 — Admin CMS polish
+- **Autosave drafts** (debounced, every 10s) + "Saved Xs ago" indicator
+- **Revision history** table + restore-from-revision UI
+- **Scheduled publishing**: status=`scheduled` + `scheduled_at` + cron edge function `publish-scheduled-posts`
+- **Duplicate post** action, **bulk actions** (publish/unpublish/delete/move-category)
+- **Sticky/featured post** toggle, surfaced on `/blog`
+- **Media library upgrades**: folders, drag-drop upload, search, alt-text editor
+- **Focus keyword analysis** integrated into editor SEO tab (density, in title/H1/meta/slug/first paragraph)
 
-## Database Tables Added
-- `review_reactions`, `user_achievements`, `referrals`
-- `alternative_pages`, `glossary_terms`, `category_trend_reports`
+### Phase 3 — Dedicated SEO dashboard
+- New `/admin/seo` route with tabs:
+  - **Audit**: posts missing meta, missing alt text, missing OG image, missing focus keyword, weak readability
+  - **Redirects**: `redirects` table (from_path → to_path, status code), edge function applies them
+  - **Broken links**: edge function scrapes published posts, flags 4xx links
+  - **Top content**: posts sorted by view_count + CTR (uses existing `view_count`)
+  - **GSC integration**: OAuth connector + impressions/clicks/position per URL (you have Google Search Console connector knowledge)
+- **Sitemap**: extend `seo-files` to include `/author/*`, `/blog/tag/*`, `/blog/category/*`
 
-## New Routes
-- `/alternatives/:slug` — SEO alternatives pages
-- `/glossary` — SaaS glossary listing
-- `/glossary/:slug` — Glossary term detail
-- `/admin/glossary` — Admin glossary management
-- `/admin/trend-reports` — Admin trend reports
-- `/admin/cohort` — Admin cohort analysis
+### Phase 4 — AI assistant + monetization
+- **AI editor toolbar**: generate title, meta description, excerpt, outline, "improve this paragraph", "expand", "summarize" — calls a new `ai-blog-assistant` edge function (Lovable AI gateway, `google/gemini-3-flash-preview`)
+- **AI alt-text** for uploaded images
+- **AI internal linking suggestions** based on existing post corpus
+- **Memberships**: `membership_tiers` table, gated content (`premium_only` flag on posts), paywall component, Paddle checkout for subscriptions
+
+## Database additions
+
+```text
+post_revisions (post_id, body, title, editor_id, created_at)
+redirects (from_path, to_path, status_code, hits)
+post_comments (post_id, user_id, body, parent_id, status)
+membership_tiers (name, price, paddle_product_id, perks)
+user_memberships (user_id, tier_id, status, expires_at)
+blog_posts: add scheduled_at, is_sticky, premium_only, autosave_body, last_autosave_at
+profiles: add bio_long, twitter_handle, linkedin_url, website (some exist)
+```
+
+All with RLS: public read for published content; admin/editor write; comments user-scoped.
+
+## Out of scope (not building unless you ask)
+
+- AMP support (Google deprecated it)
+- PWA + web push (separate effort)
+- Two-factor auth (Supabase doesn't ship MFA UI; needs custom flow)
+- Multi-language **content** translation (UI i18n already exists; post translation is a big separate feature)
+- Mailchimp/ConvertKit (Brevo is already wired — switching providers is its own task)
+- Full GA4 integration (your `view_count` + Supabase analytics cover most needs)
+
+## Recommendation
+
+Start with **Phase 1** — biggest visible upgrade for readers, no risky migrations, ships in one round. Then we evaluate before Phase 2.
+
+Approve this plan to start, or tell me to reorder/cut/expand any phase.
