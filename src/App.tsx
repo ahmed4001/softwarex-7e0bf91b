@@ -23,6 +23,8 @@ const ComparePage = lazy(() => import("./pages/ComparePage"));
 const ComparisonDetailPage = lazy(() => import("./pages/ComparisonDetailPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
+const BlogTaxonomyPage = lazy(() => import("./pages/BlogTaxonomyPage"));
+const AuthorPage = lazy(() => import("./pages/AuthorPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SubmitProductPage = lazy(() => import("./pages/SubmitProductPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -127,7 +129,10 @@ function AppContent() {
           <Route path="/compare" element={<ErrorBoundary><ComparePage /></ErrorBoundary>} />
           <Route path="/compare/:slug" element={<ErrorBoundary><ComparisonDetailPage /></ErrorBoundary>} />
           <Route path="/blog" element={<ErrorBoundary><BlogPage /></ErrorBoundary>} />
+          <Route path="/blog/tag/:tag" element={<ErrorBoundary><BlogTaxonomyPage mode="tag" /></ErrorBoundary>} />
+          <Route path="/blog/category/:category" element={<ErrorBoundary><BlogTaxonomyPage mode="category" /></ErrorBoundary>} />
           <Route path="/blog/:slug" element={<ErrorBoundary><BlogPostPage /></ErrorBoundary>} />
+          <Route path="/author/:id" element={<ErrorBoundary><AuthorPage /></ErrorBoundary>} />
           <Route path="/login" element={<ErrorBoundary><LoginPage /></ErrorBoundary>} />
           <Route path="/submit-product" element={<ErrorBoundary><SubmitProductPage /></ErrorBoundary>} />
           <Route path="/dashboard" element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
