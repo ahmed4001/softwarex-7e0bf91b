@@ -197,6 +197,7 @@ export default function AdminBlogPage() {
               />
             </div>
             <div className="flex-1">Title</div>
+            <div className="w-16 text-center hidden md:block">SEO</div>
             <div className="w-24 text-center hidden md:block">Status</div>
             <div className="w-32 hidden lg:block">Updated</div>
             <div className="w-24 text-right">Actions</div>
