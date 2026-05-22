@@ -14,7 +14,7 @@ import {
 import {
   BarChart3, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2,
   Globe, FileText, Eye, Link2, ArrowUpRight, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, X, RefreshCw,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download,
 } from "lucide-react";
 
 type Post = {
