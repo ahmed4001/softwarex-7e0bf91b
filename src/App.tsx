@@ -100,6 +100,10 @@ const GlossaryTermPage = lazy(() => import("./pages/GlossaryTermPage"));
 const PartnerLinksPage = lazy(() => import("./pages/PartnerLinksPage"));
 const AdminPartnerLinksPage = lazy(() => import("./pages/admin/AdminPartnerLinksPage"));
 const AdminAffiliateAnalyticsPage = lazy(() => import("./pages/admin/AdminAffiliateAnalyticsPage"));
+const KeywordLandingPage = lazy(() => import("./pages/KeywordLandingPage"));
+const AdminKeywordLandingPage = lazy(() => import("./pages/admin/AdminKeywordLandingPage"));
+
+import { KEYWORD_ROOT_SLUGS } from "@/lib/seo-canonical";
 
 const queryClient = new QueryClient();
 
