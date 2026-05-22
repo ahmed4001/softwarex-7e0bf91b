@@ -45,7 +45,12 @@ function extractLinks(html: string): string[] {
 }
 
 export default function AdminBlogSeoDashboardPage() {
-  const { data: posts, isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  const [recomputeKey, setRecomputeKey] = useState(0);
+  const [recomputing, setRecomputing] = useState(false);
+  const [lastRun, setLastRun] = useState<Date | null>(null);
+
+  const { data: posts, isLoading, isFetching } = useQuery({
     queryKey: ["admin-blog-seo"],
     queryFn: async () => {
       const { data } = await supabase
@@ -55,6 +60,21 @@ export default function AdminBlogSeoDashboardPage() {
       return (data || []) as Post[];
     },
   });
+
+  const recompute = async () => {
+    setRecomputing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["admin-blog-seo"] });
+      // Force the useMemo to re-run even if data reference is identical
+      setRecomputeKey((k) => k + 1);
+      setLastRun(new Date());
+      toast({ title: "SEO scores recomputed", description: `${posts?.length ?? 0} posts re-scored.` });
+    } catch (err: any) {
+      toast({ title: "Recompute failed", description: err.message, variant: "destructive" });
+    } finally {
+      setRecomputing(false);
+    }
+  };
 
   const analysis = useMemo(() => {
     if (!posts) return null;
