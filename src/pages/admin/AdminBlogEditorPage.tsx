@@ -201,23 +201,71 @@ export default function AdminBlogEditorPage() {
         published_at: finalStatus === "published" ? new Date().toISOString() : existing?.published_at || null,
       };
 
-      if (isEdit) {
-        const { error } = await supabase.from("blog_posts").update(payload).eq("id", id!);
+      const effectiveId = id || createdId;
+      if (effectiveId) {
+        const { error } = await supabase.from("blog_posts").update(payload).eq("id", effectiveId);
         if (error) throw error;
+        return { id: effectiveId, isNew: false };
       } else {
-        const { error } = await supabase.from("blog_posts").insert(payload);
+        const { data, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
         if (error) throw error;
+        return { id: data.id, isNew: true };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog"] });
-      toast({ title: isEdit ? "Post updated" : "Post created" });
+      toast({ title: isEdit || createdId ? "Post updated" : "Post created" });
       navigate("/admin/blog");
     },
     onError: (err: any) => {
       toast({ title: "Error saving post", description: err.message, variant: "destructive" });
     },
   });
+
+  // ---- AUTO-SAVE ----
+  // Debounced silent save of drafts. Skips published/scheduled posts (require explicit user action).
+  useEffect(() => {
+    if (!form.title.trim() || !form.slug.trim()) return;
+    if (form.status !== "draft") return;
+    const handle = setTimeout(async () => {
+      setAutoSaving(true);
+      try {
+        const readingTime = estimateReadingTime(form.body);
+        const payload: any = {
+          title: form.title,
+          slug: form.slug,
+          excerpt: form.excerpt || null,
+          body: form.body || null,
+          category: form.category || null,
+          featured_image: form.featured_image || null,
+          status: "draft",
+          is_featured: form.is_featured,
+          is_pinned: form.is_pinned,
+          seo_title: form.seo_title || null,
+          seo_description: form.seo_description || null,
+          seo_keywords: form.seo_keywords || null,
+          canonical_url: form.canonical_url || null,
+          og_image: form.og_image || null,
+          reading_time: readingTime,
+          tags: form.tags as any,
+        };
+        const effectiveId = id || createdId;
+        if (effectiveId) {
+          await supabase.from("blog_posts").update(payload).eq("id", effectiveId);
+        } else {
+          const { data } = await supabase.from("blog_posts").insert(payload).select("id").single();
+          if (data?.id) setCreatedId(data.id);
+        }
+        setLastSavedAt(new Date());
+      } catch {
+        // silent — manual save will surface errors
+      } finally {
+        setAutoSaving(false);
+      }
+    }, 2500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
   const handleSave = () => {
     if (!form.title.trim()) {
