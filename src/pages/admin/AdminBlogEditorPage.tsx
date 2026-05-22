@@ -801,6 +801,12 @@ export default function AdminBlogEditorPage() {
               }
             }}
           />
+          <SocialPreview
+            title={form.seo_title || form.title}
+            description={form.seo_description}
+            slug={form.slug}
+            image={form.featured_image}
+          />
         </aside>
       </div>
     </>
