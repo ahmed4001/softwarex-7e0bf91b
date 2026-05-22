@@ -130,6 +130,21 @@ const CATEGORY_MAP: Record<string, string> = {
   "kw-title-stuff": "Keyword",
   "title-h1-match": "Title",
   "read-time": "Content",
+  "h1-missing": "Headings",
+  "kw-h1": "Keyword",
+  "slug-special": "URL",
+  "slug-underscore": "URL",
+  "http-links": "Technical",
+  "external-overuse": "Links",
+  "internal-overuse": "Links",
+  "alt-generic": "Media",
+  "intro-length": "Content",
+  "conclusion": "Content",
+  "cta-body": "Engagement",
+  "authority-link": "E-E-A-T",
+  "subhead-distribution": "Headings",
+  "lsi-coverage": "Keyword",
+  "title-clickbait": "Title",
 };
 
 // Industry benchmark tiers used for the comparison bar
