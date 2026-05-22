@@ -100,9 +100,43 @@ export function computeSeoScore(input: SeoScoreInput): SeoScoreResult {
   const imgTags = Array.from(input.body.matchAll(/<img\b[^>]*>/gi)).map((m) => m[0]);
   const images = imgTags.length;
   const imagesMissingAlt = imgTags.filter((t) => !/\salt=["'][^"']+["']/i.test(t)).length;
+  const imgAltsWithKw = kw
+    ? imgTags.filter((t) => {
+        const m = t.match(/\salt=["']([^"']+)["']/i);
+        return m && m[1].toLowerCase().includes(kw);
+      }).length
+    : 0;
 
   const kwHits = kw ? countMatches(text, kw) : 0;
   const keywordDensity = kw && words > 0 ? (kwHits / words) * 100 : 0;
+
+  // ---- Content structure stats
+  const paragraphs = (input.body.match(/<p\b/gi) || []).length;
+  const lists = (input.body.match(/<(ul|ol)\b/gi) || []).length;
+  const videos =
+    (input.body.match(/<(video|iframe)\b/gi) || []).length;
+
+  // Sentence stats
+  const sentenceArr = text.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
+  const sentenceCount = Math.max(1, sentenceArr.length);
+  const avgSentenceLength = words / sentenceCount;
+  const longSentences = sentenceArr.filter((s) => s.split(/\s+/).length > 25).length;
+  const longSentenceRatio = longSentences / sentenceCount;
+
+  // Transition words
+  const lowerText = " " + text.toLowerCase() + " ";
+  const transitionHits = TRANSITION_WORDS.reduce(
+    (a, w) => a + (lowerText.match(new RegExp(`\\b${w}\\b`, "g")) || []).length,
+    0,
+  );
+  const transitionWordRatio = sentenceCount ? transitionHits / sentenceCount : 0;
+
+  // Passive voice (rough: "was/were/been/being/is/are + past-participle-ish ending in 'ed' or common irregulars")
+  const passiveRe =
+    /\b(?:was|were|been|being|is|are|am|be)\s+(?:\w+ly\s+)?(\w+ed|done|made|given|taken|seen|known|written|said|told|shown|built|sent|kept|held|brought|bought|caught|found|left|paid|put|set|let)\b/gi;
+  const passiveHits = (text.match(passiveRe) || []).length;
+  const passiveRatio = sentenceCount ? passiveHits / sentenceCount : 0;
+
 
   // ---- TITLE
   const titleLen = effectiveTitle.length;
