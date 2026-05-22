@@ -460,9 +460,9 @@ function PostsTable({ scored }: { scored: { post: Post; score: number; stats: { 
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-muted-foreground">No posts match your filters.</td></tr>
-            ) : rows.map((s) => (
+            ) : pageRows.map((s) => (
               <tr key={s.post.id} className="border-t hover:bg-muted/30">
                 <td className="px-6 py-2.5">
                   <Link to={`/admin/blog/${s.post.id}/edit`} className="hover:underline font-medium">
@@ -481,6 +481,40 @@ function PostsTable({ scored }: { scored: { post: Post; score: number; stats: { 
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination footer */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 border-t bg-muted/20 text-xs">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span>Rows per page</span>
+          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <SelectTrigger className="h-7 w-[68px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[10, 25, 50, 100, 200].map((n) => (
+                <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground tabular-nums">
+            Page {currentPage} of {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(1)} disabled={currentPage === 1} aria-label="First page">
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} aria-label="Previous page">
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} aria-label="Next page">
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(totalPages)} disabled={currentPage === totalPages} aria-label="Last page">
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
