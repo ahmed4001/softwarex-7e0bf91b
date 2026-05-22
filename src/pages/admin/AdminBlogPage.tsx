@@ -203,7 +203,18 @@ export default function AdminBlogPage() {
             <div className="w-24 text-right">Actions</div>
           </div>
 
-          {filtered.map((p) => (
+          {filtered.map((p) => {
+            const seo = computeSeoScore({
+              title: p.title,
+              seoTitle: p.seo_title || undefined,
+              metaDescription: p.seo_description || undefined,
+              slug: p.slug,
+              body: p.body || "",
+              focusKeyword: (p.seo_keywords || "").split(",")[0]?.trim(),
+              featuredImage: p.featured_image || undefined,
+            });
+            const seoColor = seo.level === "good" ? "text-emerald-600" : seo.level === "warn" ? "text-amber-600" : "text-destructive";
+            return (
             <div key={p.id} className="flex items-center gap-4 py-3 group hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors">
               <div className="w-8 flex items-center justify-center">
                 <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleOne(p.id)} />
@@ -216,6 +227,12 @@ export default function AdminBlogPage() {
                   </p>
                   <p className="text-xs text-muted-foreground font-mono truncate">/{p.slug}</p>
                 </Link>
+              </div>
+
+              <div className="w-16 text-center hidden md:block">
+                <span className={cn("text-xs font-bold tabular-nums", seoColor)} title={`${seo.score}/100 SEO score`}>
+                  {seo.score}
+                </span>
               </div>
 
               <div className="w-24 text-center hidden md:flex items-center justify-center">
