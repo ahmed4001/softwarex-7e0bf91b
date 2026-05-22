@@ -271,7 +271,8 @@ export default function AdminBlogPage() {
                 </Button>
               </div>
             </div>
-          ))}
+            );
+          })}
 
           {isLoading && (
             <div className="py-12 text-center text-muted-foreground flex items-center justify-center gap-2">
