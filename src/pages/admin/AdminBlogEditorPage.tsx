@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FocusKeywordAnalyzer } from "@/components/FocusKeywordAnalyzer";
+import { BlogSeoScorePanel } from "@/components/admin/BlogSeoScorePanel";
+import { InternalLinksSuggestionPanel } from "@/components/admin/InternalLinksSuggestionPanel";
+import { computeSeoScore } from "@/lib/blog-seo-score";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +20,7 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
-import { ArrowLeft, Save, Eye, Loader2, X, Settings, Globe, Clock, Tag, Image, Search } from "lucide-react";
+import { ArrowLeft, Save, Eye, Loader2, X, Settings, Globe, Clock, Tag, Image, Search, Gauge, Link2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
