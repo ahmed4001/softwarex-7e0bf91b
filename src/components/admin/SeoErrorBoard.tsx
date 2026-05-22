@@ -58,6 +58,18 @@ const FIX_MAP: Record<string, FixAction> = {
   "passive-voice": { type: "focus-body" },
   "lists": { type: "focus-body" },
   "media-rich": { type: "focus-body" },
+  "title-capital": { type: "focus-title" },
+  "meta-hook": { type: "focus-meta" },
+  "meta-cta": { type: "focus-meta" },
+  "h-hierarchy": { type: "focus-body" },
+  "anchor-text": { type: "focus-body" },
+  "link-safety": { type: "focus-body" },
+  "img-lazy": { type: "focus-body" },
+  "slug-words": { type: "focus-slug" },
+  "slug-stop": { type: "focus-slug" },
+  "kw-title-stuff": { type: "focus-title" },
+  "title-h1-match": { type: "focus-body" },
+  "read-time": { type: "focus-body" },
 };
 
 // Category labels shown beside each check icon
@@ -91,6 +103,18 @@ const CATEGORY_MAP: Record<string, string> = {
   "passive-voice": "Readability",
   "lists": "Structure",
   "media-rich": "Media",
+  "title-capital": "Title",
+  "meta-hook": "Meta",
+  "meta-cta": "Meta",
+  "h-hierarchy": "Headings",
+  "anchor-text": "Links",
+  "link-safety": "Links",
+  "img-lazy": "Performance",
+  "slug-words": "URL",
+  "slug-stop": "URL",
+  "kw-title-stuff": "Keyword",
+  "title-h1-match": "Title",
+  "read-time": "Content",
 };
 
 // Industry benchmark tiers used for the comparison bar

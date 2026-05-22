@@ -479,7 +479,211 @@ export function computeSeoScore(input: SeoScoreInput): SeoScoreResult {
     weight: 3,
   });
 
-  // Score: weighted average where good=1, warn=0.5, bad=0
+
+  // ---- TITLE: starts with capital
+  if (effectiveTitle) {
+    const firstChar = effectiveTitle.trimStart()[0] || "";
+    const capStart = firstChar === firstChar.toUpperCase() && /[A-Za-z]/.test(firstChar);
+    checks.push({
+      id: "title-capital",
+      label: "Title sentence case",
+      level: capStart ? "good" : "warn",
+      message: capStart ? "Title starts with a capital letter." : "Capitalize the first letter of the title.",
+      weight: 2,
+    });
+  }
+
+  // ---- META: question / curiosity hook
+  if (md) {
+    const hasHook = /\?|how|why|what|when|discover|learn|find out/i.test(md);
+    checks.push({
+      id: "meta-hook",
+      label: "Meta description hook",
+      level: hasHook ? "good" : "warn",
+      message: hasHook
+        ? "Meta description contains a curiosity hook."
+        : "Add a question or CTA word (how, why, discover…) to the meta description.",
+      weight: 3,
+    });
+  }
+
+  // ---- META: call-to-action verb
+  if (md) {
+    const ctaRe = /\b(learn|discover|explore|read|find|see|get|try|start|build|compare|review|download)\b/i;
+    const hasCta = ctaRe.test(md);
+    checks.push({
+      id: "meta-cta",
+      label: "Meta CTA verb",
+      level: hasCta ? "good" : "warn",
+      message: hasCta
+        ? "Meta description includes an action verb."
+        : "Add an action verb (Discover, Learn, Compare…) to drive clicks.",
+      weight: 3,
+    });
+  }
+
+  // ---- HEADING HIERARCHY (no skipping H2 -> H4)
+  const hasH4WithoutH3 = /<h4\b/i.test(input.body) && h3 === 0;
+  if (h2 > 0) {
+    checks.push({
+      id: "h-hierarchy",
+      label: "Heading hierarchy",
+      level: hasH4WithoutH3 ? "warn" : "good",
+      message: hasH4WithoutH3
+        ? "H4 used without H3 — don't skip heading levels."
+        : "Heading levels nest correctly.",
+      weight: 3,
+    });
+  }
+
+  // ---- LINKS: descriptive anchor text (no "click here")
+  const anchorTexts = Array.from(
+    input.body.matchAll(/<a\s[^>]*>([\s\S]*?)<\/a>/gi),
+  ).map((m) => stripHtml(m[1]).toLowerCase().trim());
+  if (anchorTexts.length > 0) {
+    const generic = anchorTexts.filter((t) =>
+      ["click here", "here", "read more", "this", "link", "more"].includes(t),
+    ).length;
+    checks.push({
+      id: "anchor-text",
+      label: "Descriptive anchor text",
+      level: generic === 0 ? "good" : "warn",
+      message: generic === 0
+        ? "All link anchors are descriptive."
+        : `${generic} link(s) use generic anchor text like "click here".`,
+      weight: 4,
+    });
+  }
+
+  // ---- LINKS: external links open safely (rel)
+  const externalAnchors = Array.from(
+    input.body.matchAll(/<a\s[^>]*href=["'](https?:\/\/[^"']+)["'][^>]*>/gi),
+  ).map((m) => m[0]);
+  if (externalAnchors.length > 0) {
+    const safe = externalAnchors.filter((a) => /rel=["'][^"']*noopener/i.test(a)).length;
+    checks.push({
+      id: "link-safety",
+      label: "Safe external links",
+      level: safe === externalAnchors.length ? "good" : "warn",
+      message: safe === externalAnchors.length
+        ? "All external links use rel=noopener."
+        : `${externalAnchors.length - safe} external link(s) missing rel="noopener".`,
+      weight: 2,
+    });
+  }
+
+  // ---- IMAGES: lazy loading
+  if (images > 1) {
+    const lazy = imgTags.filter((t) => /\sloading=["']lazy["']/i.test(t)).length;
+    checks.push({
+      id: "img-lazy",
+      label: "Lazy-loaded images",
+      level: lazy >= images - 1 ? "good" : "warn",
+      message: lazy >= images - 1
+        ? "Below-the-fold images use lazy loading."
+        : `${images - lazy} image(s) not lazy-loaded — slows page speed.`,
+      weight: 3,
+    });
+  }
+
+  // ---- SLUG: word count (3-5 words ideal)
+  if (input.slug) {
+    const slugWords = input.slug.split("-").filter(Boolean).length;
+    if (slugWords >= 3 && slugWords <= 5) {
+      checks.push({
+        id: "slug-words",
+        label: "Slug word count",
+        level: "good",
+        message: `${slugWords} words — ideal.`,
+        weight: 3,
+      });
+    } else {
+      checks.push({
+        id: "slug-words",
+        label: "Slug word count",
+        level: "warn",
+        message: `${slugWords} words — aim for 3–5 words.`,
+        weight: 3,
+      });
+    }
+  }
+
+  // ---- STOP WORDS in slug
+  if (input.slug) {
+    const stopWords = ["a","an","the","and","or","but","of","in","on","at","to","for","with","is","are"];
+    const slugBits = input.slug.split("-").filter(Boolean);
+    const stopHits = slugBits.filter((w) => stopWords.includes(w.toLowerCase())).length;
+    if (stopHits === 0) {
+      checks.push({
+        id: "slug-stop",
+        label: "Slug stop words",
+        level: "good",
+        message: "Slug has no stop words.",
+        weight: 2,
+      });
+    } else {
+      checks.push({
+        id: "slug-stop",
+        label: "Slug stop words",
+        level: "warn",
+        message: `Remove stop words from slug (${stopHits} found).`,
+        weight: 2,
+      });
+    }
+  }
+
+  // ---- KEYWORD: not over-stuffed in title
+  if (kw) {
+    const kwTitleHits = countMatches(effectiveTitle, kw);
+    if (kwTitleHits > 2) {
+      checks.push({
+        id: "kw-title-stuff",
+        label: "Keyword stuffing in title",
+        level: "bad",
+        message: `Keyword appears ${kwTitleHits}× in title — looks spammy.`,
+        weight: 4,
+      });
+    }
+  }
+
+  // ---- TITLE: duplicate of body H1 (rough — title appears as first H1 in body)
+  const firstH1 = input.body.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
+  if (firstH1 && effectiveTitle) {
+    const h1Text = stripHtml(firstH1[1]).toLowerCase().trim();
+    const same = h1Text === effectiveTitle.toLowerCase().trim();
+    checks.push({
+      id: "title-h1-match",
+      label: "Title vs H1",
+      level: same ? "good" : "warn",
+      message: same
+        ? "H1 matches the SEO title."
+        : "H1 differs from the SEO title — keep them aligned.",
+      weight: 3,
+    });
+  }
+
+  // ---- READING TIME guidance
+  if (readingTime >= 4 && readingTime <= 12) {
+    checks.push({
+      id: "read-time",
+      label: "Reading time",
+      level: "good",
+      message: `${readingTime} min read — ideal for engagement.`,
+      weight: 3,
+    });
+  } else if (readingTime > 0) {
+    checks.push({
+      id: "read-time",
+      label: "Reading time",
+      level: "warn",
+      message:
+        readingTime < 4
+          ? `${readingTime} min — too short for in-depth ranking.`
+          : `${readingTime} min — consider splitting into multiple posts.`,
+      weight: 2,
+    });
+  }
+
   const totalWeight = checks.reduce((a, c) => a + c.weight, 0);
   const earned = checks.reduce((a, c) => a + c.weight * (c.level === "good" ? 1 : c.level === "warn" ? 0.5 : 0), 0);
   const score = Math.round((earned / Math.max(1, totalWeight)) * 100);
