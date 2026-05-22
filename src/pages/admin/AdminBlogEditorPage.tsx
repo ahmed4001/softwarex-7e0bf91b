@@ -90,7 +90,10 @@ export default function AdminBlogEditorPage() {
   const [form, setForm] = useState<BlogForm>(emptyForm);
   const [autoSlug, setAutoSlug] = useState(true);
   const [tagInput, setTagInput] = useState("");
-  const [settingsTab, setSettingsTab] = useState<"general" | "seo">("general");
+  const [settingsTab, setSettingsTab] = useState<"general" | "seo" | "score" | "links">("general");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   const { data: existing, isLoading: loadingPost } = useQuery({
     queryKey: ["admin-blog-post", id],
