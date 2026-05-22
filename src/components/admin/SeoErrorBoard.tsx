@@ -237,11 +237,18 @@ export function SeoErrorBoard(props: Props) {
                     >
                       <Icon className={cn("h-3.5 w-3.5 mt-[3px] flex-shrink-0", color)} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[12.5px] leading-snug text-foreground">
-                          {c.label}
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {CATEGORY_MAP[c.id] && (
+                            <span className="inline-flex items-center rounded bg-muted px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              {CATEGORY_MAP[c.id]}
+                            </span>
+                          )}
+                          <p className="text-[12.5px] leading-snug text-foreground">
+                            {c.label}
+                          </p>
+                        </div>
                         {c.level !== "good" && (
-                          <p className="text-[11px] text-muted-foreground leading-snug">
+                          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
                             {c.message}
                           </p>
                         )}
