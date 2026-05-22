@@ -132,19 +132,57 @@ export function SeoErrorBoard(props: Props) {
             <span className="text-sm font-semibold text-foreground">SEO Score</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={cn("text-2xl font-bold tabular-nums leading-none", tone.text)}>
-              {result.score}%
-            </span>
+            <div className="flex flex-col items-end leading-none">
+              <span className={cn("text-2xl font-bold tabular-nums", tone.text)}>
+                {result.score}%
+              </span>
+              <span className={cn("text-[10px] font-semibold uppercase tracking-wider mt-0.5", tone.text)}>
+                {getTier(result.score).label}
+              </span>
+            </div>
             {open
               ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
               : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </div>
         </div>
-        <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all duration-500", tone.bar)}
-            style={{ width: `${Math.max(2, result.score)}%` }}
-          />
+
+        {/* Benchmark scale */}
+        <div className="mt-3">
+          <div className="relative h-2 w-full rounded-full overflow-hidden flex">
+            {BENCHMARKS.map((b) => (
+              <div
+                key={b.label}
+                className={cn("h-full", b.color)}
+                style={{ width: `${b.max - b.min}%` }}
+              />
+            ))}
+            {/* Industry average marker */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 h-3 w-px bg-foreground/40"
+              style={{ left: `${INDUSTRY_AVG}%` }}
+              title={`Industry avg ${INDUSTRY_AVG}%`}
+            />
+            {/* Your score marker */}
+            <div
+              className="absolute -top-0.5 h-3 w-1 rounded-sm bg-foreground shadow ring-2 ring-background"
+              style={{ left: `calc(${Math.max(0, Math.min(100, result.score))}% - 2px)` }}
+            />
+          </div>
+          <div className="mt-1 flex justify-between text-[9px] uppercase tracking-wider text-muted-foreground">
+            <span>Poor</span>
+            <span>Fair</span>
+            <span>Good</span>
+            <span>Excellent</span>
+          </div>
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
+            You: <span className={cn("font-semibold", tone.text)}>{result.score}%</span>
+            <span className="mx-1.5">·</span>
+            Industry avg: <span className="font-semibold text-foreground">{INDUSTRY_AVG}%</span>
+            <span className="mx-1.5">·</span>
+            {result.score >= INDUSTRY_AVG
+              ? <span className="text-emerald-600 font-semibold">+{result.score - INDUSTRY_AVG} above avg</span>
+              : <span className="text-rose-600 font-semibold">{result.score - INDUSTRY_AVG} below avg</span>}
+          </p>
         </div>
       </button>
 
