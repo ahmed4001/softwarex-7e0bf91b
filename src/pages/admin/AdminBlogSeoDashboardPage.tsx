@@ -349,6 +349,8 @@ function PostsTable({ scored }: { scored: { post: Post; score: number; stats: { 
   const [scoreFilter, setScoreFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const rows = useMemo(() => {
     let r = scored;
