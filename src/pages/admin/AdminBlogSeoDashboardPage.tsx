@@ -1,17 +1,19 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { computeSeoScore } from "@/lib/blog-seo-score";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
   BarChart3, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2,
-  Globe, FileText, Eye, Link2, ArrowUpRight, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, X,
+  Globe, FileText, Eye, Link2, ArrowUpRight, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, X, RefreshCw,
 } from "lucide-react";
 
 type Post = {
@@ -43,7 +45,12 @@ function extractLinks(html: string): string[] {
 }
 
 export default function AdminBlogSeoDashboardPage() {
-  const { data: posts, isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  const [recomputeKey, setRecomputeKey] = useState(0);
+  const [recomputing, setRecomputing] = useState(false);
+  const [lastRun, setLastRun] = useState<Date | null>(null);
+
+  const { data: posts, isLoading, isFetching } = useQuery({
     queryKey: ["admin-blog-seo"],
     queryFn: async () => {
       const { data } = await supabase
@@ -53,6 +60,21 @@ export default function AdminBlogSeoDashboardPage() {
       return (data || []) as Post[];
     },
   });
+
+  const recompute = async () => {
+    setRecomputing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["admin-blog-seo"] });
+      // Force the useMemo to re-run even if data reference is identical
+      setRecomputeKey((k) => k + 1);
+      setLastRun(new Date());
+      toast({ title: "SEO scores recomputed", description: `${posts?.length ?? 0} posts re-scored.` });
+    } catch (err: any) {
+      toast({ title: "Recompute failed", description: err.message, variant: "destructive" });
+    } finally {
+      setRecomputing(false);
+    }
+  };
 
   const analysis = useMemo(() => {
     if (!posts) return null;
@@ -107,7 +129,8 @@ export default function AdminBlogSeoDashboardPage() {
       missingMeta, missingKeyword, noFeaturedImage,
       suspiciousLinks, totalViews,
     };
-  }, [posts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts, recomputeKey]);
 
   if (isLoading || !analysis) {
     return (
@@ -133,11 +156,30 @@ export default function AdminBlogSeoDashboardPage() {
           <h1 className="text-3xl font-semibold tracking-tight">SEO Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Live audit of every blog post — performance, scores, and content health.
+            {lastRun && (
+              <span className="ml-2 text-xs">
+                · Last recomputed {lastRun.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </p>
         </div>
-        <Link to="/admin/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
-          Back to posts <ArrowUpRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={recompute}
+            disabled={recomputing || isFetching}
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+          >
+            {recomputing || isFetching
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <RefreshCw className="h-3.5 w-3.5" />}
+            Recompute SEO scores
+          </Button>
+          <Link to="/admin/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+            Back to posts <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* KPI cards */}
