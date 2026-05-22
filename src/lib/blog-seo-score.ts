@@ -36,12 +36,34 @@ export interface SeoScoreResult {
     images: number;
     imagesMissingAlt: number;
     keywordDensity: number; // percent
+    paragraphs: number;
+    avgSentenceLength: number;
+    transitionWordRatio: number;
+    passiveRatio: number;
+    lists: number;
+    videos: number;
   };
 }
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
+
+// Transition word list (subset, English)
+const TRANSITION_WORDS = [
+  "however", "therefore", "furthermore", "moreover", "additionally", "consequently",
+  "meanwhile", "nevertheless", "nonetheless", "accordingly", "subsequently", "instead",
+  "likewise", "similarly", "in addition", "for example", "for instance", "in contrast",
+  "on the other hand", "as a result", "in conclusion", "finally", "first", "second",
+  "third", "next", "then", "because", "although", "while", "since", "thus", "hence",
+  "specifically", "notably", "indeed", "overall", "in fact", "of course",
+];
+
+const POWER_WORDS = [
+  "ultimate", "best", "proven", "essential", "complete", "free", "new", "easy",
+  "powerful", "guide", "guaranteed", "secret", "amazing", "incredible", "exclusive",
+  "definitive", "must", "stunning", "remarkable", "epic", "smart", "instant",
+];
 
 function countMatches(haystack: string, needle: string) {
   if (!needle) return 0;
