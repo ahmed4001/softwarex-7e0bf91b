@@ -129,7 +129,8 @@ export default function AdminBlogSeoDashboardPage() {
       missingMeta, missingKeyword, noFeaturedImage,
       suspiciousLinks, totalViews,
     };
-  }, [posts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts, recomputeKey]);
 
   if (isLoading || !analysis) {
     return (
@@ -155,11 +156,30 @@ export default function AdminBlogSeoDashboardPage() {
           <h1 className="text-3xl font-semibold tracking-tight">SEO Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Live audit of every blog post — performance, scores, and content health.
+            {lastRun && (
+              <span className="ml-2 text-xs">
+                · Last recomputed {lastRun.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </p>
         </div>
-        <Link to="/admin/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
-          Back to posts <ArrowUpRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={recompute}
+            disabled={recomputing || isFetching}
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+          >
+            {recomputing || isFetching
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <RefreshCw className="h-3.5 w-3.5" />}
+            Recompute SEO scores
+          </Button>
+          <Link to="/admin/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+            Back to posts <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* KPI cards */}
