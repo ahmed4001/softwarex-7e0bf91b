@@ -617,6 +617,29 @@ export default function AdminBlogEditorPage() {
                   </div>
                 </div>
               )}
+
+              {settingsTab === "score" && (
+                <BlogSeoScorePanel
+                  title={form.title}
+                  seoTitle={form.seo_title}
+                  metaDescription={form.seo_description}
+                  slug={form.slug}
+                  body={form.body}
+                  focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
+                  featuredImage={form.featured_image}
+                />
+              )}
+
+              {settingsTab === "links" && (
+                <InternalLinksSuggestionPanel
+                  currentId={id || createdId || undefined}
+                  title={form.title}
+                  tags={form.tags}
+                  category={form.category}
+                  body={form.body}
+                  onInsert={(html) => updateField("body", (form.body || "") + html)}
+                />
+              )}
             </SheetContent>
           </Sheet>
 
