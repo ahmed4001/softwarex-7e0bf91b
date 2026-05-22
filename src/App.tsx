@@ -161,6 +161,21 @@ function AppContent() {
           <Route path="/glossary" element={<ErrorBoundary><GlossaryPage /></ErrorBoundary>} />
           <Route path="/glossary/:slug" element={<ErrorBoundary><GlossaryTermPage /></ErrorBoundary>} />
           <Route path="/partners" element={<ErrorBoundary><PartnerLinksPage /></ErrorBoundary>} />
+
+          {/* Programmatic SEO route families */}
+          <Route path="/features/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="feature" pathPrefix="/features" /></ErrorBoundary>} />
+          <Route path="/use-cases/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="use_case" pathPrefix="/use-cases" /></ErrorBoundary>} />
+          <Route path="/industry/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="industry" pathPrefix="/industry" /></ErrorBoundary>} />
+          <Route path="/templates/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="template" pathPrefix="/templates" /></ErrorBoundary>} />
+
+          {/* Apploye-style root-level keyword landing pages */}
+          {KEYWORD_ROOT_SLUGS.map((slug) => (
+            <Route
+              key={slug}
+              path={`/${slug}`}
+              element={<ErrorBoundary><KeywordLandingPage pageType="keyword" slugOverride={slug} /></ErrorBoundary>}
+            />
+          ))}
         </Route>
 
         {/* Admin routes */}
