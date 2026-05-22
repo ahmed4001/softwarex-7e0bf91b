@@ -412,22 +412,6 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         </div>
       </div>
 
-      {/* Bubble menu (selection) */}
-      {editor && (
-        <BubbleMenu
-          editor={editor}
-          tippyOptions={{ duration: 100 }}
-          shouldShow={({ editor, from, to }) => from !== to && !editor.isActive("image") && mode === "rich"}
-          className="flex items-center gap-0.5 rounded-lg border border-border bg-popover shadow-md p-0.5"
-        >
-          <Toggle size="sm" pressed={editor.isActive("bold")} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold className="h-3.5 w-3.5" /></Toggle>
-          <Toggle size="sm" pressed={editor.isActive("italic")} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic className="h-3.5 w-3.5" /></Toggle>
-          <Toggle size="sm" pressed={editor.isActive("underline")} onPressedChange={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon className="h-3.5 w-3.5" /></Toggle>
-          <Toggle size="sm" pressed={editor.isActive("strike")} onPressedChange={() => editor.chain().focus().toggleStrike().run()}><Strikethrough className="h-3.5 w-3.5" /></Toggle>
-          <Toggle size="sm" pressed={editor.isActive("link")} onPressedChange={setLink}><LinkIcon className="h-3.5 w-3.5" /></Toggle>
-          <Toggle size="sm" pressed={editor.isActive("highlight")} onPressedChange={() => editor.chain().focus().toggleHighlight({ color: "#fef08a" }).run()}><Highlighter className="h-3.5 w-3.5" /></Toggle>
-        </BubbleMenu>
-      )}
 
       {/* Body */}
       {mode === "rich" && <EditorContent editor={editor} />}
