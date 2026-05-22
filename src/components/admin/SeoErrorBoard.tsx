@@ -48,6 +48,41 @@ const FIX_MAP: Record<string, FixAction> = {
   "featured": { type: "focus-featured" },
 };
 
+// Category labels shown beside each check icon
+const CATEGORY_MAP: Record<string, string> = {
+  "title-length": "Title",
+  "meta-desc": "Meta",
+  "kw-set": "Keyword",
+  "kw-title": "Keyword",
+  "kw-meta": "Keyword",
+  "kw-slug": "Keyword",
+  "kw-intro": "Keyword",
+  "kw-density": "Keyword",
+  "h-structure": "Headings",
+  "h1-count": "Headings",
+  "img-alt": "Media",
+  "internal-links": "Links",
+  "external-links": "Links",
+  "slug": "URL",
+  "length": "Content",
+  "readability": "Content",
+  "featured": "Media",
+};
+
+// Industry benchmark tiers used for the comparison bar
+const BENCHMARKS = [
+  { label: "Poor",      min: 0,  max: 40,  color: "bg-rose-400/70"   },
+  { label: "Fair",      min: 40, max: 55,  color: "bg-orange-400/70" },
+  { label: "Good",      min: 55, max: 80,  color: "bg-amber-400/70"  },
+  { label: "Excellent", min: 80, max: 100, color: "bg-emerald-500/80" },
+];
+
+function getTier(score: number) {
+  return BENCHMARKS.find((b) => score >= b.min && score <= b.max) ?? BENCHMARKS[0];
+}
+
+const INDUSTRY_AVG = 62; // average on-page SEO score reference
+
 export function SeoErrorBoard(props: Props) {
   const [open, setOpen] = useState(true);
   const [filter, setFilter] = useState<"all" | "errors" | "warnings" | "passing">("all");
