@@ -334,8 +334,212 @@ export default function AdminBlogSeoDashboardPage() {
         )}
       </div>
 
+      {/* Broken link scanner */}
+      <BrokenLinkScanner scored={analysis.scored} />
+
       {/* All posts score table */}
       <PostsTable scored={analysis.scored} />
+    </div>
+  );
+}
+
+type CheckResult = {
+  url: string;
+  ok: boolean;
+  status: number | null;
+  error?: string;
+  ms: number;
+  redirected?: boolean;
+  finalUrl?: string;
+};
+
+function BrokenLinkScanner({
+  scored,
+}: {
+  scored: { post: Post; links: string[] }[];
+}) {
+  const [scanning, setScanning] = useState(false);
+  const [results, setResults] = useState<CheckResult[] | null>(null);
+  const [scannedAt, setScannedAt] = useState<Date | null>(null);
+
+  // Map url -> posts that contain it
+  const urlToPosts = useMemo(() => {
+    const m = new Map<string, Post[]>();
+    for (const s of scored) {
+      for (const link of s.links) {
+        if (!/^https?:\/\//i.test(link)) continue;
+        const arr = m.get(link) || [];
+        arr.push(s.post);
+        m.set(link, arr);
+      }
+    }
+    return m;
+  }, [scored]);
+
+  const allUrls = useMemo(() => Array.from(urlToPosts.keys()), [urlToPosts]);
+
+  const scan = async () => {
+    if (allUrls.length === 0) {
+      toast({ title: "No external links found", description: "Nothing to scan." });
+      return;
+    }
+    setScanning(true);
+    setResults(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("scan-broken-links", {
+        body: { urls: allUrls },
+      });
+      if (error) throw error;
+      const list: CheckResult[] = data?.results ?? [];
+      setResults(list);
+      setScannedAt(new Date());
+      const broken = list.filter((r) => !r.ok).length;
+      toast({
+        title: "Link scan complete",
+        description: `${list.length} checked · ${broken} broken`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Scan failed",
+        description: err.message || "Unable to scan links",
+        variant: "destructive",
+      });
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const broken = (results ?? []).filter((r) => !r.ok);
+
+  const statusBadge = (r: CheckResult) => {
+    if (r.error === "timeout") return "Timeout";
+    if (r.status) return String(r.status);
+    return r.error || "Error";
+  };
+
+  return (
+    <div className="rounded-xl border bg-card p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold flex items-center gap-2">
+            <Link2 className="h-4 w-4" /> Broken Link Scanner
+          </h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Checks every external <code className="text-[10px]">http(s)://</code> link across
+            your posts for 404s, 5xx errors and timeouts.
+            {scannedAt && (
+              <span className="ml-1">
+                · Last scan {scannedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="text-right">
+          <Button onClick={scan} disabled={scanning} size="sm" variant="outline" className="gap-1.5">
+            {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {scanning ? "Scanning…" : `Scan ${allUrls.length} link${allUrls.length === 1 ? "" : "s"}`}
+          </Button>
+        </div>
+      </div>
+
+      {results === null && !scanning && (
+        <p className="text-sm text-muted-foreground mt-6">
+          Click <strong>Scan</strong> to run a live check on all outbound URLs.
+        </p>
+      )}
+
+      {scanning && (
+        <div className="mt-6 flex items-center gap-3 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Checking {allUrls.length} URL{allUrls.length === 1 ? "" : "s"}…
+        </div>
+      )}
+
+      {results && !scanning && (
+        <>
+          <div className="mt-5 grid grid-cols-3 gap-3 text-xs">
+            <div className="rounded-md border p-3">
+              <div className="text-muted-foreground">Checked</div>
+              <div className="text-xl font-semibold tabular-nums">{results.length}</div>
+            </div>
+            <div className="rounded-md border p-3 border-emerald-200/60">
+              <div className="text-emerald-700">Healthy</div>
+              <div className="text-xl font-semibold tabular-nums text-emerald-600">
+                {results.length - broken.length}
+              </div>
+            </div>
+            <div className={cn("rounded-md border p-3", broken.length > 0 ? "border-rose-200/60" : "")}>
+              <div className={broken.length > 0 ? "text-rose-700" : "text-muted-foreground"}>Broken</div>
+              <div className={cn("text-xl font-semibold tabular-nums", broken.length > 0 ? "text-rose-600" : "")}>
+                {broken.length}
+              </div>
+            </div>
+          </div>
+
+          {broken.length === 0 ? (
+            <p className="mt-4 text-sm flex items-center gap-2 text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" /> All links are reachable.
+            </p>
+          ) : (
+            <div className="mt-5 border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground bg-muted/30 border-b">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-medium">Status</th>
+                    <th className="text-left px-3 py-2 font-medium">URL</th>
+                    <th className="text-left px-3 py-2 font-medium">Found in</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {broken.map((r, i) => {
+                    const posts = urlToPosts.get(r.url) || [];
+                    return (
+                      <tr key={i} className="border-t align-top">
+                        <td className="px-3 py-2.5">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md border text-rose-600 bg-rose-50 dark:bg-rose-950/30 border-rose-200/60">
+                            <AlertTriangle className="h-3 w-3" /> {statusBadge(r)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-xs text-rose-600 hover:underline break-all"
+                          >
+                            {r.url}
+                          </a>
+                          {r.finalUrl && (
+                            <div className="text-[10px] text-muted-foreground mt-0.5">
+                              → redirected to <span className="font-mono">{r.finalUrl}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-xs">
+                          <div className="flex flex-col gap-0.5 max-w-xs">
+                            {posts.slice(0, 3).map((p) => (
+                              <Link
+                                key={p.id}
+                                to={`/admin/blog/${p.id}/edit`}
+                                className="hover:underline truncate text-muted-foreground hover:text-foreground"
+                              >
+                                {p.title}
+                              </Link>
+                            ))}
+                            {posts.length > 3 && (
+                              <span className="text-muted-foreground">+ {posts.length - 3} more</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
