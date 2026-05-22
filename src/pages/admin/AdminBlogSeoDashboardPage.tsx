@@ -481,6 +481,16 @@ function PostsTable({ scored }: { scored: { post: Post; score: number; stats: { 
               <X className="h-3 w-3" /> Clear
             </button>
           )}
+          <Button
+            onClick={exportCsv}
+            disabled={rows.length === 0}
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV{hasFilters ? ` (${rows.length})` : ""}
+          </Button>
         </div>
       </div>
       <div className="overflow-x-auto">
