@@ -103,6 +103,18 @@ const CATEGORY_MAP: Record<string, string> = {
   "passive-voice": "Readability",
   "lists": "Structure",
   "media-rich": "Media",
+  "title-capital": "Title",
+  "meta-hook": "Meta",
+  "meta-cta": "Meta",
+  "h-hierarchy": "Headings",
+  "anchor-text": "Links",
+  "link-safety": "Links",
+  "img-lazy": "Performance",
+  "slug-words": "URL",
+  "slug-stop": "URL",
+  "kw-title-stuff": "Keyword",
+  "title-h1-match": "Title",
+  "read-time": "Content",
 };
 
 // Industry benchmark tiers used for the comparison bar
