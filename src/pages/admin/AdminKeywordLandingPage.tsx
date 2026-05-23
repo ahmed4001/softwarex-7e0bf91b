@@ -450,7 +450,7 @@ export default function AdminKeywordLandingPage() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {form.id ? "Edit" : "New"} SEO landing page
@@ -465,6 +465,7 @@ export default function AdminKeywordLandingPage() {
               <TabsTrigger value="faq">FAQ</TabsTrigger>
               <TabsTrigger value="links">Internal links</TabsTrigger>
               <TabsTrigger value="seo">SEO Score</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
 
             <TabsContent value="meta" className="grid gap-4 mt-4">
