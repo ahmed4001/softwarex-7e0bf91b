@@ -911,8 +911,9 @@ export default function AdminBlogEditorPage() {
           </p>
         </div>
 
-        {/* SEO Error Board — sticky sidebar */}
-        <aside className="lg:sticky lg:top-4 self-start space-y-4">
+        {/* SEO Error Board — sticky sidebar (hidden in focus mode) */}
+        {!focusMode && (
+        <aside className="lg:sticky lg:top-20 self-start space-y-4">
           <SeoErrorBoard
             title={form.title}
             seoTitle={form.seo_title}
