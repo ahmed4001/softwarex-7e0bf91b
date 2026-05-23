@@ -620,12 +620,14 @@ export default function AdminKeywordLandingPage() {
                 slug={form.slug}
                 body={buildSeoBody(form)}
                 focusKeyword={form.focus_keyword}
+                featuredImage={form.featured_image}
                 onFix={(_a: FixAction) => { /* tab-only editor; no field focusing */ }}
               />
               <SocialPreview
                 title={form.meta_title || form.h1}
-                description={form.meta_description}
+                description={form.meta_description || form.excerpt}
                 slug={form.slug}
+                image={form.featured_image}
               />
             </TabsContent>
           </Tabs>
