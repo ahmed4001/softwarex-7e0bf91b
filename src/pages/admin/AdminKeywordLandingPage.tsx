@@ -514,9 +514,50 @@ export default function AdminKeywordLandingPage() {
                   <Sparkles className="h-3.5 w-3.5" /> {generating ? "Generating…" : "AI generate"}
                 </Button>
               </div>
+              {/* Custom excerpt */}
+              <textarea
+                value={form.excerpt}
+                onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+                placeholder="Add a custom excerpt…"
+                rows={1}
+                className="w-full text-base text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40 resize-none"
+              />
+
+              {/* Featured image (Ghost-style click to add) */}
+              {form.featured_image ? (
+                <div className="relative rounded-xl overflow-hidden group border border-border">
+                  <img src={form.featured_image} alt="Feature" className="w-full h-auto" />
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, featured_image: "" })}
+                    className="absolute top-3 right-3 h-7 w-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = window.prompt("Featured image URL:");
+                    if (url) setForm({ ...form, featured_image: url });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                >
+                  <ImageIcon className="h-5 w-5" />
+                  <span className="text-sm font-medium">Add feature image</span>
+                </button>
+              )}
+
+              {/* Hero body — rich editor */}
               <div>
-                <Label>Hero body (markdown)</Label>
-                <Textarea rows={3} value={form.hero_body} onChange={(e) => setForm({ ...form, hero_body: e.target.value })} />
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Hero body</Label>
+                <RichTextEditor
+                  value={form.hero_body}
+                  onChange={(html) => setForm({ ...form, hero_body: html })}
+                  placeholder="Write your hero introduction…"
+                  className="min-h-[260px] bg-transparent mt-2"
+                />
               </div>
               {form.sections.map((s, i) => (
                 <Card key={i}>
