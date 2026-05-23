@@ -108,6 +108,7 @@ export default function AdminKeywordLandingPage() {
   const [filterIntent, setFilterIntent] = useState<Intent | "all">("all");
   const [search, setSearch] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: pages = [], isLoading } = useQuery({
     queryKey: ["admin-keyword-landings"],
@@ -523,7 +524,7 @@ export default function AdminKeywordLandingPage() {
                 className="w-full text-base text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40 resize-none"
               />
 
-              {/* Featured image (Ghost-style click to add) */}
+              {/* Featured image (upload or URL) */}
               {form.featured_image ? (
                 <div className="relative rounded-xl overflow-hidden group border border-border">
                   <img src={form.featured_image} alt="Feature" className="w-full h-auto" />
@@ -536,17 +537,48 @@ export default function AdminKeywordLandingPage() {
                   </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const url = window.prompt("Featured image URL:");
-                    if (url) setForm({ ...form, featured_image: url });
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-                >
-                  <ImageIcon className="h-5 w-5" />
-                  <span className="text-sm font-medium">Add feature image</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingImage}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploadingImage(true);
+                        try {
+                          const ext = file.name.split(".").pop() || "png";
+                          const path = `keyword-pages/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                          const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
+                          if (error) throw error;
+                          const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+                          setForm((f) => ({ ...f, featured_image: data.publicUrl }));
+                          toast.success("Image uploaded");
+                        } catch (err: any) {
+                          toast.error(err.message || "Upload failed");
+                        } finally {
+                          setUploadingImage(false);
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                    <ImageIcon className="h-5 w-5" />
+                    <span className="text-sm font-medium">{uploadingImage ? "Uploading…" : "Upload feature image"}</span>
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const url = window.prompt("Or paste image URL:");
+                      if (url) setForm({ ...form, featured_image: url });
+                    }}
+                  >
+                    Use URL
+                  </Button>
+                </div>
               )}
 
               {/* Hero body — rich editor */}
