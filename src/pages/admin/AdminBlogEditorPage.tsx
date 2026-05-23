@@ -197,8 +197,8 @@ export default function AdminBlogEditorPage() {
     : [];
 
   const saveMutation = useMutation({
-    mutationFn: async (status?: string) => {
-      const finalStatus = status || form.status;
+    mutationFn: async (opts?: { status?: string; exit?: boolean }) => {
+      const finalStatus = opts?.status || form.status;
       const readingTime = estimateReadingTime(form.body);
       const payload = {
         title: form.title,
@@ -225,17 +225,23 @@ export default function AdminBlogEditorPage() {
       if (effectiveId) {
         const { error } = await supabase.from("blog_posts").update(payload).eq("id", effectiveId);
         if (error) throw error;
-        return { id: effectiveId, isNew: false };
+        return { id: effectiveId, isNew: false, exit: !!opts?.exit, status: finalStatus };
       } else {
         const { data, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
         if (error) throw error;
-        return { id: data.id, isNew: true };
+        return { id: data.id, isNew: true, exit: !!opts?.exit, status: finalStatus };
       }
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog"] });
-      toast({ title: isEdit || createdId ? "Post updated" : "Post created" });
-      navigate("/admin/blog");
+      setLastSavedAt(new Date());
+      if (result.isNew && !id) setCreatedId(result.id);
+      if (result.exit || result.status === "published" || result.status === "scheduled") {
+        toast({ title: result.status === "published" ? "Post published" : "Post saved" });
+        navigate("/admin/blog");
+      } else {
+        toast({ title: "Saved" });
+      }
     },
     onError: (err: any) => {
       toast({ title: "Error saving post", description: err.message, variant: "destructive" });
