@@ -896,6 +896,26 @@ export default function AdminBlogEditorPage() {
           />
         </aside>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-5 py-3 border-b border-border">
+            <DialogTitle className="text-sm font-semibold">Post preview</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-muted/20">
+            <BlogPostPreview
+              title={form.title}
+              excerpt={form.excerpt}
+              body={form.body}
+              category={form.category}
+              featured_image={form.featured_image}
+              tags={form.tags}
+              slug={form.slug}
+              readingTime={readingTime}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
