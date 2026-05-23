@@ -22,7 +22,11 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
-import { ArrowLeft, Save, Eye, Loader2, X, Settings, Globe, Clock, Tag, Image, Search, Gauge, Link2 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { BlogPostPreview } from "@/components/admin/BlogPostPreview";
+import { ArrowLeft, Save, Eye, Loader2, X, Settings, Globe, Clock, Tag, Image, Search, Gauge, Link2, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +101,7 @@ export default function AdminBlogEditorPage() {
   const [autoSaving, setAutoSaving] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const uploadFeaturedImage = useCallback(async (file: File) => {
     setUploadingImage(true);
@@ -386,10 +391,18 @@ export default function AdminBlogEditorPage() {
             <span className="font-semibold text-foreground">{seoScore.score}</span>
             <Gauge className="h-3 w-3 text-muted-foreground" />
           </div>
-          {form.slug && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setPreviewOpen(true)}
+          >
+            <Eye className="h-3.5 w-3.5" /> Preview
+          </Button>
+          {form.slug && form.status === "published" && (
             <Link to={`/blog/${form.slug}`} target="_blank">
               <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
-                <Eye className="h-3.5 w-3.5" /> Preview
+                <ExternalLink className="h-3.5 w-3.5" /> Open live
               </Button>
             </Link>
           )}
@@ -883,6 +896,26 @@ export default function AdminBlogEditorPage() {
           />
         </aside>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-5 py-3 border-b border-border">
+            <DialogTitle className="text-sm font-semibold">Post preview</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-muted/20">
+            <BlogPostPreview
+              title={form.title}
+              excerpt={form.excerpt}
+              body={form.body}
+              category={form.category}
+              featured_image={form.featured_image}
+              tags={form.tags}
+              slug={form.slug}
+              readingTime={readingTime}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
