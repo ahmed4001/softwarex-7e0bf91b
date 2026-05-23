@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
 
 type PageType = "keyword" | "feature" | "use_case" | "industry" | "template";
 type Status = "draft" | "in_progress" | "ready" | "published" | "needs_update";
@@ -401,6 +402,7 @@ export default function AdminKeywordLandingPage() {
               <TabsTrigger value="content">Content (8 sections)</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>
               <TabsTrigger value="links">Internal links</TabsTrigger>
+              <TabsTrigger value="seo">SEO Score</TabsTrigger>
             </TabsList>
 
             <TabsContent value="meta" className="grid gap-4 mt-4">
@@ -559,6 +561,23 @@ export default function AdminKeywordLandingPage() {
                 <Plus className="h-3.5 w-3.5 mr-1" /> Add link
               </Button>
             </TabsContent>
+
+            <TabsContent value="seo" className="mt-4 grid lg:grid-cols-2 gap-4">
+              <SeoErrorBoard
+                title={form.meta_title || form.h1}
+                seoTitle={form.meta_title}
+                metaDescription={form.meta_description}
+                slug={form.slug}
+                body={buildSeoBody(form)}
+                focusKeyword={form.focus_keyword}
+                onFix={(_a: FixAction) => { /* tab-only editor; no field focusing */ }}
+              />
+              <SocialPreview
+                title={form.meta_title || form.h1}
+                description={form.meta_description}
+                slug={form.slug}
+              />
+            </TabsContent>
           </Tabs>
 
           <DialogFooter>
@@ -575,4 +594,23 @@ export default function AdminKeywordLandingPage() {
 
 function safeJson<T>(s: string, fallback: T): T {
   try { return JSON.parse(s); } catch { return fallback; }
+}
+
+function buildSeoBody(f: FormState): string {
+  const parts: string[] = [];
+  if (f.h1) parts.push(`<h1>${f.h1}</h1>`);
+  if (f.hero_body) parts.push(`<p>${f.hero_body}</p>`);
+  f.sections.forEach((s) => {
+    if (s.heading) parts.push(`<h2>${s.heading}</h2>`);
+    if (s.body) parts.push(`<p>${s.body}</p>`);
+    if (s.bullets?.length) parts.push(`<ul>${s.bullets.map((b) => `<li>${b}</li>`).join("")}</ul>`);
+  });
+  f.faq.forEach((q) => {
+    if (q.q) parts.push(`<h3>${q.q}</h3>`);
+    if (q.a) parts.push(`<p>${q.a}</p>`);
+  });
+  f.internal_links.forEach((l) => {
+    if (l.href) parts.push(`<a href="${l.href}">${l.label || l.href}</a>`);
+  });
+  return parts.join("\n");
 }
