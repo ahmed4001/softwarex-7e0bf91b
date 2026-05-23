@@ -74,7 +74,11 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         orderedList: { HTMLAttributes: { class: "list-decimal pl-6 my-3" } },
         heading: { levels: [1, 2, 3, 4] },
         horizontalRule: { HTMLAttributes: { class: "my-6 border-border" } },
-      }),
+        // StarterKit v3 bundles link + underline — disable to avoid duplicate-extension warnings;
+        // we re-register them below with custom HTMLAttributes.
+        link: false,
+        underline: false,
+      } as any),
       Underline,
       Link.configure({
         openOnClick: false,
