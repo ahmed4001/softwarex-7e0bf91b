@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
 import { SeoHighlights } from "@/components/admin/SeoHighlights";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { KeywordPagePreview } from "@/components/admin/KeywordPagePreview";
 
 type PageType = "keyword" | "feature" | "use_case" | "industry" | "template";
 type Status = "draft" | "in_progress" | "ready" | "published" | "needs_update";
@@ -449,7 +450,7 @@ export default function AdminKeywordLandingPage() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {form.id ? "Edit" : "New"} SEO landing page
@@ -464,6 +465,7 @@ export default function AdminKeywordLandingPage() {
               <TabsTrigger value="faq">FAQ</TabsTrigger>
               <TabsTrigger value="links">Internal links</TabsTrigger>
               <TabsTrigger value="seo">SEO Score</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
 
             <TabsContent value="meta" className="grid gap-4 mt-4">
@@ -723,6 +725,31 @@ export default function AdminKeywordLandingPage() {
                   focusKeyword={form.focus_keyword}
                 />
               </div>
+            </TabsContent>
+
+            <TabsContent value="preview" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">Live preview — exactly how this page will render to visitors.</p>
+                {form.id && form.slug && (
+                  <Link to={`${PATH_PREFIX[form.page_type]}/${form.slug}`} target="_blank">
+                    <Button size="sm" variant="outline" className="gap-1.5">
+                      <ExternalLink className="h-3.5 w-3.5" /> Open live page
+                    </Button>
+                  </Link>
+                )}
+              </div>
+              <KeywordPagePreview
+                h1={form.h1}
+                meta_description={form.meta_description}
+                hero_body={form.hero_body}
+                featured_image={form.featured_image}
+                excerpt={form.excerpt}
+                sections={form.sections}
+                faq={form.faq}
+                internal_links={form.internal_links}
+                slug={form.slug}
+                page_type={form.page_type}
+              />
             </TabsContent>
           </Tabs>
 
