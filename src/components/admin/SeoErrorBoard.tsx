@@ -270,6 +270,14 @@ export function SeoErrorBoard(props: Props) {
 
       {open && (
         <div className="border-t border-border">
+          <SuggestionPanel
+            title={props.seoTitle || props.title}
+            metaDescription={props.metaDescription || ""}
+            slug={props.slug}
+            body={props.body}
+            focusKeyword={props.focusKeyword || ""}
+            onApply={props.onFix}
+          />
           {/* Compact filter chips */}
           <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-muted/10 overflow-x-auto">
             {([
