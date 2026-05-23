@@ -96,6 +96,24 @@ export default function AdminBlogEditorPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [autoSaving, setAutoSaving] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const uploadFeaturedImage = useCallback(async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `blog/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      setForm((f) => ({ ...f, featured_image: data.publicUrl }));
+      toast({ title: "Image uploaded" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+    }
+  }, []);
 
   const { data: existing, isLoading: loadingPost } = useQuery({
     queryKey: ["admin-blog-post", id],
@@ -480,15 +498,31 @@ export default function AdminBlogEditorPage() {
                     <Input
                       value={form.featured_image}
                       onChange={(e) => updateField("featured_image", e.target.value)}
-                      placeholder="https://…"
+                      placeholder="https://… or upload below"
                       className="h-8 text-sm"
                     />
+                    <label className="flex items-center justify-center gap-2 py-2 border-2 border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 cursor-pointer transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingImage}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadFeaturedImage(f);
+                          e.target.value = "";
+                        }}
+                      />
+                      {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Image className="h-3.5 w-3.5" />}
+                      <span>{uploadingImage ? "Uploading…" : "Upload image"}</span>
+                    </label>
                     {form.featured_image && (
                       <div className="rounded-lg border border-border overflow-hidden mt-2">
                         <img src={form.featured_image} alt="Preview" className="w-full h-auto" />
                       </div>
                     )}
                   </div>
+
 
                   <div className="border-t border-border pt-4 space-y-3">
                     {/* Status */}
@@ -702,18 +736,35 @@ export default function AdminBlogEditorPage() {
               </button>
             </div>
           ) : (
-            <button
-              id="blog-featured-block"
-              onClick={() => {
-                const url = window.prompt("Featured image URL:");
-                if (url) updateField("featured_image", url);
-              }}
-              className="w-full flex items-center justify-center gap-2 py-6 mb-8 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-            >
-              <Image className="h-5 w-5" />
-              <span className="text-sm font-medium">Add feature image</span>
-            </button>
+            <div id="blog-featured-block" className="flex items-stretch gap-2 mb-8">
+              <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadFeaturedImage(f);
+                    e.target.value = "";
+                  }}
+                />
+                {uploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Image className="h-5 w-5" />}
+                <span className="text-sm font-medium">{uploadingImage ? "Uploading…" : "Upload feature image"}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = window.prompt("Or paste image URL:");
+                  if (url) updateField("featured_image", url);
+                }}
+                className="px-4 border-2 border-dashed border-border rounded-xl text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+              >
+                Use URL
+              </button>
+            </div>
           )}
+
 
           {/* Rich text editor — clean, minimal */}
           <div id="blog-body-block">
