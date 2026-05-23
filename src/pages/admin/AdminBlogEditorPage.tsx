@@ -960,6 +960,7 @@ export default function AdminBlogEditorPage() {
             focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
           />
         </aside>
+        )}
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
