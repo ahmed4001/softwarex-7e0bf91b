@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
 import { SeoHighlights } from "@/components/admin/SeoHighlights";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { KeywordPagePreview } from "@/components/admin/KeywordPagePreview";
 
 type PageType = "keyword" | "feature" | "use_case" | "industry" | "template";
 type Status = "draft" | "in_progress" | "ready" | "published" | "needs_update";
