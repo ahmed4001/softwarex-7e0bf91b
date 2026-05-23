@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { computeSeoScore, type SeoLevel } from "@/lib/blog-seo-score";
 import {
   CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Sparkles,
-  Globe, TrendingUp,
+  Globe, TrendingUp, Wand2, Check, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Props {
   title: string;
@@ -24,7 +26,9 @@ export type FixAction =
   | { type: "focus-keyword" }
   | { type: "focus-slug" }
   | { type: "focus-featured" }
-  | { type: "focus-body" };
+  | { type: "focus-body" }
+  | { type: "apply-title"; value: string }
+  | { type: "apply-meta"; value: string };
 
 const LEVEL_ORDER: Record<SeoLevel, number> = { bad: 0, warn: 1, good: 2 };
 
