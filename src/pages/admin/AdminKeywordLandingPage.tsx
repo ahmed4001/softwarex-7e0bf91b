@@ -11,10 +11,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock } from "lucide-react";
+import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 type PageType = "keyword" | "feature" | "use_case" | "industry" | "template";
 type Status = "draft" | "in_progress" | "ready" | "published" | "needs_update";
@@ -64,6 +65,8 @@ interface FormState {
   meta_description: string;
   focus_keyword: string;
   hero_body: string;
+  excerpt: string;
+  featured_image: string;
   sections: { heading: string; body: string; bullets: string[] }[];
   faq: { q: string; a: string }[];
   related_keywords: string[];
@@ -84,6 +87,8 @@ const emptyForm = (): FormState => ({
   meta_description: "",
   focus_keyword: "",
   hero_body: "",
+  excerpt: "",
+  featured_image: "",
   sections: TEMPLATE_SECTIONS.map((s) => ({ ...s, bullets: [...s.bullets] })),
   faq: [{ q: "", a: "" }],
   related_keywords: [],
@@ -163,6 +168,8 @@ export default function AdminKeywordLandingPage() {
         meta_description: form.meta_description || null,
         focus_keyword: form.focus_keyword || null,
         hero_body: form.hero_body || null,
+        excerpt: form.excerpt || null,
+        featured_image: form.featured_image || null,
         sections: form.sections,
         faq: form.faq.filter((f) => f.q || f.a),
         related_keywords: form.related_keywords,
@@ -231,6 +238,8 @@ export default function AdminKeywordLandingPage() {
       meta_description: p.meta_description || "",
       focus_keyword: p.focus_keyword || "",
       hero_body: p.hero_body || "",
+      excerpt: p.excerpt || "",
+      featured_image: p.featured_image || "",
       sections,
       faq: Array.isArray(p.faq) && p.faq.length ? p.faq : [{ q: "", a: "" }],
       related_keywords: Array.isArray(p.related_keywords) ? p.related_keywords : [],
@@ -505,9 +514,50 @@ export default function AdminKeywordLandingPage() {
                   <Sparkles className="h-3.5 w-3.5" /> {generating ? "Generating…" : "AI generate"}
                 </Button>
               </div>
+              {/* Custom excerpt */}
+              <textarea
+                value={form.excerpt}
+                onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+                placeholder="Add a custom excerpt…"
+                rows={1}
+                className="w-full text-base text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40 resize-none"
+              />
+
+              {/* Featured image (Ghost-style click to add) */}
+              {form.featured_image ? (
+                <div className="relative rounded-xl overflow-hidden group border border-border">
+                  <img src={form.featured_image} alt="Feature" className="w-full h-auto" />
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, featured_image: "" })}
+                    className="absolute top-3 right-3 h-7 w-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = window.prompt("Featured image URL:");
+                    if (url) setForm({ ...form, featured_image: url });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                >
+                  <ImageIcon className="h-5 w-5" />
+                  <span className="text-sm font-medium">Add feature image</span>
+                </button>
+              )}
+
+              {/* Hero body — rich editor */}
               <div>
-                <Label>Hero body (markdown)</Label>
-                <Textarea rows={3} value={form.hero_body} onChange={(e) => setForm({ ...form, hero_body: e.target.value })} />
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Hero body</Label>
+                <RichTextEditor
+                  value={form.hero_body}
+                  onChange={(html) => setForm({ ...form, hero_body: html })}
+                  placeholder="Write your hero introduction…"
+                  className="min-h-[260px] bg-transparent mt-2"
+                />
               </div>
               {form.sections.map((s, i) => (
                 <Card key={i}>
@@ -570,12 +620,14 @@ export default function AdminKeywordLandingPage() {
                 slug={form.slug}
                 body={buildSeoBody(form)}
                 focusKeyword={form.focus_keyword}
+                featuredImage={form.featured_image}
                 onFix={(_a: FixAction) => { /* tab-only editor; no field focusing */ }}
               />
               <SocialPreview
                 title={form.meta_title || form.h1}
-                description={form.meta_description}
+                description={form.meta_description || form.excerpt}
                 slug={form.slug}
+                image={form.featured_image}
               />
             </TabsContent>
           </Tabs>
