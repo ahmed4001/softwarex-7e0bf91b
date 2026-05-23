@@ -665,6 +665,14 @@ export default function AdminKeywordLandingPage() {
                 slug={form.slug}
                 image={form.featured_image}
               />
+              <div className="lg:col-span-2">
+                <SeoHighlights
+                  title={form.h1 || form.meta_title}
+                  slug={form.slug}
+                  body={buildSeoBody(form)}
+                  focusKeyword={form.focus_keyword}
+                />
+              </div>
             </TabsContent>
           </Tabs>
 
