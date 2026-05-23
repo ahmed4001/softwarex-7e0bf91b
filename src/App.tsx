@@ -42,6 +42,7 @@ const AdminTranslationsPage = lazy(() => import("./pages/admin/AdminTranslations
 const AdminAIImportPage = lazy(() => import("./pages/admin/AdminAIImportPage"));
 const AdminBlogEditorPage = lazy(() => import("./pages/admin/AdminBlogEditorPage"));
 const AdminBlogSeoDashboardPage = lazy(() => import("./pages/admin/AdminBlogSeoDashboardPage"));
+const AdminBlogSeoAuditPage = lazy(() => import("./pages/admin/AdminBlogSeoAuditPage"));
 const AdminBrevoPage = lazy(() => import("./pages/admin/AdminBrevoPage"));
 const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
 const AdminAIPage = lazy(() => import("./pages/admin/AdminAIPage"));
@@ -194,6 +195,7 @@ function AppContent() {
           <Route path="users" element={<ErrorBoundary><AdminUsersPage /></ErrorBoundary>} />
           <Route path="blog" element={<ErrorBoundary><AdminBlogPage /></ErrorBoundary>} />
           <Route path="blog/seo" element={<ErrorBoundary><AdminBlogSeoDashboardPage /></ErrorBoundary>} />
+          <Route path="blog/seo-audit" element={<ErrorBoundary><AdminBlogSeoAuditPage /></ErrorBoundary>} />
           <Route path="blog/new" element={<ErrorBoundary><AdminBlogEditorPage /></ErrorBoundary>} />
           <Route path="blog/:id/edit" element={<ErrorBoundary><AdminBlogEditorPage /></ErrorBoundary>} />
           <Route path="seed" element={<ErrorBoundary><AdminSeedPage /></ErrorBoundary>} />
