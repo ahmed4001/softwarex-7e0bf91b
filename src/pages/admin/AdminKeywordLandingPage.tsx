@@ -110,6 +110,9 @@ export default function AdminKeywordLandingPage() {
   const [search, setSearch] = useState("");
   const [generating, setGenerating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const lastSerializedRef = useRef<string>("");
 
   const { data: pages = [], isLoading } = useQuery({
     queryKey: ["admin-keyword-landings"],
