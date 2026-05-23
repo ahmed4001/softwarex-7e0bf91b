@@ -653,7 +653,10 @@ export default function AdminKeywordLandingPage() {
                 body={buildSeoBody(form)}
                 focusKeyword={form.focus_keyword}
                 featuredImage={form.featured_image}
-                onFix={(_a: FixAction) => { /* tab-only editor; no field focusing */ }}
+                onFix={(a: FixAction) => {
+                  if (a.type === "apply-title") setForm((f) => ({ ...f, meta_title: a.value }));
+                  else if (a.type === "apply-meta") setForm((f) => ({ ...f, meta_description: a.value }));
+                }}
               />
               <SocialPreview
                 title={form.meta_title || form.h1}
