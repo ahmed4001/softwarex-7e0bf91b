@@ -786,7 +786,16 @@ export default function AdminBlogEditorPage() {
             focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
             featuredImage={form.featured_image}
             onFix={(action: FixAction) => {
-              const map: Record<FixAction["type"], string> = {
+              if (action.type === "apply-title") {
+                updateField("seo_title", action.value);
+                if (!form.title) updateField("title", action.value);
+                return;
+              }
+              if (action.type === "apply-meta") {
+                updateField("seo_description", action.value);
+                return;
+              }
+              const map: Record<string, string> = {
                 "focus-title": "blog-title-input",
                 "focus-meta": "blog-seo-desc",
                 "focus-keyword": "blog-focus-keyword",

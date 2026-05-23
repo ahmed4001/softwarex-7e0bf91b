@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { computeSeoScore, type SeoLevel } from "@/lib/blog-seo-score";
 import {
   CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Sparkles,
-  Globe, TrendingUp,
+  Globe, TrendingUp, Wand2, Check, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Props {
   title: string;
@@ -24,7 +26,9 @@ export type FixAction =
   | { type: "focus-keyword" }
   | { type: "focus-slug" }
   | { type: "focus-featured" }
-  | { type: "focus-body" };
+  | { type: "focus-body" }
+  | { type: "apply-title"; value: string }
+  | { type: "apply-meta"; value: string };
 
 const LEVEL_ORDER: Record<SeoLevel, number> = { bad: 0, warn: 1, good: 2 };
 
@@ -266,6 +270,14 @@ export function SeoErrorBoard(props: Props) {
 
       {open && (
         <div className="border-t border-border">
+          <SuggestionPanel
+            title={props.seoTitle || props.title}
+            metaDescription={props.metaDescription || ""}
+            slug={props.slug}
+            body={props.body}
+            focusKeyword={props.focusKeyword || ""}
+            onApply={props.onFix}
+          />
           {/* Compact filter chips */}
           <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-muted/10 overflow-x-auto">
             {([
@@ -366,6 +378,122 @@ function Stat({ label, value }: { label: string; value: string | number }) {
     <div className="text-center">
       <p className="text-xs font-semibold text-foreground tabular-nums">{value}</p>
       <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  AI Suggestion Panel                                                       */
+/* -------------------------------------------------------------------------- */
+
+interface SuggestionPanelProps {
+  title: string;
+  metaDescription: string;
+  slug: string;
+  body: string;
+  focusKeyword: string;
+  onApply?: (a: FixAction) => void;
+}
+
+function SuggestionPanel({ title, metaDescription, slug, body, focusKeyword, onApply }: SuggestionPanelProps) {
+  const [loading, setLoading] = useState(false);
+  const [sug, setSug] = useState<{ title: string; meta_description: string } | null>(null);
+
+  const run = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("seo-suggest", {
+        body: { title, metaDescription, focusKeyword, body, slug },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setSug({ title: (data as any).title || "", meta_description: (data as any).meta_description || "" });
+    } catch (e: any) {
+      toast.error(e.message || "Suggestion failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const titleLen = sug?.title.length || 0;
+  const metaLen = sug?.meta_description.length || 0;
+  const titleOk = titleLen >= 50 && titleLen <= 60;
+  const metaOk = metaLen >= 140 && metaLen <= 160;
+
+  return (
+    <div className="px-3 py-2.5 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Wand2 className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground">AI Suggestions</span>
+        </div>
+        <Button
+          size="sm"
+          variant={sug ? "outline" : "default"}
+          className="h-6 px-2 text-[10px] font-semibold gap-1"
+          onClick={run}
+          disabled={loading}
+        >
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          {sug ? "Regenerate" : "Generate"}
+        </Button>
+      </div>
+
+      {!sug && !loading && (
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          One-click optimized title (50–60 chars) and meta description (140–160 chars) with your focus keyword.
+        </p>
+      )}
+
+      {sug && (
+        <div className="space-y-2">
+          <SuggestionRow
+            label="Title"
+            value={sug.title}
+            len={titleLen}
+            ok={titleOk}
+            target="50–60"
+            onApply={() => onApply?.({ type: "apply-title", value: sug.title })}
+            disabled={!onApply}
+          />
+          <SuggestionRow
+            label="Meta"
+            value={sug.meta_description}
+            len={metaLen}
+            ok={metaOk}
+            target="140–160"
+            onApply={() => onApply?.({ type: "apply-meta", value: sug.meta_description })}
+            disabled={!onApply}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SuggestionRow({
+  label, value, len, ok, target, onApply, disabled,
+}: { label: string; value: string; len: number; ok: boolean; target: string; onApply: () => void; disabled?: boolean }) {
+  return (
+    <div className="rounded-md border border-border bg-card/60 p-2">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+          <span className={cn("text-[9px] tabular-nums", ok ? "text-emerald-600" : "text-amber-600")}>
+            {len}/{target}
+          </span>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-5 px-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10 gap-1"
+          onClick={onApply}
+          disabled={disabled || !value}
+        >
+          <Check className="h-2.5 w-2.5" /> Apply
+        </Button>
+      </div>
+      <p className="text-[11.5px] leading-snug text-foreground">{value || <span className="italic text-muted-foreground">(empty)</span>}</p>
     </div>
   );
 }
