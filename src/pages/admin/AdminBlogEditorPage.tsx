@@ -26,7 +26,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { BlogPostPreview } from "@/components/admin/BlogPostPreview";
-import { ArrowLeft, Save, Eye, Loader2, X, Settings, Globe, Clock, Tag, Image, Search, Gauge, Link2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Eye, Loader2, X, Settings, Globe, Clock, Tag, Image, Search, Gauge, Link2, ExternalLink, Maximize2, Minimize2, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -102,6 +102,8 @@ export default function AdminBlogEditorPage() {
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [metaOpen, setMetaOpen] = useState(false);
 
   const uploadFeaturedImage = useCallback(async (file: File) => {
     setUploadingImage(true);
@@ -318,6 +320,23 @@ export default function AdminBlogEditorPage() {
     saveMutation.mutate({ status: "published" });
   };
 
+  // Cmd/Ctrl+S to save
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        setPreviewOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   if (isEdit && loadingPost) {
     return (
       <div className="flex items-center justify-center py-32 text-muted-foreground">
@@ -344,68 +363,88 @@ export default function AdminBlogEditorPage() {
     <>
       <SeoHead title={`${isEdit ? "Edit" : "New"} Post - Admin`} />
 
-      {/* Ghost-style top bar — minimal, fixed-feel */}
-      <div className="flex items-center justify-between gap-4 mb-0 -mt-2 pb-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Link to="/admin/blog">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className={cn(
-              "inline-block h-2 w-2 rounded-full",
-              form.status === "published" ? "bg-emerald-500" : form.status === "scheduled" ? "bg-amber-500" : "bg-muted-foreground/40"
-            )} />
-            <span>{statusLabel}</span>
-            {words > 0 && (
-              <>
-                <span className="text-border">·</span>
-                <span>{words} words</span>
-                <span className="text-border">·</span>
-                <span>{readingTime} min read</span>
-              </>
-            )}
-            {(autoSaving || lastSavedAt) && (
-              <>
-                <span className="text-border">·</span>
-                <span className="flex items-center gap-1">
-                  {autoSaving ? (
-                    <><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>
-                  ) : (
-                    <>Saved {lastSavedAt!.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</>
-                  )}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* SEO score chip */}
-          <div
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border text-xs"
-            title={`SEO: ${seoScore.score}/100`}
-          >
-            <span className={cn("h-1.5 w-1.5 rounded-full", scoreColor)} />
-            <span className="font-semibold text-foreground">{seoScore.score}</span>
-            <Gauge className="h-3 w-3 text-muted-foreground" />
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={() => setPreviewOpen(true)}
-          >
-            <Eye className="h-3.5 w-3.5" /> Preview
-          </Button>
-          {form.slug && form.status === "published" && (
-            <Link to={`/blog/${form.slug}`} target="_blank">
-              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
-                <ExternalLink className="h-3.5 w-3.5" /> Open live
+      {/* Sticky top bar */}
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3 px-4 md:px-6 h-14">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link to="/admin/blog">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-          )}
+
+            {/* Status pill */}
+            <span className={cn(
+              "hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border",
+              form.status === "published" && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+              form.status === "scheduled" && "bg-amber-500/10 text-amber-600 border-amber-500/20",
+              form.status === "draft" && "bg-muted text-muted-foreground border-border",
+              form.status === "archived" && "bg-muted text-muted-foreground border-border",
+            )}>
+              <span className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                form.status === "published" ? "bg-emerald-500" : form.status === "scheduled" ? "bg-amber-500" : "bg-muted-foreground/50"
+              )} />
+              {statusLabel}
+            </span>
+
+            {/* Word count / reading time */}
+            {words > 0 && (
+              <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground ml-1">
+                <span>{words.toLocaleString()} words</span>
+                <span className="text-border">·</span>
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{readingTime} min</span>
+              </div>
+            )}
+
+            {/* Save state */}
+            <div className="hidden md:flex items-center gap-1 text-xs text-muted-foreground ml-1">
+              {autoSaving ? (
+                <><Loader2 className="h-3 w-3 animate-spin" /> <span>Saving…</span></>
+              ) : lastSavedAt ? (
+                <><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> <span>Saved {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span></>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* SEO score chip */}
+            <div
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border text-xs hover:bg-muted/50 transition-colors cursor-default"
+              title={`SEO score: ${seoScore.score}/100`}
+            >
+              <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-semibold text-foreground">{seoScore.score}</span>
+              <span className={cn("h-1.5 w-1.5 rounded-full", scoreColor)} />
+            </div>
+
+            {/* Focus mode toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-muted-foreground hover:text-foreground"
+              title={focusMode ? "Exit focus mode" : "Focus mode"}
+              onClick={() => setFocusMode((v) => !v)}
+            >
+              {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 h-9 text-muted-foreground hover:text-foreground"
+              onClick={() => setPreviewOpen(true)}
+              title="Preview (⌘⇧P)"
+            >
+              <Eye className="h-4 w-4" /> <span className="hidden sm:inline">Preview</span>
+            </Button>
+            {form.slug && form.status === "published" && (
+              <Link to={`/blog/${form.slug}`} target="_blank">
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Open live page">
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
 
           {/* Settings sidebar trigger */}
           <Sheet>
@@ -719,11 +758,15 @@ export default function AdminBlogEditorPage() {
             {form.status === "published" ? "Update" : "Publish"}
           </Button>
         </div>
-      </div>
+        </div>
+      </header>
 
-      {/* Ghost-style distraction-free writing area + SEO board */}
-      <div className="max-w-6xl mx-auto py-10 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
-        <div className="min-w-0">
+      {/* Writing area + SEO sidebar */}
+      <div className={cn(
+        "max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12 grid grid-cols-1 gap-8",
+        focusMode ? "lg:max-w-3xl" : "lg:grid-cols-[1fr_340px]"
+      )}>
+        <div className="min-w-0 max-w-3xl w-full mx-auto lg:mx-0">
           {/* Title — large, serif, no border */}
           <input
             id="blog-title-input"
@@ -795,60 +838,82 @@ export default function AdminBlogEditorPage() {
             />
           </div>
 
-          {/* Inline meta inputs for quick SEO Fix actions */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="blog-seo-title" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                SEO title <span className="text-[10px] normal-case">({(form.seo_title || form.title).length}/60)</span>
-              </Label>
-              <Input
-                id="blog-seo-title"
-                value={form.seo_title}
-                onChange={(e) => updateField("seo_title", e.target.value)}
-                placeholder={form.title || "Search engine title"}
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="blog-focus-keyword" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Focus keyword</Label>
-              <Input
-                id="blog-focus-keyword"
-                value={form.seo_keywords}
-                onChange={(e) => updateField("seo_keywords", e.target.value)}
-                placeholder="primary keyword, secondary, …"
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="blog-seo-desc" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Meta description <span className="text-[10px] normal-case">({form.seo_description.length}/160)</span>
-              </Label>
-              <Textarea
-                id="blog-seo-desc"
-                value={form.seo_description}
-                onChange={(e) => updateField("seo_description", e.target.value)}
-                placeholder="Description shown in search results (140–160 chars)…"
-                rows={2}
-                className="text-sm resize-none"
-              />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="blog-slug" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL slug</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">/blog/</span>
-                <Input
-                  id="blog-slug"
-                  value={form.slug}
-                  onChange={(e) => { setAutoSlug(false); updateField("slug", slugify(e.target.value)); }}
-                  className="font-mono text-xs h-9"
-                />
+          {/* Collapsible inline SEO meta strip */}
+          <div className="mt-10 border-t border-border pt-6">
+            <button
+              type="button"
+              onClick={() => setMetaOpen((v) => !v)}
+              className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors"
+            >
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
+              Search & Social meta
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-mono normal-case tracking-normal text-muted-foreground">
+                {(form.seo_title || form.title).length}/{form.seo_description.length}/{form.slug ? "url" : "—"}
+              </span>
+            </button>
+
+            {metaOpen && (
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                <div className="space-y-1.5">
+                  <Label htmlFor="blog-seo-title" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    SEO title <span className="text-[10px] normal-case">({(form.seo_title || form.title).length}/60)</span>
+                  </Label>
+                  <Input
+                    id="blog-seo-title"
+                    value={form.seo_title}
+                    onChange={(e) => updateField("seo_title", e.target.value)}
+                    placeholder={form.title || "Search engine title"}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="blog-focus-keyword" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Focus keyword</Label>
+                  <Input
+                    id="blog-focus-keyword"
+                    value={form.seo_keywords}
+                    onChange={(e) => updateField("seo_keywords", e.target.value)}
+                    placeholder="primary keyword, secondary, …"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="blog-seo-desc" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Meta description <span className="text-[10px] normal-case">({form.seo_description.length}/160)</span>
+                  </Label>
+                  <Textarea
+                    id="blog-seo-desc"
+                    value={form.seo_description}
+                    onChange={(e) => updateField("seo_description", e.target.value)}
+                    placeholder="Description shown in search results (140–160 chars)…"
+                    rows={2}
+                    className="text-sm resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="blog-slug" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL slug</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">/blog/</span>
+                    <Input
+                      id="blog-slug"
+                      value={form.slug}
+                      onChange={(e) => { setAutoSlug(false); updateField("slug", slugify(e.target.value)); }}
+                      className="font-mono text-xs h-9"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Keyboard hint */}
+          <p className="mt-8 text-[11px] text-muted-foreground/70 text-center">
+            <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/40 font-mono">⌘S</kbd> save · <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/40 font-mono">⌘⇧P</kbd> preview
+          </p>
         </div>
 
-        {/* SEO Error Board — sticky sidebar */}
-        <aside className="lg:sticky lg:top-4 self-start space-y-4">
+        {/* SEO Error Board — sticky sidebar (hidden in focus mode) */}
+        {!focusMode && (
+        <aside className="lg:sticky lg:top-20 self-start space-y-4">
           <SeoErrorBoard
             title={form.title}
             seoTitle={form.seo_title}
@@ -895,6 +960,7 @@ export default function AdminBlogEditorPage() {
             focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
           />
         </aside>
+        )}
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
