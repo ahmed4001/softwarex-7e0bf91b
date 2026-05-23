@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
 
 type PageType = "keyword" | "feature" | "use_case" | "industry" | "template";
 type Status = "draft" | "in_progress" | "ready" | "published" | "needs_update";
