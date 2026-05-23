@@ -595,3 +595,22 @@ export default function AdminKeywordLandingPage() {
 function safeJson<T>(s: string, fallback: T): T {
   try { return JSON.parse(s); } catch { return fallback; }
 }
+
+function buildSeoBody(f: FormState): string {
+  const parts: string[] = [];
+  if (f.h1) parts.push(`<h1>${f.h1}</h1>`);
+  if (f.hero_body) parts.push(`<p>${f.hero_body}</p>`);
+  f.sections.forEach((s) => {
+    if (s.heading) parts.push(`<h2>${s.heading}</h2>`);
+    if (s.body) parts.push(`<p>${s.body}</p>`);
+    if (s.bullets?.length) parts.push(`<ul>${s.bullets.map((b) => `<li>${b}</li>`).join("")}</ul>`);
+  });
+  f.faq.forEach((q) => {
+    if (q.q) parts.push(`<h3>${q.q}</h3>`);
+    if (q.a) parts.push(`<p>${q.a}</p>`);
+  });
+  f.internal_links.forEach((l) => {
+    if (l.href) parts.push(`<a href="${l.href}">${l.label || l.href}</a>`);
+  });
+  return parts.join("\n");
+}
