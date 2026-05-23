@@ -756,7 +756,7 @@ export default function AdminBlogEditorPage() {
           >
             <Globe className="h-3 w-3" />
             {form.status === "published" ? "Update" : "Publish"}
-          </div>
+          </Button>
         </div>
       </header>
 
