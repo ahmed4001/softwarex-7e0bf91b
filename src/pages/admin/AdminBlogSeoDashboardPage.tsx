@@ -177,6 +177,9 @@ export default function AdminBlogSeoDashboardPage() {
               : <RefreshCw className="h-3.5 w-3.5" />}
             Recompute SEO scores
           </Button>
+          <Link to="/admin/blog/seo-audit" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+            Bulk audit <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
           <Link to="/admin/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
             Back to posts <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
