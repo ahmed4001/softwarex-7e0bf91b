@@ -726,10 +726,28 @@ export default function AdminKeywordLandingPage() {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={() => upsert.mutate()} disabled={upsert.isPending || !form.slug || !form.h1 || !form.focus_keyword}>
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap items-center">
+            <div className="mr-auto text-xs text-muted-foreground flex items-center gap-1.5">
+              {autoSaving ? (
+                <><Loader2 className="h-3 w-3 animate-spin" /> Auto-saving…</>
+              ) : lastSavedAt ? (
+                <><Check className="h-3 w-3 text-emerald-600" /> Saved {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</>
+              ) : null}
+            </div>
+            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+            <Button
+              variant="secondary"
+              onClick={() => upsert.mutate({})}
+              disabled={upsert.isPending || !form.slug || !form.h1 || !form.focus_keyword}
+            >
+              {upsert.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
               Save
+            </Button>
+            <Button
+              onClick={() => upsert.mutate({ exit: true })}
+              disabled={upsert.isPending || !form.slug || !form.h1 || !form.focus_keyword}
+            >
+              Save & Close
             </Button>
           </DialogFooter>
         </DialogContent>
