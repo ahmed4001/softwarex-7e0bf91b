@@ -736,18 +736,35 @@ export default function AdminBlogEditorPage() {
               </button>
             </div>
           ) : (
-            <button
-              id="blog-featured-block"
-              onClick={() => {
-                const url = window.prompt("Featured image URL:");
-                if (url) updateField("featured_image", url);
-              }}
-              className="w-full flex items-center justify-center gap-2 py-6 mb-8 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-            >
-              <Image className="h-5 w-5" />
-              <span className="text-sm font-medium">Add feature image</span>
-            </button>
+            <div id="blog-featured-block" className="flex items-stretch gap-2 mb-8">
+              <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadFeaturedImage(f);
+                    e.target.value = "";
+                  }}
+                />
+                {uploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Image className="h-5 w-5" />}
+                <span className="text-sm font-medium">{uploadingImage ? "Uploading…" : "Upload feature image"}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = window.prompt("Or paste image URL:");
+                  if (url) updateField("featured_image", url);
+                }}
+                className="px-4 border-2 border-dashed border-border rounded-xl text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+              >
+                Use URL
+              </button>
+            </div>
           )}
+
 
           {/* Rich text editor — clean, minimal */}
           <div id="blog-body-block">
