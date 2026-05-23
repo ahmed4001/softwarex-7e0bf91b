@@ -236,6 +236,8 @@ export default function AdminKeywordLandingPage() {
       meta_description: p.meta_description || "",
       focus_keyword: p.focus_keyword || "",
       hero_body: p.hero_body || "",
+      excerpt: p.excerpt || "",
+      featured_image: p.featured_image || "",
       sections,
       faq: Array.isArray(p.faq) && p.faq.length ? p.faq : [{ q: "", a: "" }],
       related_keywords: Array.isArray(p.related_keywords) ? p.related_keywords : [],
