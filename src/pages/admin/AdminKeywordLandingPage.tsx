@@ -108,6 +108,7 @@ export default function AdminKeywordLandingPage() {
   const [filterIntent, setFilterIntent] = useState<Intent | "all">("all");
   const [search, setSearch] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: pages = [], isLoading } = useQuery({
     queryKey: ["admin-keyword-landings"],
