@@ -8,6 +8,7 @@ import { FocusKeywordAnalyzer } from "@/components/FocusKeywordAnalyzer";
 import { BlogSeoScorePanel } from "@/components/admin/BlogSeoScorePanel";
 import { InternalLinksSuggestionPanel } from "@/components/admin/InternalLinksSuggestionPanel";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
+import { SeoHighlights } from "@/components/admin/SeoHighlights";
 import { computeSeoScore } from "@/lib/blog-seo-score";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -815,6 +816,12 @@ export default function AdminBlogEditorPage() {
             description={form.seo_description}
             slug={form.slug}
             image={form.featured_image}
+          />
+          <SeoHighlights
+            title={form.title}
+            slug={form.slug}
+            body={form.body}
+            focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
           />
         </aside>
       </div>

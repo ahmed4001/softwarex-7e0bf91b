@@ -15,6 +15,7 @@ import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock, 
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
+import { SeoHighlights } from "@/components/admin/SeoHighlights";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
 type PageType = "keyword" | "feature" | "use_case" | "industry" | "template";
@@ -664,6 +665,14 @@ export default function AdminKeywordLandingPage() {
                 slug={form.slug}
                 image={form.featured_image}
               />
+              <div className="lg:col-span-2">
+                <SeoHighlights
+                  title={form.h1 || form.meta_title}
+                  slug={form.slug}
+                  body={buildSeoBody(form)}
+                  focusKeyword={form.focus_keyword}
+                />
+              </div>
             </TabsContent>
           </Tabs>
 
