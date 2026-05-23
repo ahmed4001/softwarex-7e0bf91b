@@ -758,6 +758,7 @@ export default function AdminBlogEditorPage() {
             {form.status === "published" ? "Update" : "Publish"}
           </Button>
         </div>
+        </div>
       </header>
 
       {/* Writing area + SEO sidebar */}
