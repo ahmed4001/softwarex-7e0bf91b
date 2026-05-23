@@ -225,7 +225,19 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
           ] as const).map(([m, Icon, label]) => (
             <button
               key={m}
-              onClick={() => { if (m === "html") setHtmlDraft(editor.getHTML()); setMode(m); }}
+              type="button"
+              onClick={() => {
+                // Leaving HTML mode — push the textarea draft into the editor & value
+                if (mode === "html" && m !== "html") {
+                  editor.commands.setContent(htmlDraft || "", { emitUpdate: false });
+                  onChange(htmlDraft);
+                }
+                // Entering HTML mode — seed textarea with latest editor HTML
+                if (m === "html" && mode !== "html") {
+                  setHtmlDraft(editor.getHTML());
+                }
+                setMode(m);
+              }}
               className={cn(
                 "flex items-center gap-1 px-2 py-1 text-[11px] font-medium transition-colors",
                 mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
