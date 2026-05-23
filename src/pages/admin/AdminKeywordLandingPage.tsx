@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Trash2, ExternalLink, AlertTriangle, Sparkles, RefreshCw, Clock, Image as ImageIcon, X, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
