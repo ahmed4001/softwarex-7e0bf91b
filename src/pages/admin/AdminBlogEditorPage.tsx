@@ -838,56 +838,77 @@ export default function AdminBlogEditorPage() {
             />
           </div>
 
-          {/* Inline meta inputs for quick SEO Fix actions */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="blog-seo-title" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                SEO title <span className="text-[10px] normal-case">({(form.seo_title || form.title).length}/60)</span>
-              </Label>
-              <Input
-                id="blog-seo-title"
-                value={form.seo_title}
-                onChange={(e) => updateField("seo_title", e.target.value)}
-                placeholder={form.title || "Search engine title"}
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="blog-focus-keyword" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Focus keyword</Label>
-              <Input
-                id="blog-focus-keyword"
-                value={form.seo_keywords}
-                onChange={(e) => updateField("seo_keywords", e.target.value)}
-                placeholder="primary keyword, secondary, …"
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="blog-seo-desc" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Meta description <span className="text-[10px] normal-case">({form.seo_description.length}/160)</span>
-              </Label>
-              <Textarea
-                id="blog-seo-desc"
-                value={form.seo_description}
-                onChange={(e) => updateField("seo_description", e.target.value)}
-                placeholder="Description shown in search results (140–160 chars)…"
-                rows={2}
-                className="text-sm resize-none"
-              />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="blog-slug" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL slug</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">/blog/</span>
-                <Input
-                  id="blog-slug"
-                  value={form.slug}
-                  onChange={(e) => { setAutoSlug(false); updateField("slug", slugify(e.target.value)); }}
-                  className="font-mono text-xs h-9"
-                />
+          {/* Collapsible inline SEO meta strip */}
+          <div className="mt-10 border-t border-border pt-6">
+            <button
+              type="button"
+              onClick={() => setMetaOpen((v) => !v)}
+              className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors"
+            >
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
+              Search & Social meta
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-mono normal-case tracking-normal text-muted-foreground">
+                {(form.seo_title || form.title).length}/{form.seo_description.length}/{form.slug ? "url" : "—"}
+              </span>
+            </button>
+
+            {metaOpen && (
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                <div className="space-y-1.5">
+                  <Label htmlFor="blog-seo-title" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    SEO title <span className="text-[10px] normal-case">({(form.seo_title || form.title).length}/60)</span>
+                  </Label>
+                  <Input
+                    id="blog-seo-title"
+                    value={form.seo_title}
+                    onChange={(e) => updateField("seo_title", e.target.value)}
+                    placeholder={form.title || "Search engine title"}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="blog-focus-keyword" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Focus keyword</Label>
+                  <Input
+                    id="blog-focus-keyword"
+                    value={form.seo_keywords}
+                    onChange={(e) => updateField("seo_keywords", e.target.value)}
+                    placeholder="primary keyword, secondary, …"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="blog-seo-desc" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Meta description <span className="text-[10px] normal-case">({form.seo_description.length}/160)</span>
+                  </Label>
+                  <Textarea
+                    id="blog-seo-desc"
+                    value={form.seo_description}
+                    onChange={(e) => updateField("seo_description", e.target.value)}
+                    placeholder="Description shown in search results (140–160 chars)…"
+                    rows={2}
+                    className="text-sm resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="blog-slug" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL slug</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">/blog/</span>
+                    <Input
+                      id="blog-slug"
+                      value={form.slug}
+                      onChange={(e) => { setAutoSlug(false); updateField("slug", slugify(e.target.value)); }}
+                      className="font-mono text-xs h-9"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Keyboard hint */}
+          <p className="mt-8 text-[11px] text-muted-foreground/70 text-center">
+            <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/40 font-mono">⌘S</kbd> save · <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/40 font-mono">⌘⇧P</kbd> preview
+          </p>
         </div>
 
         {/* SEO Error Board — sticky sidebar */}
