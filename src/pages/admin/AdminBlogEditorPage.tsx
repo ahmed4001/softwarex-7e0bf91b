@@ -635,6 +635,7 @@ export default function AdminBlogEditorPage() {
               {settingsTab === "links" && (
                 <InternalLinksSuggestionPanel
                   currentId={id || createdId || undefined}
+                  slug={form.slug}
                   title={form.title}
                   tags={form.tags}
                   category={form.category}
