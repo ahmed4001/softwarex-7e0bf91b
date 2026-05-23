@@ -756,13 +756,16 @@ export default function AdminBlogEditorPage() {
           >
             <Globe className="h-3 w-3" />
             {form.status === "published" ? "Update" : "Publish"}
-          </Button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Ghost-style distraction-free writing area + SEO board */}
-      <div className="max-w-6xl mx-auto py-10 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
-        <div className="min-w-0">
+      {/* Writing area + SEO sidebar */}
+      <div className={cn(
+        "max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12 grid grid-cols-1 gap-8",
+        focusMode ? "lg:max-w-3xl" : "lg:grid-cols-[1fr_340px]"
+      )}>
+        <div className="min-w-0 max-w-3xl w-full mx-auto lg:mx-0">
           {/* Title — large, serif, no border */}
           <input
             id="blog-title-input"
