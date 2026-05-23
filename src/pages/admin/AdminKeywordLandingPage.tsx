@@ -402,6 +402,7 @@ export default function AdminKeywordLandingPage() {
               <TabsTrigger value="content">Content (8 sections)</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>
               <TabsTrigger value="links">Internal links</TabsTrigger>
+              <TabsTrigger value="seo">SEO Score</TabsTrigger>
             </TabsList>
 
             <TabsContent value="meta" className="grid gap-4 mt-4">
