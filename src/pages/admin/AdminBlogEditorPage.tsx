@@ -498,15 +498,31 @@ export default function AdminBlogEditorPage() {
                     <Input
                       value={form.featured_image}
                       onChange={(e) => updateField("featured_image", e.target.value)}
-                      placeholder="https://…"
+                      placeholder="https://… or upload below"
                       className="h-8 text-sm"
                     />
+                    <label className="flex items-center justify-center gap-2 py-2 border-2 border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 cursor-pointer transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingImage}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadFeaturedImage(f);
+                          e.target.value = "";
+                        }}
+                      />
+                      {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Image className="h-3.5 w-3.5" />}
+                      <span>{uploadingImage ? "Uploading…" : "Upload image"}</span>
+                    </label>
                     {form.featured_image && (
                       <div className="rounded-lg border border-border overflow-hidden mt-2">
                         <img src={form.featured_image} alt="Preview" className="w-full h-auto" />
                       </div>
                     )}
                   </div>
+
 
                   <div className="border-t border-border pt-4 space-y-3">
                     {/* Status */}
