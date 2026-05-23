@@ -87,6 +87,8 @@ const emptyForm = (): FormState => ({
   meta_description: "",
   focus_keyword: "",
   hero_body: "",
+  excerpt: "",
+  featured_image: "",
   sections: TEMPLATE_SECTIONS.map((s) => ({ ...s, bullets: [...s.bullets] })),
   faq: [{ q: "", a: "" }],
   related_keywords: [],
