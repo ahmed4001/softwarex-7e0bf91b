@@ -440,12 +440,28 @@ export default function AdminBlogEditorPage() {
             )}
 
             {/* Save state */}
-            <div className="hidden md:flex items-center gap-1 text-xs text-muted-foreground ml-1">
-              {autoSaving ? (
-                <><Loader2 className="h-3 w-3 animate-spin" /> <span>Saving…</span></>
+            <div className={cn(
+              "hidden md:flex items-center gap-1.5 ml-1 px-2 py-1 rounded-md text-xs font-medium transition-all duration-300",
+              autosaveError && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+              !autosaveError && (autoSaving || saveMutation.isPending) && "bg-primary/10 text-primary",
+              !autosaveError && !autoSaving && !saveMutation.isPending && savedFlash && "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+              !autosaveError && !autoSaving && !saveMutation.isPending && !savedFlash && dirty && "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+              !autosaveError && !autoSaving && !saveMutation.isPending && !savedFlash && !dirty && "text-muted-foreground",
+            )}>
+              {autosaveError ? (
+                <><span className="h-1.5 w-1.5 rounded-full bg-rose-500" /><span>Save failed — retry</span></>
+              ) : autoSaving || saveMutation.isPending ? (
+                <><Loader2 className="h-3 w-3 animate-spin" /><span>{saveMutation.isPending ? "Saving…" : "Auto-saving…"}</span></>
+              ) : dirty ? (
+                <><span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /><span>Unsaved changes</span></>
               ) : lastSavedAt ? (
-                <><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> <span>Saved {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span></>
-              ) : null}
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span>{savedFlash ? "Saved" : `Saved ${relativeTime(lastSavedAt)}`}</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground/70">No changes yet</span>
+              )}
             </div>
           </div>
 
