@@ -26,61 +26,61 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 214 69% 12%;
+    --background: 200 50% 98%;
+    --foreground: 200 30% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 214 69% 12%;
+    --card-foreground: 200 30% 20%;
 
-    --popover: 210 40% 98%;
-    --popover-foreground: 214 69% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 30% 20%;
 
-    --primary: 189 56% 40%;
+    --primary: 190 75% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 206 62% 27%;
+    --secondary: 175 55% 45%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 206 30% 92%;
-    --muted-foreground: 214 30% 35%;
+    --muted: 195 40% 95%;
+    --muted-foreground: 200 20% 45%;
 
-    --accent: 178 39% 90%;
-    --accent-foreground: 206 62% 27%;
+    --accent: 180 60% 92%;
+    --accent-foreground: 190 75% 30%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 206 25% 85%;
-    --input: 206 25% 85%;
-    --ring: 189 56% 40%;
+    --border: 195 30% 88%;
+    --input: 195 30% 88%;
+    --ring: 190 75% 42%;
 
     --radius: 0.75rem;
 
-    --star: 45 93% 47%;
-    --success: 178 50% 40%;
-    --warning: 38 92% 50%;
-    --info: 206 62% 45%;
+    --star: 38 95% 55%;
+    --success: 160 60% 42%;
+    --warning: 38 95% 55%;
+    --info: 200 85% 50%;
 
     --glass: 0 0% 100%;
-    --glass-border: 206 25% 88%;
-    --glow: 189 56% 40%;
-    --glow-secondary: 178 39% 55%;
+    --glass-border: 195 30% 90%;
+    --glow: 190 75% 50%;
+    --glow-secondary: 175 55% 55%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 214 69% 12%;
-    --sidebar-primary: 189 56% 40%;
+    --sidebar-foreground: 200 30% 20%;
+    --sidebar-primary: 190 75% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 178 39% 90%;
-    --sidebar-accent-foreground: 206 62% 27%;
-    --sidebar-border: 206 25% 85%;
-    --sidebar-ring: 189 56% 40%;
+    --sidebar-accent: 180 60% 92%;
+    --sidebar-accent-foreground: 190 75% 30%;
+    --sidebar-border: 195 30% 88%;
+    --sidebar-ring: 190 75% 42%;
 
-    --chart-1: 189 56% 40%;
-    --chart-2: 206 62% 27%;
-    --chart-3: 178 39% 55%;
-    --chart-4: 214 69% 15%;
-    --chart-5: 206 30% 60%;
-    --sidebar: 0 0% 98%;
+    --chart-1: 190 75% 50%;
+    --chart-2: 175 55% 50%;
+    --chart-3: 200 85% 55%;
+    --chart-4: 160 60% 50%;
+    --chart-5: 220 60% 60%;
+    --sidebar: 195 40% 97%;
     --font-sans: 'Work Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
     --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -97,41 +97,41 @@
   }
 
   .dark {
-    --background: 214 69% 8%;
-    --foreground: 178 39% 92%;
-    --card: 214 60% 12%;
-    --card-foreground: 178 39% 92%;
-    --popover: 214 60% 12%;
-    --popover-foreground: 178 39% 92%;
-    --primary: 178 39% 55%;
-    --primary-foreground: 214 69% 10%;
-    --secondary: 206 62% 27%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 214 40% 18%;
-    --muted-foreground: 206 25% 70%;
-    --accent: 189 56% 25%;
-    --accent-foreground: 178 39% 85%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
-    --border: 214 40% 20%;
-    --input: 214 40% 20%;
-    --ring: 178 39% 55%;
-    --glass: 214 60% 10%;
-    --glass-border: 214 40% 22%;
-    --sidebar-background: 214 69% 6%;
-    --sidebar-foreground: 178 39% 92%;
-    --sidebar-primary: 178 39% 55%;
-    --sidebar-primary-foreground: 214 69% 10%;
-    --sidebar-accent: 189 56% 25%;
-    --sidebar-accent-foreground: 178 39% 85%;
-    --sidebar-border: 214 40% 20%;
-    --sidebar-ring: 178 39% 55%;
-    --chart-1: 178 39% 55%;
-    --chart-2: 189 56% 50%;
-    --chart-3: 206 62% 50%;
-    --chart-4: 178 50% 70%;
-    --chart-5: 206 30% 60%;
-    --sidebar: 214 69% 6%;
+    --background: 200 35% 12%;
+    --foreground: 180 30% 95%;
+    --card: 200 30% 16%;
+    --card-foreground: 180 30% 95%;
+    --popover: 200 30% 16%;
+    --popover-foreground: 180 30% 95%;
+    --primary: 185 70% 55%;
+    --primary-foreground: 200 35% 12%;
+    --secondary: 175 50% 50%;
+    --secondary-foreground: 200 35% 12%;
+    --muted: 200 25% 22%;
+    --muted-foreground: 195 20% 70%;
+    --accent: 190 55% 28%;
+    --accent-foreground: 180 60% 90%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 200 25% 25%;
+    --input: 200 25% 25%;
+    --ring: 185 70% 55%;
+    --glass: 200 30% 14%;
+    --glass-border: 200 25% 28%;
+    --sidebar-background: 200 35% 10%;
+    --sidebar-foreground: 180 30% 95%;
+    --sidebar-primary: 185 70% 55%;
+    --sidebar-primary-foreground: 200 35% 12%;
+    --sidebar-accent: 190 55% 28%;
+    --sidebar-accent-foreground: 180 60% 90%;
+    --sidebar-border: 200 25% 25%;
+    --sidebar-ring: 185 70% 55%;
+    --chart-1: 185 70% 60%;
+    --chart-2: 175 55% 55%;
+    --chart-3: 200 80% 60%;
+    --chart-4: 160 60% 55%;
+    --chart-5: 220 60% 65%;
+    --sidebar: 200 35% 10%;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -217,7 +217,7 @@
 
   /* Professional hero — dark, bold, no gradient rave */
   .gradient-hero {
-    background: hsl(var(--foreground));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
   }
 
   .gradient-text {
@@ -250,7 +250,7 @@
   /* Button — clean, no wild gradients */
   .btn-premium {
     @apply relative overflow-hidden font-semibold transition-all duration-300;
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(206 62% 27%));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     box-shadow: 0 2px 8px hsl(var(--primary) / 0.25), 0 0 0 1px hsl(var(--primary) / 0.1);
   }
   .btn-premium:hover {
