@@ -493,6 +493,7 @@ export default function AdminBlogEditorPage() {
                         className="font-mono text-xs h-8"
                       />
                     </div>
+                    <InlineFieldValidation messages={validateSlug(form.slug)} current={form.slug.length} max={75} recommended={[3, 60]} />
                   </div>
 
                   {/* Excerpt */}
