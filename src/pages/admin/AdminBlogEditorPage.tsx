@@ -6,6 +6,7 @@ import { SeoHead } from "@/components/SeoHead";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FocusKeywordAnalyzer } from "@/components/FocusKeywordAnalyzer";
 import { BlogSeoScorePanel } from "@/components/admin/BlogSeoScorePanel";
+import { SeoChecklistPanel } from "@/components/admin/SeoChecklistPanel";
 import { InternalLinksSuggestionPanel } from "@/components/admin/InternalLinksSuggestionPanel";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
 import { SeoHighlights } from "@/components/admin/SeoHighlights";
