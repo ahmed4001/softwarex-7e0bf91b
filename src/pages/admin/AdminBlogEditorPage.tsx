@@ -179,6 +179,8 @@ export default function AdminBlogEditorPage() {
         scheduled_at: existing.scheduled_at || "",
       });
       setAutoSlug(false);
+      setDirty(false);
+      if (existing.updated_at) setLastSavedAt(new Date(existing.updated_at));
     }
   }, [existing]);
 
