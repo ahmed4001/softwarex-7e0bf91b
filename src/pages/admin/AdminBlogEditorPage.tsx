@@ -125,6 +125,7 @@ export default function AdminBlogEditorPage() {
       if (error) throw error;
       const { data } = supabase.storage.from("product-images").getPublicUrl(path);
       setForm((f) => ({ ...f, featured_image: data.publicUrl }));
+      setDirty(true);
       toast({ title: "Image uploaded" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
