@@ -8,6 +8,7 @@ function AnimatedNumber({ value, duration = 1.5 }: { value: number; duration?: n
   const ref = useRef<HTMLSpanElement>(null);
   const motionValue = useMotionValue(0);
   const rounded = useTransform(motionValue, (v) => {
+    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
     if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
     return Math.round(v).toLocaleString();
   });
