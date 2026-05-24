@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, Building2, BarChart3, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const benefits = [
   { icon: Star, text: "Collect verified reviews from real software users" },
@@ -10,6 +12,25 @@ const benefits = [
 ];
 
 export function VendorCTASection() {
+  const { data: liveStats } = useQuery({
+    queryKey: ["vendor-cta-stats"],
+    queryFn: async () => {
+      const [products, reviewsAgg, profiles] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("reviews").select("rating").eq("status", "approved"),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+      ]);
+      const ratings = (reviewsAgg.data || []).map((r: any) => r.rating).filter(Boolean);
+      const avg = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "—";
+      return {
+        products: (products.count || 0).toLocaleString(),
+        users: (profiles.count || 0).toLocaleString(),
+        avg,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <section className="py-20 md:py-24" aria-labelledby="vendor-cta-heading">
       <div className="container">
