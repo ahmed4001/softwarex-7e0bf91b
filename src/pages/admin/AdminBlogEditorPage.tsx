@@ -255,15 +255,23 @@ export default function AdminBlogEditorPage() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog"] });
       setLastSavedAt(new Date());
+      setDirty(false);
+      setAutosaveError(null);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1800);
       if (result.isNew && !id) setCreatedId(result.id);
       if (result.exit || result.status === "published" || result.status === "scheduled") {
-        toast({ title: result.status === "published" ? "Post published" : "Post saved" });
+        toast({
+          title: result.status === "published" ? "✓ Post published" : "✓ Post saved",
+          description: result.status === "published" ? "Your post is now live." : "All changes saved successfully.",
+        });
         navigate("/admin/blog");
       } else {
-        toast({ title: "Saved" });
+        toast({ title: "✓ Saved", description: "All changes saved successfully." });
       }
     },
     onError: (err: any) => {
+      setAutosaveError(err.message);
       toast({ title: "Error saving post", description: err.message, variant: "destructive" });
     },
   });
