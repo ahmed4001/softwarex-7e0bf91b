@@ -113,9 +113,9 @@ export function TrendingProductsSection() {
                       <div className="flex items-center gap-3 mt-1.5">
                         {(() => {
                           const seed = p.name.charCodeAt(0) * 7 + p.name.length * 13 + (p.name.charCodeAt(1) || 0) * 3;
-                          const dr = p.total_reviews > 0 ? p.total_reviews : (seed % 280) + 12;
+                          const dr = p.total_reviews > 0 ? p.total_reviews : (seed % 6800) + 1200;
                           const da = Number(p.avg_rating) > 0 ? Number(p.avg_rating) : parseFloat((4.1 + (seed % 8) / 10).toFixed(1));
-                          const rc = p.recentReviewCount > 0 ? p.recentReviewCount : (seed % 6) + 1;
+                          const rc = p.recentReviewCount > 0 ? p.recentReviewCount : (seed % 180) + 40;
                           return (
                             <>
                               <span className="flex items-center gap-1 text-xs font-medium">
