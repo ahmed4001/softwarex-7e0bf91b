@@ -58,7 +58,7 @@ export function ProductShowcaseSection() {
           {products.map((p: any, i: number) => {
             const screenshot = Array.isArray(p.screenshots) ? p.screenshots[0] : null;
             const seed = p.name.charCodeAt(0) * 7 + p.name.length * 13 + (p.name.charCodeAt(1) || 0) * 3;
-            const displayReviews = p.total_reviews > 0 ? p.total_reviews : (seed % 280) + 12;
+            const displayReviews = p.total_reviews > 0 ? p.total_reviews : (seed % 6800) + 1200;
             const displayRating = Number(p.avg_rating) > 0 ? Number(p.avg_rating) : parseFloat((4.1 + (seed % 8) / 10).toFixed(1));
             return (
               <motion.div
