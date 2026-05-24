@@ -100,11 +100,21 @@ export default function AdminBlogEditorPage() {
   const [settingsTab, setSettingsTab] = useState<"general" | "seo" | "score" | "links">("general");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [autoSaving, setAutoSaving] = useState(false);
+  const [autosaveError, setAutosaveError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const [, forceTick] = useState(0);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [metaOpen, setMetaOpen] = useState(false);
+
+  // Tick every 15s to refresh "Saved Xm ago" relative time
+  useEffect(() => {
+    const i = setInterval(() => forceTick((n) => n + 1), 15000);
+    return () => clearInterval(i);
+  }, []);
 
   const uploadFeaturedImage = useCallback(async (file: File) => {
     setUploadingImage(true);
