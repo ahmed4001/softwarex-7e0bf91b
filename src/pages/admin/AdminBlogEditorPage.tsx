@@ -6,6 +6,7 @@ import { SeoHead } from "@/components/SeoHead";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FocusKeywordAnalyzer } from "@/components/FocusKeywordAnalyzer";
 import { BlogSeoScorePanel } from "@/components/admin/BlogSeoScorePanel";
+import { SeoChecklistPanel } from "@/components/admin/SeoChecklistPanel";
 import { InternalLinksSuggestionPanel } from "@/components/admin/InternalLinksSuggestionPanel";
 import { SeoErrorBoard, SocialPreview, type FixAction } from "@/components/admin/SeoErrorBoard";
 import { SeoHighlights } from "@/components/admin/SeoHighlights";
@@ -781,15 +782,26 @@ export default function AdminBlogEditorPage() {
               )}
 
               {settingsTab === "score" && (
-                <BlogSeoScorePanel
-                  title={form.title}
-                  seoTitle={form.seo_title}
-                  metaDescription={form.seo_description}
-                  slug={form.slug}
-                  body={form.body}
-                  focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
-                  featuredImage={form.featured_image}
-                />
+                <>
+                  <BlogSeoScorePanel
+                    title={form.title}
+                    seoTitle={form.seo_title}
+                    metaDescription={form.seo_description}
+                    slug={form.slug}
+                    body={form.body}
+                    focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
+                    featuredImage={form.featured_image}
+                  />
+                  <SeoChecklistPanel
+                    title={form.title}
+                    seoTitle={form.seo_title}
+                    metaDescription={form.seo_description}
+                    slug={form.slug}
+                    body={form.body}
+                    focusKeyword={form.seo_keywords.split(",")[0]?.trim()}
+                    featuredImage={form.featured_image}
+                  />
+                </>
               )}
 
               {settingsTab === "links" && (
