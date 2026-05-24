@@ -1,14 +1,36 @@
 import { motion } from "framer-motion";
-import { Star, TrendingUp, Users, MessageSquare } from "lucide-react";
-
-const proofs = [
-  { icon: Star, text: "average user rating", highlight: "4.8/5" },
-  { icon: Users, text: "professionals trust SoftwareHub", highlight: "340,000+" },
-  { icon: MessageSquare, text: "verified software reviews", highlight: "125,000+" },
-  { icon: TrendingUp, text: "month-over-month growth", highlight: "62%" },
-];
+import { Star, Package, Users, MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SocialProofBanner() {
+  const { data } = useQuery({
+    queryKey: ["social-proof-banner"],
+    queryFn: async () => {
+      const [products, profiles, reviewsAgg] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("reviews").select("rating", { count: "exact" }).eq("status", "approved"),
+      ]);
+      const ratings = (reviewsAgg.data || []).map((r: any) => r.rating).filter(Boolean);
+      const avg = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "—";
+      return {
+        products: (products.count || 0).toLocaleString(),
+        users: (profiles.count || 0).toLocaleString(),
+        reviews: (reviewsAgg.count || 0).toLocaleString(),
+        avg,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const proofs = [
+    { icon: Star, text: "average user rating", highlight: data ? `${data.avg}/5` : "—" },
+    { icon: Users, text: "registered members", highlight: data?.users ?? "—" },
+    { icon: MessageSquare, text: "verified software reviews", highlight: data?.reviews ?? "—" },
+    { icon: Package, text: "software products listed", highlight: data?.products ?? "—" },
+  ];
+
   return (
     <section className="py-12 bg-foreground" aria-label="Platform trust metrics">
       <div className="container">

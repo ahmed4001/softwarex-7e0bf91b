@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, Building2, BarChart3, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const benefits = [
   { icon: Star, text: "Collect verified reviews from real software users" },
@@ -10,6 +12,25 @@ const benefits = [
 ];
 
 export function VendorCTASection() {
+  const { data: liveStats } = useQuery({
+    queryKey: ["vendor-cta-stats"],
+    queryFn: async () => {
+      const [products, reviewsAgg, profiles] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("reviews").select("rating").eq("status", "approved"),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+      ]);
+      const ratings = (reviewsAgg.data || []).map((r: any) => r.rating).filter(Boolean);
+      const avg = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "—";
+      return {
+        products: (products.count || 0).toLocaleString(),
+        users: (profiles.count || 0).toLocaleString(),
+        avg,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <section className="py-20 md:py-24" aria-labelledby="vendor-cta-heading">
       <div className="container">
@@ -46,9 +67,9 @@ export function VendorCTASection() {
           </div>
           <aside className="hidden md:flex flex-col gap-3 w-64 flex-shrink-0" aria-label="Platform statistics">
             {[
-              { label: "Software Products Listed", value: "82,847+", color: "primary" },
-              { label: "Monthly B2B Visitors", value: "1.2M", color: "secondary" },
-              { label: "Avg. Review Score", value: "4.8★", color: "primary" },
+              { label: "Software Products Listed", value: liveStats?.products ?? "—" },
+              { label: "Registered Members", value: liveStats?.users ?? "—" },
+              { label: "Avg. Review Score", value: liveStats ? `${liveStats.avg}★` : "—" },
             ].map((stat) => (
               <div key={stat.label} className="bg-muted/50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-extrabold text-foreground">{stat.value}</p>
