@@ -867,6 +867,12 @@ export default function AdminBlogEditorPage() {
                     placeholder={form.title || "Search engine title"}
                     className="h-9 text-sm"
                   />
+                  <InlineFieldValidation
+                    messages={validateSeoTitle(form.seo_title || form.title, form.seo_keywords)}
+                    current={(form.seo_title || form.title).length}
+                    max={60}
+                    recommended={[50, 60]}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="blog-focus-keyword" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Focus keyword</Label>
