@@ -818,6 +818,15 @@ export default function AdminBlogEditorPage() {
           </Button>
         </div>
         </div>
+        {/* Autosave progress bar */}
+        <div className="relative h-0.5 w-full overflow-hidden bg-transparent">
+          {(autoSaving || saveMutation.isPending) && (
+            <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent animate-[shimmer_1.2s_ease-in-out_infinite]" />
+          )}
+          {!autoSaving && !saveMutation.isPending && savedFlash && (
+            <div className="absolute inset-y-0 left-0 w-full bg-emerald-500/60 animate-in fade-in slide-in-from-left duration-500" />
+          )}
+        </div>
       </header>
 
       {/* Writing area + SEO sidebar */}
