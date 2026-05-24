@@ -896,6 +896,12 @@ export default function AdminBlogEditorPage() {
                     rows={2}
                     className="text-sm resize-none"
                   />
+                  <InlineFieldValidation
+                    messages={validateMetaDescription(form.seo_description, form.seo_keywords)}
+                    current={form.seo_description.length}
+                    max={160}
+                    recommended={[120, 160]}
+                  />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <Label htmlFor="blog-slug" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL slug</Label>
