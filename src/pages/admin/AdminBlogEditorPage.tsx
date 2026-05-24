@@ -279,6 +279,7 @@ export default function AdminBlogEditorPage() {
   // ---- AUTO-SAVE ----
   // Debounced silent save of drafts. Skips published/scheduled posts (require explicit user action).
   useEffect(() => {
+    if (!dirty) return;
     if (!form.title.trim() || !form.slug.trim()) return;
     if (form.status !== "draft") return;
     const handle = setTimeout(async () => {
@@ -305,21 +306,28 @@ export default function AdminBlogEditorPage() {
         };
         const effectiveId = id || createdId;
         if (effectiveId) {
-          await supabase.from("blog_posts").update(payload).eq("id", effectiveId);
+          const { error } = await supabase.from("blog_posts").update(payload).eq("id", effectiveId);
+          if (error) throw error;
         } else {
-          const { data } = await supabase.from("blog_posts").insert(payload).select("id").single();
+          const { data, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
+          if (error) throw error;
           if (data?.id) setCreatedId(data.id);
         }
         setLastSavedAt(new Date());
-      } catch {
-        // silent — manual save will surface errors
+        setDirty(false);
+        setAutosaveError(null);
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 1800);
+        toast({ title: "✓ Draft auto-saved", description: "Your changes are safe." });
+      } catch (err: any) {
+        setAutosaveError(err?.message || "Auto-save failed");
       } finally {
         setAutoSaving(false);
       }
     }, 2500);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form]);
+  }, [form, dirty]);
 
   const handleSave = () => {
     if (!form.title.trim()) {
