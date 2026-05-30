@@ -22,14 +22,14 @@ export function TrendingProductsSection() {
         .gte("created_at", thirtyDaysAgo.toISOString());
 
       if (!recentReviews || recentReviews.length === 0) {
-        // Fallback: most viewed products
-        const { data } = await supabase
+        const { applyRealFirstOrder } = await import("@/lib/product-order");
+        // Fallback: most viewed products with real-first priority
+        let q = supabase
           .from("products")
-          .select("id, name, slug, logo_url, avg_rating, total_reviews, tagline, view_count, categories!products_category_id_fkey(name)")
-          .eq("is_active", true)
-          .order("info_score", { ascending: false })
-          .order("view_count", { ascending: false })
-          .limit(6);
+          .select("id, name, slug, logo_url, avg_rating, total_reviews, tagline, view_count, info_score, categories!products_category_id_fkey(name)")
+          .eq("is_active", true);
+        q = applyRealFirstOrder(q, "reviews");
+        const { data } = await q.limit(6);
         return (data || []).map((p: any) => ({ ...p, recentReviewCount: 0 }));
       }
 

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { applyRealFirstOrder, type ProductSortKey } from "@/lib/product-order";
 
 type Product = Tables<"products">;
 
@@ -11,7 +12,7 @@ interface ProductWithCategory extends Product {
 interface UseProductsOptions {
   search?: string;
   categoryId?: string;
-  sort?: "rating" | "reviews" | "newest" | "name";
+  sort?: ProductSortKey;
   limit?: number;
   enabled?: boolean;
   onlyActive?: boolean;
@@ -37,22 +38,7 @@ export function useProducts({
       if (categoryId) query = query.eq("category_id", categoryId);
       if (search) query = query.ilike("name", `%${search}%`);
 
-      // Always prioritize full-info products
-      query = query.order("info_score", { ascending: false });
-
-      switch (sort) {
-        case "rating":
-          query = query.order("avg_rating", { ascending: false });
-          break;
-        case "reviews":
-          query = query.order("total_reviews", { ascending: false });
-          break;
-        case "name":
-          query = query.order("name", { ascending: true });
-          break;
-        default:
-          query = query.order("created_at", { ascending: false });
-      }
+      query = applyRealFirstOrder(query, sort);
 
       const { data } = await query.limit(limit);
       return (data as unknown as ProductWithCategory[]) ?? [];

@@ -11,15 +11,15 @@ export function ProductShowcaseSection() {
   const { data: products } = useQuery({
     queryKey: ["products-showcase"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { applyRealFirstOrder } = await import("@/lib/product-order");
+      let query = supabase
         .from("products")
-        .select("id, slug, name, tagline, logo_url, screenshots, avg_rating, total_reviews, categories!products_category_id_fkey(name)")
+        .select("id, slug, name, tagline, logo_url, screenshots, avg_rating, total_reviews, info_score, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
         .not("screenshots", "eq", "[]")
-        .not("screenshots", "is", null)
-        .order("info_score", { ascending: false })
-        .order("total_reviews", { ascending: false })
-        .limit(8);
+        .not("screenshots", "is", null);
+      query = applyRealFirstOrder(query, "reviews");
+      const { data } = await query.limit(8);
       return (data || []).filter((p: any) => {
         const shots = p.screenshots;
         return Array.isArray(shots) && shots.length > 0 && typeof shots[0] === "string";

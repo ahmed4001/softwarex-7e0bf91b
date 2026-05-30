@@ -58,18 +58,15 @@ export default function CategoryPage() {
   const { data: products, isLoading } = useQuery({
     queryKey: ["products-category", slug, sort, page, tierFilter],
     queryFn: async () => {
+      const { applyRealFirstOrder, realFirstComparator } = await import("@/lib/product-order");
       let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
       if (tierFilter !== "all") {
         query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
       }
       const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
-      // Always prioritize real / full-info products first
-      query = query.order("info_score", { ascending: false });
-      if (sort === "rating") query = query.order("avg_rating", { ascending: false });
-      else if (sort === "reviews") query = query.order("total_reviews", { ascending: false });
-      else if (sort === "newest") query = query.order("created_at", { ascending: false });
-      else query = query.order("name");
+      // Unified real-first ordering + requested sort
+      query = applyRealFirstOrder(query, sort as any);
       const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       const results = data || [];
       return results.sort((a: any, b: any) => {
@@ -78,8 +75,7 @@ export default function CategoryPage() {
         if (a.is_sponsored && b.is_sponsored) {
           return (tierOrder[a.sponsor_tier] ?? 3) - (tierOrder[b.sponsor_tier] ?? 3);
         }
-        // Real products (higher info_score) first, fake/seeded last
-        return (b.info_score ?? 0) - (a.info_score ?? 0);
+        return realFirstComparator(a, b);
       });
     },
     enabled: !!category,
@@ -89,14 +85,12 @@ export default function CategoryPage() {
   const { data: allGridProducts } = useQuery({
     queryKey: ["products-grid", slug],
     queryFn: async () => {
+      const { applyRealFirstOrder } = await import("@/lib/product-order");
       let query = supabase.from("products")
         .select("id, name, slug, logo_url, avg_rating, total_reviews, click_count, view_count, comparison_count, info_score")
         .eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
-      const { data } = await query
-        .order("info_score", { ascending: false })
-        .order("avg_rating", { ascending: false })
-        .limit(50);
+      const { data } = await applyRealFirstOrder(query, "rating").limit(50);
       return data || [];
     },
     enabled: !!category && !isAll,
