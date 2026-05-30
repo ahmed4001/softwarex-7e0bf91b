@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye } from "lucide-react";
+import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered } from "lucide-react";
 import { toast } from "sonner";
 
 type SettingRow = {
@@ -44,6 +44,8 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; gro
   sitemap_include_categories: { label: "Include Categories in Sitemap", description: "Add all active categories to sitemap.xml", group: "seo", defaultValue: true },
   sitemap_include_blog: { label: "Include Blog Posts in Sitemap", description: "Add published blog posts to sitemap.xml", group: "seo", defaultValue: true },
   sitemap_include_comparisons: { label: "Include Comparisons in Sitemap", description: "Add published comparisons to sitemap.xml", group: "seo", defaultValue: true },
+  real_first_enabled: { label: "Prioritize Real Products", description: "Show real / full-info products first and push seeded ones to the end across categories, search, and feeds.", group: "listings", defaultValue: true },
+  real_first_min_score: { label: "Minimum Real info_score", description: "Products with info_score at or above this value rank as 'real'. Range 0-5 (default 4).", group: "listings", defaultValue: "4" },
 };
 
 export default function AdminSettingsPage() {
@@ -147,6 +149,7 @@ export default function AdminSettingsPage() {
 
   const groups = [
     { id: "general", label: "General", icon: Globe, keys: ["site_name", "site_tagline", "contact_email"] },
+    { id: "listings", label: "Listings", icon: ListOrdered, keys: ["real_first_enabled", "real_first_min_score"] },
     { id: "moderation", label: "Moderation", icon: Shield, keys: ["reviews_require_approval", "allow_anonymous_reviews", "max_reviews_per_user_per_product"] },
     { id: "appearance", label: "Appearance", icon: Palette, keys: ["primary_color", "footer_text"] },
     { id: "email", label: "Email", icon: Mail, keys: ["smtp_from_email", "smtp_from_name"] },
