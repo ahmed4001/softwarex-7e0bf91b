@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useLanguagePreference } from "@/hooks/useLanguagePreference";
+import { useProductOrderConfig } from "@/hooks/useProductOrderConfig";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -121,6 +122,7 @@ const Loading = () => (
 
 function AppContent() {
   useLanguagePreference();
+  useProductOrderConfig();
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
