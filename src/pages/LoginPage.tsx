@@ -79,7 +79,7 @@ export default function LoginPage() {
               <div className="h-9 w-9 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10">
                 <span className="text-sm font-bold tracking-tight text-white">S</span>
               </div>
-              <span className="font-semibold text-lg tracking-tight">SoftwareHub</span>
+              
             </Link>
 
             <div className="max-w-md">
