@@ -90,10 +90,13 @@ export default function CategoryPage() {
     queryKey: ["products-grid", slug],
     queryFn: async () => {
       let query = supabase.from("products")
-        .select("id, name, slug, logo_url, avg_rating, total_reviews, click_count, view_count, comparison_count")
+        .select("id, name, slug, logo_url, avg_rating, total_reviews, click_count, view_count, comparison_count, info_score")
         .eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
-      const { data } = await query.order("avg_rating", { ascending: false }).limit(50);
+      const { data } = await query
+        .order("info_score", { ascending: false })
+        .order("avg_rating", { ascending: false })
+        .limit(50);
       return data || [];
     },
     enabled: !!category && !isAll,
