@@ -105,8 +105,10 @@ export default function AdminSettingsPage() {
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["admin-site-settings"] });
+      const { loadProductOrderConfig } = await import("@/lib/product-order");
+      await loadProductOrderConfig();
       toast.success("Settings saved");
     },
     onError: () => toast.error("Failed to save settings"),
