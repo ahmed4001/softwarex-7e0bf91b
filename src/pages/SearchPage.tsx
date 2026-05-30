@@ -118,6 +118,7 @@ export default function SearchPage() {
       }
       const { data } = await query
         .order("is_sponsored", { ascending: false })
+        .order("info_score", { ascending: false })
         .order("avg_rating", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
@@ -125,7 +126,8 @@ export default function SearchPage() {
         if (a.is_sponsored && b.is_sponsored) {
           return (tierOrder[a.sponsor_tier] ?? 3) - (tierOrder[b.sponsor_tier] ?? 3);
         }
-        return 0;
+        // Real (higher info_score) first, fake/seeded last
+        return (b.info_score ?? 0) - (a.info_score ?? 0);
       });
     },
     enabled: q.length > 0,
