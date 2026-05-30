@@ -11,13 +11,13 @@ export function RecentlyAddedSection() {
   const { data: recentProducts } = useQuery({
     queryKey: ["products-recent"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { applyRealFirstOrder } = await import("@/lib/product-order");
+      let query = supabase
         .from("products")
-        .select("id, slug, name, tagline, logo_url, created_at, categories!products_category_id_fkey(name)")
-        .eq("is_active", true)
-        .order("info_score", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(6);
+        .select("id, slug, name, tagline, logo_url, created_at, info_score, avg_rating, total_reviews, categories!products_category_id_fkey(name)")
+        .eq("is_active", true);
+      query = applyRealFirstOrder(query, "newest");
+      const { data } = await query.limit(6);
       return data || [];
     },
   });
