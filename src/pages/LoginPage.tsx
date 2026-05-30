@@ -130,7 +130,7 @@ export default function LoginPage() {
               <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
                 <span className="text-sm font-bold text-primary-foreground">S</span>
               </div>
-              <span className="font-semibold text-lg text-foreground tracking-tight">SoftwareHub</span>
+              
             </Link>
 
             {/* Header */}
