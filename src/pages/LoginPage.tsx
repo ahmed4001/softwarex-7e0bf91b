@@ -79,7 +79,7 @@ export default function LoginPage() {
               <div className="h-9 w-9 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10">
                 <span className="text-sm font-bold tracking-tight text-white">S</span>
               </div>
-              <span className="font-semibold text-lg tracking-tight">SoftwareHub</span>
+              
             </Link>
 
             <div className="max-w-md">
@@ -130,7 +130,7 @@ export default function LoginPage() {
               <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
                 <span className="text-sm font-bold text-primary-foreground">S</span>
               </div>
-              <span className="font-semibold text-lg text-foreground tracking-tight">SoftwareHub</span>
+              
             </Link>
 
             {/* Header */}
