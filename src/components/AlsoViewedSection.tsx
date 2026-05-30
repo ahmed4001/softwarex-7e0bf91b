@@ -11,20 +11,20 @@ export function AlsoViewedSection({ productId, categoryId }: { productId: string
     queryKey: ["also-viewed", productId, categoryId],
     enabled: !!productId,
     queryFn: async () => {
+      const { applyRealFirstOrder } = await import("@/lib/product-order");
       // Get products from same category, excluding current
       let query = supabase
         .from("products")
-        .select("id, name, slug, logo_url, avg_rating, total_reviews, tagline")
+        .select("id, name, slug, logo_url, avg_rating, total_reviews, tagline, info_score")
         .eq("is_active", true)
-        .neq("id", productId)
-        .order("view_count", { ascending: false })
-        .limit(6);
+        .neq("id", productId);
 
       if (categoryId) {
         query = query.eq("category_id", categoryId);
       }
 
-      const { data } = await query;
+      query = applyRealFirstOrder(query, "rating");
+      const { data } = await query.limit(6);
       return data || [];
     },
   });

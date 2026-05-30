@@ -99,6 +99,7 @@ export default function SearchPage() {
     queryKey: ["search", q, page, tierFilter, pricingFilter, categoryFilter, ratingRange[0]],
     queryFn: async () => {
       if (!q.trim()) return [];
+      const { applyRealFirstOrder, realFirstComparator } = await import("@/lib/product-order");
       let query = supabase
         .from("products")
         .select("*, categories!products_category_id_fkey(name)")
@@ -116,18 +117,17 @@ export default function SearchPage() {
       if (ratingRange[0] > 0) {
         query = query.gte("avg_rating", ratingRange[0]);
       }
-      const { data } = await query
-        .order("is_sponsored", { ascending: false })
-        .order("info_score", { ascending: false })
-        .order("avg_rating", { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      query = query.order("is_sponsored", { ascending: false });
+      query = applyRealFirstOrder(query, "rating");
+      const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
       return (data || []).sort((a: any, b: any) => {
+        if (a.is_sponsored && !b.is_sponsored) return -1;
+        if (!a.is_sponsored && b.is_sponsored) return 1;
         if (a.is_sponsored && b.is_sponsored) {
           return (tierOrder[a.sponsor_tier] ?? 3) - (tierOrder[b.sponsor_tier] ?? 3);
         }
-        // Real (higher info_score) first, fake/seeded last
-        return (b.info_score ?? 0) - (a.info_score ?? 0);
+        return realFirstComparator(a, b);
       });
     },
     enabled: q.length > 0,
