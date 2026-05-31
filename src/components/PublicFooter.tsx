@@ -35,7 +35,7 @@ export function PublicFooter() {
   });
 
   // Split dynamic pages into company vs policies by known slugs
-  const policySlugs = ["terms", "privacy", "community-guidelines", "trust"];
+  const policySlugs = ["terms", "privacy", "community-guidelines", "trust", "refund-policy"];
   const companyPages = (footerPages || []).filter(p => !policySlugs.includes(p.slug));
   const policyPages = (footerPages || []).filter(p => policySlugs.includes(p.slug));
 
