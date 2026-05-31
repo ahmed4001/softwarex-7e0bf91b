@@ -10,8 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered } from "lucide-react";
+import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered, Paintbrush, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { applyTheme, normalizeColor } from "@/lib/theme-config";
 
 type SettingRow = {
   id: string;
@@ -29,7 +30,10 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; gro
   reviews_require_approval: { label: "Reviews Require Approval", description: "New reviews must be approved before appearing", group: "moderation", defaultValue: true },
   allow_anonymous_reviews: { label: "Allow Anonymous Reviews", description: "Allow reviews without sign-in", group: "moderation", defaultValue: false },
   max_reviews_per_user_per_product: { label: "Max Reviews Per User Per Product", description: "Limit duplicate reviews", group: "moderation", defaultValue: "1" },
-  primary_color: { label: "Primary Color (HSL)", description: "Main brand color in HSL", group: "appearance", defaultValue: "142 76% 36%" },
+  primary_color: { label: "Primary Color", description: "Main brand color", group: "theme", defaultValue: "190 75% 42%" },
+  secondary_color: { label: "Secondary Color", description: "Secondary accent color", group: "theme", defaultValue: "175 55% 45%" },
+  button_color: { label: "Button Color", description: "Color used for primary buttons (overrides primary on buttons)", group: "theme", defaultValue: "190 75% 42%" },
+  background_color: { label: "Background Color", description: "Page background color", group: "theme", defaultValue: "200 50% 98%" },
   footer_text: { label: "Footer Copyright Text", description: "Text shown in footer", group: "appearance", defaultValue: "© 2026 SoftwareHub. All rights reserved." },
   smtp_from_email: { label: "From Email", description: "Default sender email", group: "email", defaultValue: "" },
   smtp_from_name: { label: "From Name", description: "Default sender name", group: "email", defaultValue: "SoftwareHub" },
