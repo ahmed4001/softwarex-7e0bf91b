@@ -160,6 +160,10 @@ export default function AdminSettingsPage() {
         </div>
       );
     }
+    // Color picker fields
+    if (isThemeKey(key)) {
+      return renderColorField(key);
+    }
     return (
       <div key={key} className="space-y-1.5">
         <Label>{def.label}</Label>
@@ -169,11 +173,73 @@ export default function AdminSettingsPage() {
     );
   };
 
+  const hslToHex = (hsl: string): string => {
+    const m = (hsl || "").trim().match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+    if (!m) return "#000000";
+    const h = parseFloat(m[1]) / 360;
+    const s = parseFloat(m[2]) / 100;
+    const l = parseFloat(m[3]) / 100;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    let r: number, g: number, b: number;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1 / 3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1 / 3);
+    }
+    const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  };
+
+  const renderColorField = (key: string) => {
+    const def = DEFAULT_SETTINGS[key];
+    const val = form[key] || def.defaultValue;
+    const normalized = normalizeColor(val) || def.defaultValue;
+    const hex = hslToHex(normalized);
+    return (
+      <div key={key} className="space-y-1.5">
+        <Label>{def.label}</Label>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={hex}
+            onChange={(e) => updateField(key, e.target.value)}
+            className="h-10 w-14 rounded-md border border-border bg-transparent cursor-pointer"
+            aria-label={`${def.label} picker`}
+          />
+          <Input
+            value={val || ""}
+            onChange={(e) => updateField(key, e.target.value)}
+            placeholder="#1ea7c4 or 190 75% 42%"
+            className="font-mono text-xs"
+          />
+          <div
+            className="h-10 w-10 rounded-md border border-border shrink-0"
+            style={{ backgroundColor: `hsl(${normalized})` }}
+            aria-hidden
+          />
+        </div>
+        <p className="text-[11px] text-muted-foreground">{def.description}</p>
+      </div>
+    );
+  };
+
+  const resetTheme = () => {
+    THEME_KEYS.forEach((k) => updateField(k, DEFAULT_SETTINGS[k].defaultValue));
+  };
+
   const groups = [
     { id: "general", label: "General", icon: Globe, keys: ["site_name", "site_tagline", "contact_email"] },
+    { id: "theme", label: "Theme", icon: Paintbrush, keys: ["primary_color", "secondary_color", "button_color", "background_color"] },
     { id: "listings", label: "Listings", icon: ListOrdered, keys: ["real_first_enabled", "real_first_min_score"] },
     { id: "moderation", label: "Moderation", icon: Shield, keys: ["reviews_require_approval", "allow_anonymous_reviews", "max_reviews_per_user_per_product"] },
-    { id: "appearance", label: "Appearance", icon: Palette, keys: ["primary_color", "footer_text"] },
+    { id: "appearance", label: "Appearance", icon: Palette, keys: ["footer_text"] },
     { id: "email", label: "Email", icon: Mail, keys: ["smtp_from_email", "smtp_from_name"] },
     { id: "seo", label: "SEO", icon: Search, keys: ["seo_default_title", "seo_default_description", "seo_default_keywords", "seo_default_og_image", "seo_google_verification", "seo_bing_verification", "robots_txt", "sitemap_include_products", "sitemap_include_categories", "sitemap_include_blog", "sitemap_include_comparisons"] },
   ];
