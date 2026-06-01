@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import logoAsset from "@/assets/reviewhunts-logo.png.asset.json";
 import { SearchBar } from "./SearchBar";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LayoutDashboard, Store, ChevronDown, BookOpen, BarChart3, GitCompareArrows, Trophy, Activity, DollarSign, MessageCircle, Layers, Compass, BookMarked } from "lucide-react";
@@ -66,13 +67,8 @@ export function PublicHeader() {
         : "bg-transparent border-b border-transparent"
     )}>
       <div className="container flex items-center justify-between h-16 gap-4">
-        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-sm font-bold text-primary-foreground">S</span>
-          </div>
-          <span className="text-base font-bold text-foreground hidden sm:block">
-            Software<span className="text-primary">Hub</span>
-          </span>
+        <Link to="/" className="flex items-center flex-shrink-0" aria-label="ReviewHunts">
+          <img src={logoAsset.url} alt="ReviewHunts" className="h-9 w-auto" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">
