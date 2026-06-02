@@ -51,6 +51,12 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; gro
   sitemap_include_comparisons: { label: "Include Comparisons in Sitemap", description: "Add published comparisons to sitemap.xml", group: "seo", defaultValue: true },
   real_first_enabled: { label: "Prioritize Real Products", description: "Show real / full-info products first and push seeded ones to the end across categories, search, and feeds.", group: "listings", defaultValue: true },
   real_first_min_score: { label: "Minimum Real info_score", description: "Products with info_score at or above this value rank as 'real'. Range 0-5 (default 4).", group: "listings", defaultValue: "4" },
+  logo_height_mobile: { label: "Logo Height — Mobile (px)", description: "Logo height on screens below 768px. Recommended 80–140.", group: "branding", defaultValue: "112" },
+  logo_height_desktop: { label: "Logo Height — Desktop (px)", description: "Logo height on screens 768px and up. Recommended 100–180.", group: "branding", defaultValue: "160" },
+  logo_max_width_mobile: { label: "Logo Max Width — Mobile (px)", description: "Prevents overflow on small screens.", group: "branding", defaultValue: "200" },
+  logo_max_width_desktop: { label: "Logo Max Width — Desktop (px)", description: "Caps logo width on large screens.", group: "branding", defaultValue: "320" },
+  upload_max_size_mb: { label: "Max Upload Size (MB)", description: "Maximum allowed size per uploaded file.", group: "uploads", defaultValue: "10" },
+  upload_image_quality: { label: "Image Compression Quality (1–100)", description: "JPEG/WebP quality used when compressing uploads. Lower = smaller files.", group: "uploads", defaultValue: "82" },
 };
 
 export default function AdminSettingsPage() {
