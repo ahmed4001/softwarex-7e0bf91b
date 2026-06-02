@@ -72,7 +72,7 @@ export function PublicHeader() {
         : "bg-transparent border-b border-transparent"
     )}>
       <div
-        className="container flex items-center justify-between gap-4"
+        className="container flex items-center justify-between gap-4 min-h-[var(--header-h-mobile)] md:min-h-[var(--header-h-desktop)]"
         style={{
           ['--logo-h-mobile' as any]: `${branding.logoHeightMobile}px`,
           ['--logo-h-desktop' as any]: `${branding.logoHeightDesktop}px`,
@@ -80,7 +80,6 @@ export function PublicHeader() {
           ['--logo-mw-desktop' as any]: `${branding.logoMaxWidthDesktop}px`,
           ['--header-h-mobile' as any]: `${headerMinHeightMobile}px`,
           ['--header-h-desktop' as any]: `${headerMinHeightDesktop}px`,
-          minHeight: `var(--header-h-mobile)`,
         }}
       >
         <Link to="/" className="flex items-center flex-shrink-0" aria-label="ReviewHunts">
