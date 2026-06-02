@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { NotificationBell } from "./NotificationBell";
+import { useBrandingSettings } from "@/hooks/useBrandingSettings";
 
 const resourceLinks = [
   { to: "/blog", label: "nav.blog", icon: BookOpen },
@@ -29,6 +30,10 @@ export function PublicHeader() {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const branding = useBrandingSettings();
+
+  const headerMinHeightMobile = Math.max(branding.logoHeightMobile + 32, 96);
+  const headerMinHeightDesktop = Math.max(branding.logoHeightDesktop + 32, 112);
 
   const navLinks = [
     { to: "/", label: t("nav.home") },
@@ -66,9 +71,23 @@ export function PublicHeader() {
         ? "bg-card/95 backdrop-blur-md border-b border-border shadow-sm"
         : "bg-transparent border-b border-transparent"
     )}>
-      <div className="container flex items-center justify-between h-36 md:h-48 gap-4">
+      <div
+        className="container flex items-center justify-between gap-4 min-h-[var(--header-h-mobile)] md:min-h-[var(--header-h-desktop)]"
+        style={{
+          ['--logo-h-mobile' as any]: `${branding.logoHeightMobile}px`,
+          ['--logo-h-desktop' as any]: `${branding.logoHeightDesktop}px`,
+          ['--logo-mw-mobile' as any]: `${branding.logoMaxWidthMobile}px`,
+          ['--logo-mw-desktop' as any]: `${branding.logoMaxWidthDesktop}px`,
+          ['--header-h-mobile' as any]: `${headerMinHeightMobile}px`,
+          ['--header-h-desktop' as any]: `${headerMinHeightDesktop}px`,
+        }}
+      >
         <Link to="/" className="flex items-center flex-shrink-0" aria-label="ReviewHunts">
-          <img src={logoAsset.url} alt="ReviewHunts" className="h-28 md:h-40 w-auto max-w-[200px] md:max-w-[320px] object-contain" />
+          <img
+            src={logoAsset.url}
+            alt="ReviewHunts"
+            className="w-auto object-contain h-[var(--logo-h-mobile)] md:h-[var(--logo-h-desktop)] max-w-[var(--logo-mw-mobile)] md:max-w-[var(--logo-mw-desktop)]"
+          />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">

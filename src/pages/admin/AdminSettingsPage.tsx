@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered, Paintbrush, RotateCcw } from "lucide-react";
+import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered, Paintbrush, RotateCcw, Image as ImageIcon, Upload } from "lucide-react";
+import logoAsset from "@/assets/reviewhunts-logo.png.asset.json";
 import { toast } from "sonner";
 import { applyTheme, normalizeColor } from "@/lib/theme-config";
 
@@ -50,6 +51,12 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; gro
   sitemap_include_comparisons: { label: "Include Comparisons in Sitemap", description: "Add published comparisons to sitemap.xml", group: "seo", defaultValue: true },
   real_first_enabled: { label: "Prioritize Real Products", description: "Show real / full-info products first and push seeded ones to the end across categories, search, and feeds.", group: "listings", defaultValue: true },
   real_first_min_score: { label: "Minimum Real info_score", description: "Products with info_score at or above this value rank as 'real'. Range 0-5 (default 4).", group: "listings", defaultValue: "4" },
+  logo_height_mobile: { label: "Logo Height — Mobile (px)", description: "Logo height on screens below 768px. Recommended 80–140.", group: "branding", defaultValue: "112" },
+  logo_height_desktop: { label: "Logo Height — Desktop (px)", description: "Logo height on screens 768px and up. Recommended 100–180.", group: "branding", defaultValue: "160" },
+  logo_max_width_mobile: { label: "Logo Max Width — Mobile (px)", description: "Prevents overflow on small screens.", group: "branding", defaultValue: "200" },
+  logo_max_width_desktop: { label: "Logo Max Width — Desktop (px)", description: "Caps logo width on large screens.", group: "branding", defaultValue: "320" },
+  upload_max_size_mb: { label: "Max Upload Size (MB)", description: "Maximum allowed size per uploaded file.", group: "uploads", defaultValue: "10" },
+  upload_image_quality: { label: "Image Compression Quality (1–100)", description: "JPEG/WebP quality used when compressing uploads. Lower = smaller files.", group: "uploads", defaultValue: "82" },
 };
 
 export default function AdminSettingsPage() {
@@ -236,6 +243,8 @@ export default function AdminSettingsPage() {
 
   const groups = [
     { id: "general", label: "General", icon: Globe, keys: ["site_name", "site_tagline", "contact_email"] },
+    { id: "branding", label: "Branding", icon: ImageIcon, keys: ["logo_height_mobile", "logo_height_desktop", "logo_max_width_mobile", "logo_max_width_desktop"] },
+    { id: "uploads", label: "Uploads", icon: Upload, keys: ["upload_max_size_mb", "upload_image_quality"] },
     { id: "theme", label: "Theme", icon: Paintbrush, keys: ["primary_color", "secondary_color", "button_color", "background_color"] },
     { id: "listings", label: "Listings", icon: ListOrdered, keys: ["real_first_enabled", "real_first_min_score"] },
     { id: "moderation", label: "Moderation", icon: Shield, keys: ["reviews_require_approval", "allow_anonymous_reviews", "max_reviews_per_user_per_product"] },
@@ -276,6 +285,42 @@ export default function AdminSettingsPage() {
               <TabsContent key={g.id} value={g.id}>
                 <div className="glass-card p-6 space-y-5">
                   {g.keys.map((key) => renderField(key))}
+                  {g.id === "branding" && (
+                    <div className="pt-4 border-t border-border space-y-4">
+                      <p className="text-sm font-medium text-foreground">Live Preview</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Mobile</p>
+                          <div className="flex items-center justify-center bg-muted/40 rounded-lg p-4 min-h-[140px]">
+                            <img
+                              src={logoAsset.url}
+                              alt="Logo preview mobile"
+                              className="w-auto object-contain"
+                              style={{
+                                height: `${parseInt(form.logo_height_mobile) || 112}px`,
+                                maxWidth: `${parseInt(form.logo_max_width_mobile) || 200}px`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Desktop</p>
+                          <div className="flex items-center justify-center bg-muted/40 rounded-lg p-4 min-h-[200px]">
+                            <img
+                              src={logoAsset.url}
+                              alt="Logo preview desktop"
+                              className="w-auto object-contain"
+                              style={{
+                                height: `${parseInt(form.logo_height_desktop) || 160}px`,
+                                maxWidth: `${parseInt(form.logo_max_width_desktop) || 320}px`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Click "Save All" to apply across the site header.</p>
+                    </div>
+                  )}
                   {g.id === "seo" && (
                     <div className="flex gap-3 pt-2 border-t border-border">
                       <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchSeoFile("robots")}>
