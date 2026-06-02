@@ -66,9 +66,9 @@ export function PublicHeader() {
         ? "bg-card/95 backdrop-blur-md border-b border-border shadow-sm"
         : "bg-transparent border-b border-transparent"
     )}>
-      <div className="container flex items-center justify-between h-28 md:h-32 gap-4">
+      <div className="container flex items-center justify-between h-36 md:h-48 gap-4">
         <Link to="/" className="flex items-center flex-shrink-0" aria-label="ReviewHunts">
-          <img src={logoAsset.url} alt="ReviewHunts" className="h-20 md:h-28 w-auto max-w-[140px] md:max-w-[220px] object-contain" />
+          <img src={logoAsset.url} alt="ReviewHunts" className="h-28 md:h-40 w-auto max-w-[200px] md:max-w-[320px] object-contain" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">
