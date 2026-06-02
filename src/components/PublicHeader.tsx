@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { NotificationBell } from "./NotificationBell";
+import { useBrandingSettings } from "@/hooks/useBrandingSettings";
 
 const resourceLinks = [
   { to: "/blog", label: "nav.blog", icon: BookOpen },
