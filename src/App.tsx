@@ -152,6 +152,7 @@ function AppContent() {
           <Route path="/page/:slug" element={<ErrorBoundary><StaticPage /></ErrorBoundary>} />
           <Route path="/activity" element={<ErrorBoundary><ActivityFeedPage /></ErrorBoundary>} />
           <Route path="/compare-pricing" element={<ErrorBoundary><PricingComparisonPage /></ErrorBoundary>} />
+          <Route path="/pricing" element={<ErrorBoundary><PricingPage /></ErrorBoundary>} />
           <Route path="/lists" element={<ErrorBoundary><ListsPage /></ErrorBoundary>} />
           <Route path="/lists/new" element={<ErrorBoundary><ListEditorPage /></ErrorBoundary>} />
           <Route path="/lists/:slug" element={<ErrorBoundary><ListDetailPage /></ErrorBoundary>} />
