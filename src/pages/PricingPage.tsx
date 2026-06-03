@@ -85,7 +85,7 @@ export default function PricingPage() {
       <SeoHead
         title="Pricing Plans | ReviewHunts"
         description="Choose the right plan to grow your product on ReviewHunts. From Free listings to Premium promotions."
-        canonicalPath="/pricing"
+        canonicalUrl="/pricing"
       />
 
       <div className="container py-16 md:py-24">
