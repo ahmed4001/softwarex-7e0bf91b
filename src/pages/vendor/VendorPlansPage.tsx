@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Check, CreditCard, Sparkles, Crown, Zap } from "lucide-react";
+import { Check, Zap, Star, Rocket, Crown } from "lucide-react";
 import { toast } from "sonner";
 
 const plans = [
@@ -13,60 +13,66 @@ const plans = [
     name: "Free",
     price: 0,
     icon: Zap,
-    description: "Get started with basic vendor tools",
+    accent: "text-emerald-500",
+    description: "Get listed and discovered",
     features: [
-      { label: "Basic product listing", included: true },
-      { label: "Review responses", included: true },
-      { label: "Lead capture (5/mo)", included: true },
-      { label: "Sponsored placements", included: false },
-      { label: "Advanced analytics", included: false },
-      { label: "Priority support", included: false },
+      "Basic product listing",
+      "Category placement",
+      "Indexed on Google",
+      "Discoverable on ReviewHunts",
     ],
   },
   {
-    id: "starter",
-    name: "Starter",
-    price: 49,
-    icon: CreditCard,
-    description: "For growing vendors seeking leads",
+    id: "featured",
+    name: "Featured",
+    price: 29,
+    icon: Star,
+    accent: "text-blue-500",
+    description: "Stand out with more visibility",
     features: [
-      { label: "Enhanced product listing", included: true },
-      { label: "Review responses", included: true },
-      { label: "Lead capture (50/mo)", included: true },
-      { label: "Bronze sponsored slots", included: true },
-      { label: "Basic analytics", included: true },
-      { label: "Priority support", included: false },
+      "Featured badge on listing",
+      "Higher ranking in category",
+      "Increased visibility in search results",
+      "Basic social media mention",
+      "Inclusion in \"New & Featured Tools\" section",
+      "More clicks and exposure",
     ],
   },
   {
-    id: "pro",
-    name: "Pro",
-    price: 149,
+    id: "promotion",
+    name: "Promotion",
+    price: 99,
     popular: true,
-    icon: Sparkles,
-    description: "Full suite for serious vendors",
+    icon: Rocket,
+    accent: "text-purple-500",
+    description: "Amplify reach across channels",
     features: [
-      { label: "Premium product listing", included: true },
-      { label: "Review responses + templates", included: true },
-      { label: "Unlimited lead capture", included: true },
-      { label: "Silver sponsored slots", included: true },
-      { label: "Advanced analytics + ROI", included: true },
-      { label: "Priority support", included: false },
+      "Everything in Featured",
+      "Top category placement",
+      "Featured in \"best tools\" pages",
+      "Social media promotion (posts & mentions)",
+      "Newsletter mention",
+      "YouTube promotion (video mention or inclusion)",
+      "Basic performance tracking (views & clicks)",
     ],
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 499,
+    id: "premium",
+    name: "Premium",
+    price: 199,
     icon: Crown,
-    description: "Maximum visibility and support",
+    accent: "text-rose-500",
+    description: "Maximum exposure and priority",
     features: [
-      { label: "Premium product listing", included: true },
-      { label: "Review responses + templates", included: true },
-      { label: "Unlimited lead capture", included: true },
-      { label: "Gold sponsored slots", included: true },
-      { label: "Full analytics suite", included: true },
-      { label: "Dedicated priority support", included: true },
+      "Everything in Promotion",
+      "Homepage featured placement",
+      "Top priority ranking across categories",
+      "Featured in comparison pages (X vs Y, alternatives)",
+      "Dedicated YouTube promotion (full or highlighted inclusion)",
+      "Strong social media promotion (multiple platforms)",
+      "Enhanced brand highlight (logo, banner, CTA)",
+      "Monthly performance report (views, clicks, engagement)",
+      "Priority support and fast updates",
     ],
   },
 ];
@@ -116,8 +122,8 @@ export default function VendorPlansPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-display font-bold">Subscription Plans</h1>
-        <p className="text-muted-foreground mt-1">Choose the right plan for your business</p>
+        <h1 className="text-2xl font-display font-bold">Pricing</h1>
+        <p className="text-muted-foreground mt-1">Choose the right plan to grow on ReviewHunts</p>
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -135,22 +141,22 @@ export default function VendorPlansPage() {
                 </div>
               )}
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
-                  <Icon className="h-5 w-5 text-primary" />
+                <div className="mx-auto h-10 w-10 rounded-xl bg-muted flex items-center justify-center mb-2">
+                  <Icon className={`h-5 w-5 ${plan.accent}`} />
                 </div>
                 <CardTitle className="text-lg">{plan.name}</CardTitle>
                 <CardDescription className="text-xs">{plan.description}</CardDescription>
                 <div className="mt-3">
                   <span className="text-3xl font-display font-bold">${plan.price}</span>
-                  <span className="text-sm text-muted-foreground">/mo</span>
+                  {plan.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 <ul className="space-y-2.5 flex-1 mb-6">
                   {plan.features.map((f, i) => (
-                    <li key={i} className={`flex items-center gap-2 text-sm ${f.included ? "text-foreground" : "text-muted-foreground/50 line-through"}`}>
-                      <Check className={`h-4 w-4 flex-shrink-0 ${f.included ? "text-primary" : "text-muted-foreground/30"}`} />
-                      {f.label}
+                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                      <Check className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
+                      <span>{f}</span>
                     </li>
                   ))}
                 </ul>
