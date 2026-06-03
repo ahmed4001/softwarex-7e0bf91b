@@ -65,6 +65,7 @@ const AdminPricingPage = lazy(() => import("./pages/admin/AdminPricingPage"));
 const StaticPage = lazy(() => import("./pages/StaticPage"));
 const ActivityFeedPage = lazy(() => import("./pages/ActivityFeedPage"));
 const PricingComparisonPage = lazy(() => import("./pages/PricingComparisonPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
 const ListsPage = lazy(() => import("./pages/ListsPage"));
 const ListDetailPage = lazy(() => import("./pages/ListDetailPage"));
 const ListEditorPage = lazy(() => import("./pages/ListEditorPage"));
