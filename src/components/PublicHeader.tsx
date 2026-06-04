@@ -82,7 +82,7 @@ export function PublicHeader() {
           ['--header-h-desktop' as any]: `${headerMinHeightDesktop}px`,
         }}
       >
-        <Link to="/" className="flex items-center flex-shrink-0" aria-label="ReviewHunts">
+        <Link to="/" className="flex items-center flex-shrink-0 py-1.5 pl-1" aria-label="ReviewHunts">
           <img
             src={logoAsset.url}
             alt="ReviewHunts"
