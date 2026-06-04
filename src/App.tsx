@@ -166,6 +166,7 @@ function AppContent() {
           <Route path="/glossary" element={<ErrorBoundary><GlossaryPage /></ErrorBoundary>} />
           <Route path="/glossary/:slug" element={<ErrorBoundary><GlossaryTermPage /></ErrorBoundary>} />
           <Route path="/partners" element={<ErrorBoundary><PartnerLinksPage /></ErrorBoundary>} />
+          <Route path="/deals" element={<ErrorBoundary><DealsPage /></ErrorBoundary>} />
 
           {/* Programmatic SEO route families */}
           <Route path="/features/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="feature" pathPrefix="/features" /></ErrorBoundary>} />
