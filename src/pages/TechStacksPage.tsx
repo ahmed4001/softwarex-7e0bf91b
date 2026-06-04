@@ -43,7 +43,7 @@ export default function TechStacksPage() {
 
   return (
     <>
-      <SeoHead title="Tech Stacks — SoftwareHub" description="Discover curated software stacks shared by the community." />
+      <SeoHead title="Tech Stacks — ReviewHunts" description="Discover curated software stacks shared by the community." />
       <main className="container py-8 md:py-12 max-w-5xl">
         <div className="flex items-center justify-between mb-8">
           <div>

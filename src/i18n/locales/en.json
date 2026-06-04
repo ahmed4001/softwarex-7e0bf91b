@@ -26,7 +26,7 @@
     "searchPlaceholder": "Search for business software, SaaS tools, or categories"
   },
   "footer": {
-    "softwareHub": "SoftwareHub",
+    "softwareHub": "ReviewHunts",
     "browseSoftware": "Browse Software",
     "learningHub": "Learning Hub",
     "softwareReviews": "Software Reviews",
@@ -44,7 +44,7 @@
     "terms": "Terms of Use",
     "privacy": "Privacy Policy",
     "trust": "Trust & Security",
-    "copyright": "© {{year}} SoftwareHub. All rights reserved."
+    "copyright": "© {{year}} ReviewHunts. All rights reserved."
   },
   "common": {
     "search": "Search",

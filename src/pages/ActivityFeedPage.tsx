@@ -58,7 +58,7 @@ export default function ActivityFeedPage() {
           title: `New product listed: ${p.name}`,
           description: p.tagline || "No description",
           link: `/product/${p.slug}`,
-          userName: "SoftwareHub",
+          userName: "ReviewHunts",
           timestamp: p.created_at,
         });
       });
@@ -95,7 +95,7 @@ export default function ActivityFeedPage() {
 
   return (
     <>
-      <SeoHead title="Activity Feed" description="See the latest activity on SoftwareHub" />
+      <SeoHead title="Activity Feed" description="See the latest activity on ReviewHunts" />
       <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-foreground flex items-center justify-center gap-2">

@@ -28,7 +28,7 @@ export function SeoHead({
 }: SeoHeadProps) {
   const settings = useSeoSettings();
 
-  const siteName = settings.siteName || "SoftwareHub";
+  const siteName = settings.siteName || "ReviewHunts";
   const fullTitle = `${title} | ${siteName}`;
   const effectiveDescription = description || settings.defaultDescription;
   const effectiveKeywords = keywords || settings.defaultKeywords;

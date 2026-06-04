@@ -14,11 +14,11 @@ const SITE_URL = "https://softwarehub.com";
 const categoriesJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "All Software Categories – SoftwareHub",
+  name: "All Software Categories – ReviewHunts",
   description:
     "Browse 50+ software categories including CRM, project management, marketing automation, HR, analytics, cybersecurity, and more. Find the best tools for every business need.",
   url: `${SITE_URL}/categories`,
-  isPartOf: { "@type": "WebSite", name: "SoftwareHub", url: SITE_URL },
+  isPartOf: { "@type": "WebSite", name: "ReviewHunts", url: SITE_URL },
 };
 
 const breadcrumbJsonLd = {
@@ -71,7 +71,7 @@ export default function AllCategoriesPage() {
     <>
       <SeoHead
         title="All Software Categories – Browse 50+ Business Tool Types"
-        description="Explore 50+ software categories on SoftwareHub. Find and compare CRM, project management, marketing automation, HR software, analytics, cybersecurity, AI tools, and more."
+        description="Explore 50+ software categories on ReviewHunts. Find and compare CRM, project management, marketing automation, HR software, analytics, cybersecurity, AI tools, and more."
         keywords="software categories, SaaS categories, business software types, CRM software, project management tools, marketing automation, HR software, analytics tools, cybersecurity software, AI tools, ERP software, help desk software, e-commerce platforms, collaboration tools, accounting software"
         canonicalUrl={`${SITE_URL}/categories`}
         jsonLd={[categoriesJsonLd, breadcrumbJsonLd]}
@@ -164,7 +164,7 @@ export default function AllCategoriesPage() {
               With thousands of SaaS tools available, narrowing down the right category is the
               first step. Whether you need a <strong>CRM</strong> to manage customer relationships,
               a <strong>project management</strong> tool to coordinate teams, or an{" "}
-              <strong>AI writing assistant</strong> to scale content production, SoftwareHub
+              <strong>AI writing assistant</strong> to scale content production, ReviewHunts
               organises every option into clear, searchable categories.
             </p>
             <p>

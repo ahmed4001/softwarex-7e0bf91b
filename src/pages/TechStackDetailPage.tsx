@@ -98,7 +98,7 @@ export default function TechStackDetailPage() {
     <>
       <SeoHead
         title={`${stack.title} — Tech Stack`}
-        description={stack.description || `A curated tech stack on SoftwareHub`}
+        description={stack.description || `A curated tech stack on ReviewHunts`}
         canonicalUrl={`${window.location.origin}/stacks/${slug}`}
         jsonLd={stackJsonLd}
       />

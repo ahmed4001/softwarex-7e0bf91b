@@ -287,7 +287,7 @@ export default function AdminPagesPage() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Search Preview</p>
                 <div className="rounded-xl border border-border p-4 bg-muted/30 space-y-1">
                   <p className="text-sm font-medium text-primary truncate">
-                    {editingPage.seo_title || editingPage.title || "Page Title"} | SoftwareHub
+                    {editingPage.seo_title || editingPage.title || "Page Title"} | ReviewHunts
                   </p>
                   <p className="text-xs text-emerald-700 truncate">
                     yoursite.com › {editingPage.slug || "page-slug"}

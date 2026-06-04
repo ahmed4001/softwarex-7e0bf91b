@@ -43,7 +43,7 @@ export function VendorCTASection() {
           <div className="flex-1">
             <p className="text-sm font-semibold text-primary mb-2">For Software Vendors</p>
             <h2 id="vendor-cta-heading" className="text-2xl md:text-3xl font-extrabold text-foreground mb-3">
-              List Your Software on SoftwareHub
+              List Your Software on ReviewHunts
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-6 max-w-lg">
               Showcase your SaaS product to thousands of teams actively researching business software solutions.

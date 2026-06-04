@@ -46,7 +46,7 @@ export function StatsSection({ stats }: StatsSectionProps) {
   ];
 
   return (
-    <section className="border-b border-border bg-primary/5" aria-label="SoftwareHub platform statistics">
+    <section className="border-b border-border bg-primary/5" aria-label="ReviewHunts platform statistics">
       <div className="container">
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
           {items.map(({ icon: Icon, label, value, suffix }) => (

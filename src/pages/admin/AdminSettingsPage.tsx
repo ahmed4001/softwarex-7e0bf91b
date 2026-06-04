@@ -25,7 +25,7 @@ type SettingRow = {
 };
 
 const DEFAULT_SETTINGS: Record<string, { label: string; description: string; group: string; defaultValue: any }> = {
-  site_name: { label: "Site Name", description: "The name of your site", group: "general", defaultValue: "SoftwareHub" },
+  site_name: { label: "Site Name", description: "The name of your site", group: "general", defaultValue: "ReviewHunts" },
   site_tagline: { label: "Tagline", description: "Short description shown in SEO", group: "general", defaultValue: "Find & Compare the Best Business Software" },
   contact_email: { label: "Contact Email", description: "Public contact email address", group: "general", defaultValue: "" },
   reviews_require_approval: { label: "Reviews Require Approval", description: "New reviews must be approved before appearing", group: "moderation", defaultValue: true },
@@ -35,10 +35,10 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; gro
   secondary_color: { label: "Secondary Color", description: "Secondary accent color", group: "theme", defaultValue: "175 55% 45%" },
   button_color: { label: "Button Color", description: "Color used for primary buttons (overrides primary on buttons)", group: "theme", defaultValue: "190 75% 42%" },
   background_color: { label: "Background Color", description: "Page background color", group: "theme", defaultValue: "200 50% 98%" },
-  footer_text: { label: "Footer Copyright Text", description: "Text shown in footer", group: "appearance", defaultValue: "© 2026 SoftwareHub. All rights reserved." },
+  footer_text: { label: "Footer Copyright Text", description: "Text shown in footer", group: "appearance", defaultValue: "© 2026 ReviewHunts. All rights reserved." },
   smtp_from_email: { label: "From Email", description: "Default sender email", group: "email", defaultValue: "" },
-  smtp_from_name: { label: "From Name", description: "Default sender name", group: "email", defaultValue: "SoftwareHub" },
-  seo_default_title: { label: "Default Meta Title", description: "Fallback title for pages without a custom one (max 60 chars)", group: "seo", defaultValue: "SoftwareHub — Find & Compare Business Software" },
+  smtp_from_name: { label: "From Name", description: "Default sender name", group: "email", defaultValue: "ReviewHunts" },
+  seo_default_title: { label: "Default Meta Title", description: "Fallback title for pages without a custom one (max 60 chars)", group: "seo", defaultValue: "ReviewHunts — Find & Compare Business Software" },
   seo_default_description: { label: "Default Meta Description", description: "Fallback meta description (max 160 chars)", group: "seo", defaultValue: "Discover, compare, and review the best business software. Honest reviews from real users." },
   seo_default_keywords: { label: "Default Keywords", description: "Comma-separated global keywords", group: "seo", defaultValue: "software reviews, SaaS comparison, business tools" },
   seo_default_og_image: { label: "Default OG Image", description: "Fallback Open Graph image URL", group: "seo", defaultValue: "" },

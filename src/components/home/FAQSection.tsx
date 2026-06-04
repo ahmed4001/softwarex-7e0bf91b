@@ -8,23 +8,23 @@ import {
 
 const faqs = [
   {
-    q: "Is SoftwareHub free to use for software reviews?",
-    a: "Yes, SoftwareHub is completely free. You can browse software categories, read verified user reviews, compare SaaS tools side-by-side, and make informed purchasing decisions without paying anything. We generate revenue through optional vendor partnerships, not user subscriptions.",
+    q: "Is ReviewHunts free to use for software reviews?",
+    a: "Yes, ReviewHunts is completely free. You can browse software categories, read verified user reviews, compare SaaS tools side-by-side, and make informed purchasing decisions without paying anything. We generate revenue through optional vendor partnerships, not user subscriptions.",
   },
   {
-    q: "How does SoftwareHub verify software reviews?",
+    q: "How does ReviewHunts verify software reviews?",
     a: "We use a multi-step verification process to ensure review authenticity. Reviewers must confirm their professional email, job title, and company. We also use AI-powered moderation and manual review to detect fake, incentivized, or low-quality reviews — ensuring every review you read is from a real business user.",
   },
   {
-    q: "Can I list my SaaS product on SoftwareHub?",
-    a: "Absolutely. Any software vendor can submit their product for review on SoftwareHub. Our editorial team verifies each listing and publishes it within 2–3 business days. Basic listings are free, with optional premium placements for enhanced visibility.",
+    q: "Can I list my SaaS product on ReviewHunts?",
+    a: "Absolutely. Any software vendor can submit their product for review on ReviewHunts. Our editorial team verifies each listing and publishes it within 2–3 business days. Basic listings are free, with optional premium placements for enhanced visibility.",
   },
   {
     q: "How often are software reviews and pricing updated?",
     a: "Reviews are published in real-time after our moderation process. Software pricing data is refreshed monthly, and vendors can update their own listings (including pricing tiers, features, and integrations) at any time through our vendor portal.",
   },
   {
-    q: "What categories of business software does SoftwareHub cover?",
+    q: "What categories of business software does ReviewHunts cover?",
     a: "We cover 50+ categories of business software including CRM software, project management tools, marketing automation platforms, business intelligence & analytics, HR software, accounting & invoicing tools, design tools, developer tools, customer support software, e-commerce platforms, and many more. New categories are added regularly based on market trends.",
   },
   {
@@ -32,12 +32,12 @@ const faqs = [
     a: "Select up to 4 software products and see them compared side-by-side. We compare pricing plans, key features, user ratings, pros and cons, integration support, and customer support quality — so you can make data-driven software purchasing decisions quickly.",
   },
   {
-    q: "Who writes the software reviews on SoftwareHub?",
-    a: "All reviews on SoftwareHub are written by verified business users — real professionals who use the software daily. We don't accept sponsored reviews or allow vendors to write their own reviews. This ensures unbiased, authentic feedback that helps you make better decisions.",
+    q: "Who writes the software reviews on ReviewHunts?",
+    a: "All reviews on ReviewHunts are written by verified business users — real professionals who use the software daily. We don't accept sponsored reviews or allow vendors to write their own reviews. This ensures unbiased, authentic feedback that helps you make better decisions.",
   },
   {
     q: "Can I compare enterprise software with SMB tools?",
-    a: "Yes, SoftwareHub covers software for businesses of all sizes — from solopreneurs and startups to mid-market companies and large enterprises. You can filter reviews and comparisons by company size, industry, and use case to find tools that match your specific needs.",
+    a: "Yes, ReviewHunts covers software for businesses of all sizes — from solopreneurs and startups to mid-market companies and large enterprises. You can filter reviews and comparisons by company size, industry, and use case to find tools that match your specific needs.",
   },
 ];
 
@@ -56,7 +56,7 @@ export function FAQSection() {
             Common Questions About Software Reviews
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Everything you need to know about using SoftwareHub to find, compare, and choose the best business software.
+            Everything you need to know about using ReviewHunts to find, compare, and choose the best business software.
           </p>
         </motion.header>
 
