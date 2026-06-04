@@ -12,6 +12,7 @@ import { NotificationBell } from "./NotificationBell";
 import { useBrandingSettings } from "@/hooks/useBrandingSettings";
 
 const resourceLinks = [
+  { to: "/compare-pricing", label: "nav.comparePricing", icon: Tag },
   { to: "/blog", label: "nav.blog", icon: BookOpen },
   { to: "/leaderboard", label: "nav.leaderboard", icon: Trophy },
   { to: "/activity", label: "nav.activityFeed", icon: Activity },
