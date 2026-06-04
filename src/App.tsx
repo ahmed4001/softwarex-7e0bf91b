@@ -113,13 +113,16 @@ import { KEYWORD_ROOT_SLUGS } from "@/lib/seo-canonical";
 const queryClient = new QueryClient();
 
 import { RouteSkeleton } from "./components/RouteSkeleton";
+import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 
 function AppContent() {
   useLanguagePreference();
   useProductOrderConfig();
   useThemeConfig();
   return (
+    <RouteErrorBoundary>
     <Suspense fallback={<RouteSkeleton />}>
+
 
       <Routes>
         {/* Public routes */}
