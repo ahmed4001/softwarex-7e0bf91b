@@ -107,6 +107,8 @@ const AdminPartnerLinksPage = lazy(() => import("./pages/admin/AdminPartnerLinks
 const AdminAffiliateAnalyticsPage = lazy(() => import("./pages/admin/AdminAffiliateAnalyticsPage"));
 const KeywordLandingPage = lazy(() => import("./pages/KeywordLandingPage"));
 const AdminKeywordLandingPage = lazy(() => import("./pages/admin/AdminKeywordLandingPage"));
+const DealsPage = lazy(() => import("./pages/DealsPage"));
+const AdminDealsPage = lazy(() => import("./pages/admin/AdminDealsPage"));
 
 import { KEYWORD_ROOT_SLUGS } from "@/lib/seo-canonical";
 
@@ -164,6 +166,7 @@ function AppContent() {
           <Route path="/glossary" element={<ErrorBoundary><GlossaryPage /></ErrorBoundary>} />
           <Route path="/glossary/:slug" element={<ErrorBoundary><GlossaryTermPage /></ErrorBoundary>} />
           <Route path="/partners" element={<ErrorBoundary><PartnerLinksPage /></ErrorBoundary>} />
+          <Route path="/deals" element={<ErrorBoundary><DealsPage /></ErrorBoundary>} />
 
           {/* Programmatic SEO route families */}
           <Route path="/features/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="feature" pathPrefix="/features" /></ErrorBoundary>} />
@@ -230,6 +233,7 @@ function AppContent() {
           <Route path="partner-links" element={<ErrorBoundary><AdminPartnerLinksPage /></ErrorBoundary>} />
           <Route path="affiliate-analytics" element={<ErrorBoundary><AdminAffiliateAnalyticsPage /></ErrorBoundary>} />
           <Route path="keyword-pages" element={<ErrorBoundary><AdminKeywordLandingPage /></ErrorBoundary>} />
+          <Route path="deals" element={<ErrorBoundary><AdminDealsPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}

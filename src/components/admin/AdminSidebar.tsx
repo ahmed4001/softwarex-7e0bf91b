@@ -5,7 +5,7 @@ import {
   ArrowLeftRight, BarChart3, Bot, Box, ChevronDown, DollarSign, FileText, FolderOpen,
   Image, LayoutDashboard, LogOut, Megaphone, MessageSquare, Settings,
   Star, Users, Activity, Mail, Database, Sparkles, Globe, Inbox, Compass, Shield,
-  BookOpen, TrendingUp, UserCheck, Handshake, MousePointerClick
+  BookOpen, TrendingUp, UserCheck, Handshake, MousePointerClick, Tag
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoAsset from "@/assets/reviewhunts-logo.png.asset.json";
@@ -51,6 +51,7 @@ const sidebarItems = [
   },
   { label: "Media Library", icon: Image, to: "/admin/media" },
   { label: "Advertisements", icon: Megaphone, to: "/admin/ads" },
+  { label: "Deals", icon: Tag, to: "/admin/deals" },
   { label: "Pricing", icon: DollarSign, to: "/admin/pricing" },
   { label: "Comparisons", icon: ArrowLeftRight, to: "/admin/comparisons" },
   { label: "Submissions", icon: MessageSquare, to: "/admin/submissions" },
