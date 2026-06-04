@@ -62,10 +62,10 @@ async function main() {
       fetchTable("products", "slug,updated_at", "&is_active=eq.true"),
       fetchTable("categories", "slug,updated_at", "&is_active=eq.true"),
       fetchTable("blog_posts", "slug,updated_at", "&status=eq.published"),
-      fetchTable("comparisons", "slug,updated_at"),
+      fetchTable("comparisons", "slug,created_at", "&is_published=eq.true"),
       fetchTable("pages", "slug,updated_at", "&is_active=eq.true"),
       fetchTable("buyer_guides", "slug,updated_at"),
-      fetchTable("lists", "slug,updated_at", "&is_public=eq.true"),
+      fetchTable("lists", "slug,updated_at", "&is_published=eq.true"),
       fetchTable("glossary_terms", "slug,updated_at"),
       fetchTable("keyword_landing_pages", "slug,updated_at", "&is_published=eq.true"),
     ]);
