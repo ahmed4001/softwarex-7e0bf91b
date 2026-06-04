@@ -51,6 +51,7 @@ const sidebarItems = [
   },
   { label: "Media Library", icon: Image, to: "/admin/media" },
   { label: "Advertisements", icon: Megaphone, to: "/admin/ads" },
+  { label: "Deals", icon: Tag, to: "/admin/deals" },
   { label: "Pricing", icon: DollarSign, to: "/admin/pricing" },
   { label: "Comparisons", icon: ArrowLeftRight, to: "/admin/comparisons" },
   { label: "Submissions", icon: MessageSquare, to: "/admin/submissions" },
