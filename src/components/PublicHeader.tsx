@@ -40,7 +40,6 @@ export function PublicHeader() {
     { to: "/", label: t("nav.home") },
     { to: "/categories", label: t("nav.categories") },
     { to: "/compare", label: t("nav.compare") },
-    { to: "/compare-pricing", label: t("nav.comparePricing", "Compare Pricing") },
   ];
 
   const isResourceActive = resourceLinks.some((l) => location.pathname.startsWith(l.to));
