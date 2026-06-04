@@ -85,12 +85,14 @@ export default function LoginPage() {
           />
 
           <div className="relative z-10 flex flex-col justify-between h-full p-10 xl:p-14">
-            <Link to="/" className="inline-flex items-center text-white/90 hover:text-white transition-colors w-fit" aria-label="ReviewHunts">
-              <img
-                src={logoAsset.url}
-                alt="ReviewHunts"
-                className="h-8 w-auto object-contain brightness-0 invert"
-              />
+            <Link to="/" className="inline-flex items-center w-fit" aria-label="ReviewHunts">
+              <span className="inline-flex items-center bg-white rounded-lg px-3 py-2 shadow-sm">
+                <img
+                  src={logoAsset.url}
+                  alt="ReviewHunts"
+                  className="h-8 w-auto object-contain"
+                />
+              </span>
             </Link>
 
             <div className="max-w-md">
@@ -141,7 +143,7 @@ export default function LoginPage() {
               <img
                 src={logoAsset.url}
                 alt="ReviewHunts"
-                className="h-8 w-auto object-contain dark:brightness-0 dark:invert"
+                className="h-8 w-auto object-contain"
               />
             </Link>
 
