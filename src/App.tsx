@@ -233,6 +233,7 @@ function AppContent() {
           <Route path="partner-links" element={<ErrorBoundary><AdminPartnerLinksPage /></ErrorBoundary>} />
           <Route path="affiliate-analytics" element={<ErrorBoundary><AdminAffiliateAnalyticsPage /></ErrorBoundary>} />
           <Route path="keyword-pages" element={<ErrorBoundary><AdminKeywordLandingPage /></ErrorBoundary>} />
+          <Route path="deals" element={<ErrorBoundary><AdminDealsPage /></ErrorBoundary>} />
         </Route>
 
         {/* Vendor routes */}
