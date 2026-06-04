@@ -85,15 +85,7 @@ export default function LoginPage() {
           />
 
           <div className="relative z-10 flex flex-col justify-between h-full p-10 xl:p-14">
-            <Link to="/" className="inline-flex items-center w-fit" aria-label="ReviewHunts">
-              <span className="inline-flex items-center bg-white rounded-lg px-3 py-2 shadow-sm">
-                <img
-                  src={logoAsset.url}
-                  alt="ReviewHunts"
-                  className="h-8 w-auto object-contain"
-                />
-              </span>
-            </Link>
+            <div />
 
             <div className="max-w-md">
               <motion.blockquote
@@ -138,15 +130,6 @@ export default function LoginPage() {
             transition={{ duration: 0.4 }}
             className="w-full max-w-[380px] relative z-10"
           >
-            {/* Mobile logo */}
-            <Link to="/" className="lg:hidden inline-flex items-center mb-10" aria-label="ReviewHunts">
-              <img
-                src={logoAsset.url}
-                alt="ReviewHunts"
-                className="h-8 w-auto object-contain"
-              />
-            </Link>
-
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground tracking-tight">

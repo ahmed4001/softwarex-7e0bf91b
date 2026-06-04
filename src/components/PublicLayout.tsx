@@ -1,12 +1,12 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { PublicHeader } from "./PublicHeader";
 import { PublicFooter } from "./PublicFooter";
 import { ScrollToTop } from "./ScrollToTop";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "react-router-dom";
 
 export function PublicLayout() {
   const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -24,8 +24,9 @@ export function PublicLayout() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <PublicFooter />
+      {!isLoginPage && <PublicFooter />}
       <ScrollToTop />
     </div>
   );
 }
+
