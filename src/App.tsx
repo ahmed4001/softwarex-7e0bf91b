@@ -107,6 +107,8 @@ const AdminPartnerLinksPage = lazy(() => import("./pages/admin/AdminPartnerLinks
 const AdminAffiliateAnalyticsPage = lazy(() => import("./pages/admin/AdminAffiliateAnalyticsPage"));
 const KeywordLandingPage = lazy(() => import("./pages/KeywordLandingPage"));
 const AdminKeywordLandingPage = lazy(() => import("./pages/admin/AdminKeywordLandingPage"));
+const DealsPage = lazy(() => import("./pages/DealsPage"));
+const AdminDealsPage = lazy(() => import("./pages/admin/AdminDealsPage"));
 
 import { KEYWORD_ROOT_SLUGS } from "@/lib/seo-canonical";
 
