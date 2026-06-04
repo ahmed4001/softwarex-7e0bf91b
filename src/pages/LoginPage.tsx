@@ -250,7 +250,7 @@ export default function LoginPage() {
             {/* Toggle */}
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-border hover:border-foreground/15 bg-muted/30 hover:bg-muted/60 transition-all group text-sm mt-8"
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-border hover:border-foreground/15 bg-muted/30 hover:bg-muted/60 transition-all group text-sm mt-5"
             >
               <span className="text-muted-foreground">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
@@ -262,7 +262,7 @@ export default function LoginPage() {
             </button>
 
             {/* Footer */}
-            <p className="text-[11px] text-center text-muted-foreground/60 mt-8">
+            <p className="text-[11px] text-center text-muted-foreground/60 mt-4">
               By continuing, you agree to our{" "}
               <Link to="/page/terms" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">Terms</Link>{" & "}
               <Link to="/page/privacy" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">Privacy</Link>.
