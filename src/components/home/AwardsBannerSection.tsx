@@ -22,7 +22,7 @@ export function AwardsBannerSection() {
         >
           <p className="text-sm font-semibold text-primary mb-1">🏆 2026 Awards</p>
           <h2 id="awards-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">
-            SoftwareHub Annual Awards
+            ReviewHunts Annual Awards
           </h2>
           <p className="text-muted-foreground mt-1 max-w-lg mx-auto">
             Recognizing excellence in software — voted by real users and verified by our team

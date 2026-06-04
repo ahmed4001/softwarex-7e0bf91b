@@ -76,7 +76,7 @@ export function WelcomeBanner({ userName }: { userName?: string }) {
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mb-6 max-w-xl">
-            Get the most out of SoftwareHub with these quick steps to discover, review, and compare the best software tools.
+            Get the most out of ReviewHunts with these quick steps to discover, review, and compare the best software tools.
           </p>
 
           <div className="grid sm:grid-cols-3 gap-4">

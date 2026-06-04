@@ -154,7 +154,7 @@ export default function SubmitProductPage() {
 
   return (
     <>
-      <SeoHead title="Submit Your Product" description="List your software on SoftwareHub and reach thousands of potential customers." />
+      <SeoHead title="Submit Your Product" description="List your software on ReviewHunts and reach thousands of potential customers." />
       <div className="min-h-[80vh] py-16 relative">
         <div className="absolute inset-0 mesh-gradient opacity-20" />
         <div className="container max-w-2xl relative">
@@ -165,7 +165,7 @@ export default function SubmitProductPage() {
               </div>
               <h1 className="text-3xl font-display font-bold text-foreground">Submit Your Product</h1>
               <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                Get your software listed on SoftwareHub. Our team will review your submission within 48 hours.
+                Get your software listed on ReviewHunts. Our team will review your submission within 48 hours.
               </p>
             </div>
 

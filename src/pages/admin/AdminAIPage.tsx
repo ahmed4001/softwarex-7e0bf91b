@@ -160,7 +160,7 @@ function ProvidersTab() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Available Models</CardTitle>
-            <CardDescription>All AI models accessible through Lovable AI</CardDescription>
+            <CardDescription>All AI models accessible through ReviewHunts AI</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
@@ -241,7 +241,7 @@ function ExternalApiKeysSection({ settings, saveMutation }: { settings: any; sav
           External API Keys
         </CardTitle>
         <CardDescription>
-          Add your own API keys for direct model access. These are used as fallback when Lovable AI credits are exhausted.
+          Add your own API keys for direct model access. These are used as fallback when ReviewHunts AI credits are exhausted.
         </CardDescription>
       </CardHeader>
       <CardContent>

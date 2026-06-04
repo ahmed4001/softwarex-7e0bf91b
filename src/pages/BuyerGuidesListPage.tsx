@@ -21,7 +21,7 @@ export default function BuyerGuidesListPage() {
 
   return (
     <>
-      <SeoHead title="Buyer Guides — SoftwareHub" description="Interactive guides to help you find the perfect software." />
+      <SeoHead title="Buyer Guides — ReviewHunts" description="Interactive guides to help you find the perfect software." />
       <main className="container py-8 md:py-12 max-w-4xl">
         <div className="text-center mb-10">
           <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">

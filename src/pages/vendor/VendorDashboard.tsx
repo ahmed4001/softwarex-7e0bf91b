@@ -121,7 +121,7 @@ export default function VendorDashboard() {
 
   return (
     <>
-      <SeoHead title="Vendor Dashboard — SoftwareHub" description="Manage your products, respond to reviews, and view analytics." />
+      <SeoHead title="Vendor Dashboard — ReviewHunts" description="Manage your products, respond to reviews, and view analytics." />
       {!user ? (
         <VendorDashboardSkeleton />
       ) : (

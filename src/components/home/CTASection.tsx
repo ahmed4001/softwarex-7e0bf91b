@@ -24,7 +24,7 @@ export function CTASection() {
               Software for Your Business?
             </h2>
             <p className="text-white/40 text-lg mb-8 max-w-lg mx-auto">
-              Join thousands of professionals using SoftwareHub to compare tools, read verified reviews, and make smarter software purchasing decisions — completely free.
+              Join thousands of professionals using ReviewHunts to compare tools, read verified reviews, and make smarter software purchasing decisions — completely free.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/categories">

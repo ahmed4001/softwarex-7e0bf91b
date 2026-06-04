@@ -126,7 +126,7 @@ export function CampaignComposer({ accounts }: CampaignComposerProps) {
   const [draft, setDraft] = useState({
     accountId: "",
     subject: "",
-    senderName: "SoftwareHub",
+    senderName: "ReviewHunts",
     senderEmail: "",
     htmlContent: "",
     template: "",
@@ -201,7 +201,7 @@ export function CampaignComposer({ accounts }: CampaignComposerProps) {
   const resetComposer = () => {
     setComposerOpen(false);
     setConfirmSendOpen(false);
-    setDraft({ accountId: "", subject: "", senderName: "SoftwareHub", senderEmail: "", htmlContent: "", template: "" });
+    setDraft({ accountId: "", subject: "", senderName: "ReviewHunts", senderEmail: "", htmlContent: "", template: "" });
     setEditorTab("compose");
   };
 

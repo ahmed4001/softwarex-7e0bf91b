@@ -5,7 +5,7 @@ const testimonials = [
   {
     name: "James Okonkwo",
     role: "CTO, TechScale",
-    text: "SoftwareHub saved us weeks of research. The comparison tools are incredibly powerful — we found the perfect project management solution in under an hour.",
+    text: "ReviewHunts saved us weeks of research. The comparison tools are incredibly powerful — we found the perfect project management solution in under an hour.",
     rating: 5,
     avatar: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=150&h=150&fit=crop&crop=face",
   },

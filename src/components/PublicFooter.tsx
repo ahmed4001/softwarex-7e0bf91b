@@ -80,7 +80,7 @@ export function PublicFooter() {
     <footer className="bg-foreground text-white/70">
       <div className="container py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-x-8 gap-y-10 mb-12">
-          {/* SoftwareHub - 1 col */}
+          {/* ReviewHunts - 1 col */}
           <div>
             <div className="flex items-center gap-2 mb-5">
               <div className="h-4 w-4 rounded bg-primary flex items-center justify-center flex-shrink-0">

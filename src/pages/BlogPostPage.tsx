@@ -76,7 +76,7 @@ export default function BlogPostPage() {
           ...(author && {
             author: { "@type": "Person", name: (author as any).name || "Author" },
           }),
-          publisher: { "@type": "Organization", name: "SoftwareHub" },
+          publisher: { "@type": "Organization", name: "ReviewHunts" },
           mainEntityOfPage: { "@type": "WebPage", "@id": url },
         }}
       />

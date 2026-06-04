@@ -40,7 +40,7 @@ const SITE_URL = "https://softwarehub.com";
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "SoftwareHub",
+  name: "ReviewHunts",
   url: SITE_URL,
   description: "The leading software review and comparison platform. Browse 500+ verified software reviews, compare SaaS tools side-by-side, and find the best business software for your team.",
   potentialAction: {
@@ -56,10 +56,10 @@ const websiteJsonLd = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "SoftwareHub",
+  name: "ReviewHunts",
   url: SITE_URL,
   logo: `${SITE_URL}/favicon.ico`,
-  description: "SoftwareHub helps businesses discover, compare, and choose the best software tools through verified user reviews and expert analysis.",
+  description: "ReviewHunts helps businesses discover, compare, and choose the best software tools through verified user reviews and expert analysis.",
   sameAs: [],
   contactPoint: {
     "@type": "ContactPoint",
@@ -74,15 +74,15 @@ const faqJsonLd = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "Is SoftwareHub free to use for software reviews?",
+      name: "Is ReviewHunts free to use for software reviews?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, SoftwareHub is completely free. You can browse software categories, read verified user reviews, compare SaaS tools, and make informed purchasing decisions without paying anything.",
+        text: "Yes, ReviewHunts is completely free. You can browse software categories, read verified user reviews, compare SaaS tools, and make informed purchasing decisions without paying anything.",
       },
     },
     {
       "@type": "Question",
-      name: "How does SoftwareHub verify software reviews?",
+      name: "How does ReviewHunts verify software reviews?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "We use a multi-step verification process. Reviewers must confirm their professional email, job title, and company. We also use AI and manual moderation to detect fake or low-quality reviews.",
@@ -90,7 +90,7 @@ const faqJsonLd = {
     },
     {
       "@type": "Question",
-      name: "Can I list my SaaS product on SoftwareHub?",
+      name: "Can I list my SaaS product on ReviewHunts?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "Yes, any software vendor can submit their product for listing. Our team verifies each submission and publishes it within 2–3 business days. Basic listings are free.",
@@ -98,10 +98,10 @@ const faqJsonLd = {
     },
     {
       "@type": "Question",
-      name: "What categories of business software does SoftwareHub cover?",
+      name: "What categories of business software does ReviewHunts cover?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "SoftwareHub covers 50+ categories including CRM software, project management tools, marketing automation platforms, business analytics, HR software, accounting tools, design software, developer tools, and many more.",
+        text: "ReviewHunts covers 50+ categories including CRM software, project management tools, marketing automation platforms, business analytics, HR software, accounting tools, design software, developer tools, and many more.",
       },
     },
     {
@@ -212,7 +212,7 @@ export default function HomePage() {
         keywords="software reviews, SaaS comparison, best business software, CRM software, project management tools, marketing automation, software ratings, B2B software, software directory, business tools comparison, best SaaS tools 2026, software recommendations, enterprise software reviews, SMB software guide"
         canonicalUrl={SITE_URL}
         ogImage={`${SITE_URL}/og-image.png`}
-        author="SoftwareHub"
+        author="ReviewHunts"
         jsonLd={[websiteJsonLd, organizationJsonLd, faqJsonLd, breadcrumbJsonLd]}
       />
 

@@ -181,7 +181,7 @@ export function AdminSidebar({ collapsed }: AdminSidebarProps) {
             animate={{ opacity: 1 }}
             className="text-sm font-display font-bold text-sidebar-foreground whitespace-nowrap"
           >
-            SoftwareHub
+            ReviewHunts
           </motion.span>
         )}
       </div>

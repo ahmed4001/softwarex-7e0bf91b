@@ -54,7 +54,7 @@ export function FeaturesGridSection() {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <p className="text-sm font-semibold text-primary mb-2">Why Choose SoftwareHub</p>
+          <p className="text-sm font-semibold text-primary mb-2">Why Choose ReviewHunts</p>
           <h2 id="features-heading" className="text-3xl md:text-4xl font-extrabold text-foreground">
             The Smarter Way to Choose Business Software
           </h2>
