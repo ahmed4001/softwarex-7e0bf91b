@@ -987,6 +987,87 @@ export type Database = {
           },
         ]
       }
+      deal_alert_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      deals: {
+        Row: {
+          category: string | null
+          click_count: number
+          coupon_code: string | null
+          created_at: string
+          deal_url: string
+          description: string | null
+          discount_amount: string | null
+          discount_type: string | null
+          end_date: string | null
+          id: string
+          is_featured: boolean
+          is_trending: boolean
+          is_visible: boolean
+          logo_url: string | null
+          product_name: string
+          slug: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          click_count?: number
+          coupon_code?: string | null
+          created_at?: string
+          deal_url: string
+          description?: string | null
+          discount_amount?: string | null
+          discount_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_featured?: boolean
+          is_trending?: boolean
+          is_visible?: boolean
+          logo_url?: string | null
+          product_name: string
+          slug: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          click_count?: number
+          coupon_code?: string | null
+          created_at?: string
+          deal_url?: string
+          description?: string | null
+          discount_amount?: string | null
+          discount_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_featured?: boolean
+          is_trending?: boolean
+          is_visible?: boolean
+          logo_url?: string | null
+          product_name?: string
+          slug?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       digest_logs: {
         Row: {
           id: string
