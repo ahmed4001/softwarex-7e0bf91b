@@ -121,7 +121,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right — form */}
-        <div className="flex items-center justify-center px-6 py-12 sm:px-12 bg-background relative">
+        <div className="flex items-center justify-center px-6 py-6 sm:px-12 sm:py-8 bg-background relative">
           {/* Subtle corner accent */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/3 rounded-bl-[120px]" />
 
@@ -132,11 +132,11 @@ export default function LoginPage() {
             className="w-full max-w-[380px] relative z-10"
           >
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            <div className="mb-5">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 {isLogin ? "Welcome back" : "Get started"}
               </h1>
-              <p className="text-muted-foreground mt-2 text-[15px]">
+              <p className="text-muted-foreground mt-1 text-sm">
                 {isLogin
                   ? "Sign in to access your dashboard and reviews."
                   : "Create a free account to start discovering software."}
