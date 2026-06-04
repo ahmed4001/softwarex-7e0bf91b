@@ -112,22 +112,15 @@ import { KEYWORD_ROOT_SLUGS } from "@/lib/seo-canonical";
 
 const queryClient = new QueryClient();
 
-const Loading = () => (
-  <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-    <div className="relative">
-      <div className="h-10 w-10 rounded-xl bg-primary/10 animate-pulse" />
-      <div className="absolute inset-0 h-10 w-10 rounded-xl border-2 border-primary/30 border-t-primary animate-spin" />
-    </div>
-    <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>
-  </div>
-);
+import { RouteSkeleton } from "./components/RouteSkeleton";
 
 function AppContent() {
   useLanguagePreference();
   useProductOrderConfig();
   useThemeConfig();
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<RouteSkeleton />}>
+
       <Routes>
         {/* Public routes */}
         <Route element={<PublicLayout />}>
