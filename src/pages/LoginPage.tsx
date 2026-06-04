@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, UserPlus, Mail, Lock, User, Eye, EyeOff, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import softwareCollage from "@/assets/software-collage.jpg";
-import logoAsset from "@/assets/reviewhunts-logo.png.asset.json";
+
+
 
 
 export default function LoginPage() {
