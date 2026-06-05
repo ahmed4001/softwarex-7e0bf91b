@@ -112,10 +112,10 @@ export function PublicHeader() {
             <button
               onClick={() => setResourcesOpen(!resourcesOpen)}
               className={cn(
-                "flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                "flex items-center gap-1 px-3.5 py-2 text-[13px] font-medium rounded-lg transition-colors whitespace-nowrap",
                 isResourceActive
                   ? "text-primary bg-primary/8"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
               {t("nav.resources", "Resources")}
