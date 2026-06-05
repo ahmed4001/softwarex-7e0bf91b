@@ -83,7 +83,7 @@ export default function AdminDealsPage() {
   const { data: products = [] } = useQuery({
     queryKey: ["admin-deals-products"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("products")
         .select("id,name,slug,logo_url,tagline,website_url,category_id")
         .eq("status", "approved")
