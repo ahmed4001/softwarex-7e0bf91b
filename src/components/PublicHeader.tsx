@@ -91,16 +91,16 @@ export function PublicHeader() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1.5">
           {navLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
               className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                "px-3.5 py-2 text-[13px] font-medium rounded-lg transition-colors whitespace-nowrap",
                 location.pathname === l.to
                   ? "text-primary bg-primary/8"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
               {l.label}
