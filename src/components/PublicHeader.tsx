@@ -91,16 +91,16 @@ export function PublicHeader() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1.5">
           {navLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
               className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                "px-3.5 py-2 text-[13px] font-medium rounded-lg transition-colors whitespace-nowrap",
                 location.pathname === l.to
                   ? "text-primary bg-primary/8"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
               {l.label}
@@ -112,10 +112,10 @@ export function PublicHeader() {
             <button
               onClick={() => setResourcesOpen(!resourcesOpen)}
               className={cn(
-                "flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                "flex items-center gap-1 px-3.5 py-2 text-[13px] font-medium rounded-lg transition-colors whitespace-nowrap",
                 isResourceActive
                   ? "text-primary bg-primary/8"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
               {t("nav.resources", "Resources")}
@@ -143,35 +143,35 @@ export function PublicHeader() {
           </div>
         </nav>
 
-        <div className="hidden lg:block flex-1 max-w-[200px]">
+        <div className="hidden lg:block w-[180px] xl:w-[220px] flex-shrink-0">
           <SearchBar variant="compact" />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <LanguageSwitcher />
           <NotificationBell />
           {user ? (
             <div className="flex items-center gap-1">
               <Link to="/vendor">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-medium text-sm gap-1.5">
+                <Button variant="ghost" size="sm" className="hidden xl:inline-flex font-medium text-[13px] gap-1.5 px-2.5">
                   <Store className="h-4 w-4" /> {t("nav.vendor")}
                 </Button>
               </Link>
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-medium text-sm gap-1.5">
+                <Button variant="ghost" size="sm" className="hidden xl:inline-flex font-medium text-[13px] gap-1.5 px-2.5">
                   <LayoutDashboard className="h-4 w-4" /> {t("nav.dashboard")}
                 </Button>
               </Link>
             </div>
           ) : (
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-medium text-sm">
+              <Button variant="ghost" size="sm" className="hidden md:inline-flex font-medium text-[13px] px-2.5">
                 {t("nav.signIn")}
               </Button>
             </Link>
           )}
           <Link to="/submit-product">
-            <Button size="sm" className="bg-primary text-primary-foreground rounded-lg font-semibold px-4 text-sm">
+            <Button size="sm" className="bg-primary text-primary-foreground rounded-lg font-semibold px-3 text-[13px] whitespace-nowrap">
               {t("nav.submitProduct")}
             </Button>
           </Link>
