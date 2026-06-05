@@ -59,7 +59,7 @@ export function SearchBar({ variant = "compact", className }: SearchBarProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results.length > 0 && setIsOpen(true)}
-            placeholder="Search software, tools, categories..."
+            placeholder={variant === "hero" ? "Search software, tools, categories..." : "Search..."}
             className={cn(
               "border-border bg-card",
               variant === "hero" ? "h-14 pl-12 pr-12 text-lg rounded-2xl shadow-lg" : "h-10 pl-10 pr-10 rounded-lg"
