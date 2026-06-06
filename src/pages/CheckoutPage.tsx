@@ -99,18 +99,19 @@ export default function CheckoutPage() {
                 <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 mb-5 flex gap-3">
                   <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-semibold text-foreground">Secure payment gateway setup in progress</p>
+                    <p className="font-semibold text-foreground">Secure checkout via Paddle</p>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      Once enabled, you'll be securely redirected to complete your subscription. Cancel anytime.
+                      You'll be redirected to Paddle to complete your subscription. Cancel anytime.
                     </p>
                   </div>
                 </div>
 
                 <Button
                   onClick={handlePay}
+                  disabled={loading}
                   className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
                 >
-                  <Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting…</> : <><Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe</>}
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
