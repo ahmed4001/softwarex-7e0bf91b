@@ -96,8 +96,8 @@ export default function SubmitProductPage() {
       toast.error("Failed to submit. Please try again.");
       return;
     }
-    toast.success("Product submitted for review! We'll get back to you soon.");
-    navigate("/");
+    toast.success("Product submitted! Now pick a plan to launch.");
+    navigate("/choose-plan?submitted=1");
   };
 
   const handleAuth = async (e: React.FormEvent) => {
