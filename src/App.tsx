@@ -109,6 +109,8 @@ const KeywordLandingPage = lazy(() => import("./pages/KeywordLandingPage"));
 const AdminKeywordLandingPage = lazy(() => import("./pages/admin/AdminKeywordLandingPage"));
 const DealsPage = lazy(() => import("./pages/DealsPage"));
 const AdminDealsPage = lazy(() => import("./pages/admin/AdminDealsPage"));
+const ChoosePlanPage = lazy(() => import("./pages/ChoosePlanPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 
 import { KEYWORD_ROOT_SLUGS } from "@/lib/seo-canonical";
 
@@ -167,6 +169,8 @@ function AppContent() {
           <Route path="/glossary/:slug" element={<ErrorBoundary><GlossaryTermPage /></ErrorBoundary>} />
           <Route path="/partners" element={<ErrorBoundary><PartnerLinksPage /></ErrorBoundary>} />
           <Route path="/deals" element={<ErrorBoundary><DealsPage /></ErrorBoundary>} />
+          <Route path="/choose-plan" element={<ErrorBoundary><ChoosePlanPage /></ErrorBoundary>} />
+          <Route path="/checkout" element={<ErrorBoundary><CheckoutPage /></ErrorBoundary>} />
 
           {/* Programmatic SEO route families */}
           <Route path="/features/:slug" element={<ErrorBoundary><KeywordLandingPage pageType="feature" pathPrefix="/features" /></ErrorBoundary>} />
