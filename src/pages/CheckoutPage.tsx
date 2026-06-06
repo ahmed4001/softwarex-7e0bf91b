@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CreditCard, Lock, ArrowLeft, Sparkles } from "lucide-react";
+import { CreditCard, Lock, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SeoHead } from "@/components/SeoHead";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const planPricing: Record<string, { name: string; price: number }> = {
   featured: { name: "Featured", price: 29 },
@@ -15,12 +18,33 @@ const planPricing: Record<string, { name: string; price: number }> = {
 export default function CheckoutPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const planId = params.get("plan") || "featured";
   const plan = planPricing[planId] || planPricing.featured;
 
-  const handlePay = () => {
-    toast.info("Payment gateway is being configured. You'll be redirected once it's live.");
+  const handlePay = async () => {
+    if (!user) {
+      navigate(`/login?redirect=/checkout?plan=${planId}`);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("paddle-create-checkout", {
+        body: { plan: planId },
+      });
+      if (error) throw error;
+      if (data?.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error(data?.error || "Could not start checkout");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Checkout failed. Please try again.");
+      setLoading(false);
+    }
   };
+
 
   return (
     <>
@@ -75,18 +99,19 @@ export default function CheckoutPage() {
                 <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 mb-5 flex gap-3">
                   <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-semibold text-foreground">Secure payment gateway setup in progress</p>
+                    <p className="font-semibold text-foreground">Secure checkout via Paddle</p>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      Once enabled, you'll be securely redirected to complete your subscription. Cancel anytime.
+                      You'll be redirected to Paddle to complete your subscription. Cancel anytime.
                     </p>
                   </div>
                 </div>
 
                 <Button
                   onClick={handlePay}
+                  disabled={loading}
                   className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
                 >
-                  <Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting…</> : <><Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe</>}
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">

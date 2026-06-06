@@ -153,7 +153,7 @@ export default function PricingPage() {
                     variant={plan.popular ? "default" : "outline"}
                     asChild
                   >
-                    <Link to="/vendor/plans">
+                    <Link to={`/choose-plan?plan=${plan.id}`}>
                       {plan.price === 0 ? "Get Started Free" : "Choose Plan"}
                     </Link>
                   </Button>
