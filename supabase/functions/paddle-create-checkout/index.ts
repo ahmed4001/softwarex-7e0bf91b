@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const PADDLE_API_KEY = Deno.env.get("PADDLE_API_KEY")!;
-const PADDLE_ENV = (Deno.env.get("PADDLE_ENVIRONMENT") || "sandbox").toLowerCase();
+const PADDLE_API_KEY = (Deno.env.get("PADDLE_API_KEY") || "").trim();
+const PADDLE_ENV = (Deno.env.get("PADDLE_ENVIRONMENT") || "sandbox").trim().toLowerCase();
 const PADDLE_BASE =
   PADDLE_ENV === "live" || PADDLE_ENV === "production"
     ? "https://api.paddle.com"
