@@ -8,6 +8,7 @@ import { SeoHead } from "@/components/SeoHead";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 
 const planPricing: Record<string, { name: string; price: number }> = {
   featured: { name: "Featured", price: 29 },
@@ -34,20 +35,47 @@ export default function CheckoutPage() {
         body: { plan: planId },
       });
       if (error) {
-        const contextError = error.context instanceof Response ? await error.context.clone().json().catch(() => null) : null;
-        throw new Error(contextError?.error || error.message || "Checkout failed");
+        const ctxErr = error.context instanceof Response ? await error.context.clone().json().catch(() => null) : null;
+        throw new Error(ctxErr?.error || error.message || "Checkout failed");
       }
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        throw new Error(data?.error || "Could not start checkout");
-      }
+      if (data?.error) throw new Error(data.error);
+      if (!data?.clientToken || !data?.priceId) throw new Error("Checkout configuration missing");
+
+      const paddle: Paddle | undefined = await initializePaddle({
+        environment: data.environment === "production" ? "production" : "sandbox",
+        token: data.clientToken,
+        eventCallback: (ev) => {
+          if (ev.name === "checkout.completed") {
+            toast.success("Payment successful!");
+            navigate(`/dashboard?paid=1&plan=${planId}`);
+          }
+          if (ev.name === "checkout.error") {
+            toast.error("Checkout error. Please try again.");
+            setLoading(false);
+          }
+          if (ev.name === "checkout.closed") {
+            setLoading(false);
+          }
+        },
+      });
+
+      if (!paddle) throw new Error("Could not initialize Paddle");
+
+      paddle.Checkout.open({
+        items: [{ priceId: data.priceId, quantity: 1 }],
+        customer: { email: data.email },
+        customData: { user_id: data.userId, plan: planId },
+        settings: {
+          successUrl: `${window.location.origin}/dashboard?paid=1&plan=${planId}`,
+          displayMode: "overlay",
+          theme: "light",
+        },
+      });
     } catch (err: any) {
       toast.error(err.message || "Checkout failed. Please try again.");
       setLoading(false);
     }
   };
-
 
   return (
     <>
@@ -104,7 +132,7 @@ export default function CheckoutPage() {
                   <div className="text-sm">
                     <p className="font-semibold text-foreground">Secure checkout via Paddle</p>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      You'll be redirected to Paddle to complete your subscription. Cancel anytime.
+                      A secure Paddle overlay will open to complete your subscription. Cancel anytime.
                     </p>
                   </div>
                 </div>
@@ -114,7 +142,7 @@ export default function CheckoutPage() {
                   disabled={loading}
                   className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
                 >
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting…</> : <><Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe</>}
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…</> : <><Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe</>}
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
