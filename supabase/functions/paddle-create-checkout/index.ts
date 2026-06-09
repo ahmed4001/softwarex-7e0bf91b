@@ -10,7 +10,7 @@ const PADDLE_CLIENT_TOKEN = (Deno.env.get("PADDLE_CLIENT_TOKEN") || "").trim();
 const PADDLE_ENV = (Deno.env.get("PADDLE_ENVIRONMENT") || "sandbox").trim().toLowerCase();
 const ENVIRONMENT = PADDLE_ENV === "live" || PADDLE_ENV === "production" ? "production" : "sandbox";
 
-const PADDLE_PRICE_ID_PATTERN = /^pri_[a-z\d]{26}$/;
+const PADDLE_PRICE_ID_PATTERN = /^pri_[a-z\d]{10,}$/i;
 const PRICE_MAP: Record<string, string | undefined> = {
   featured: Deno.env.get("PADDLE_PRICE_FEATURED")?.trim(),
   promotion: Deno.env.get("PADDLE_PRICE_PROMOTION")?.trim(),
