@@ -62,7 +62,7 @@ export function SeoHead({
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content={lang === "en" ? "en_US" : lang} />
-      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+      {resolvedCanonical && <meta property="og:url" content={resolvedCanonical} />}
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -71,8 +71,8 @@ export function SeoHead({
       {effectiveDescription && <meta name="twitter:description" content={effectiveDescription} />}
       {effectiveOgImage && <meta name="twitter:image" content={effectiveOgImage} />}
 
-      {/* Canonical */}
-      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+      {/* Canonical (self-referencing by default) */}
+      {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}
 
       {/* JSON-LD Structured Data */}
       {jsonLdArray.map((ld, i) => (
