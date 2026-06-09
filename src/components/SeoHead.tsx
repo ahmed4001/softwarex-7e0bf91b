@@ -34,6 +34,12 @@ export function SeoHead({
   const effectiveKeywords = keywords || settings.defaultKeywords;
   const effectiveOgImage = ogImage || settings.defaultOgImage;
   const jsonLdArray = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
+  // Always emit a self-referencing canonical for indexable pages.
+  const resolvedCanonical =
+    canonicalUrl ||
+    (typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}`
+      : undefined);
 
   return (
     <Helmet>
@@ -56,7 +62,7 @@ export function SeoHead({
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content={lang === "en" ? "en_US" : lang} />
-      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+      {resolvedCanonical && <meta property="og:url" content={resolvedCanonical} />}
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -65,8 +71,8 @@ export function SeoHead({
       {effectiveDescription && <meta name="twitter:description" content={effectiveDescription} />}
       {effectiveOgImage && <meta name="twitter:image" content={effectiveOgImage} />}
 
-      {/* Canonical */}
-      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+      {/* Canonical (self-referencing by default) */}
+      {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}
 
       {/* JSON-LD Structured Data */}
       {jsonLdArray.map((ld, i) => (
