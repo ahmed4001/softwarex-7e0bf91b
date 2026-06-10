@@ -8,14 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ListFilter, LayoutGrid } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { PaginationControls } from "@/components/PaginationControls";
 import { CategoryGrid } from "@/components/CategoryGrid";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAbVariant } from "@/hooks/useAbVariant";
+import { useDebounce } from "@/hooks/useDebounce";
+import { trackEvent } from "@/lib/analytics";
 
 const PAGE_SIZE = 20;
+const STALE_5_MIN = 5 * 60 * 1000;
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -24,9 +29,22 @@ export default function CategoryPage() {
   const [page, setPage] = useState(0);
   const isAll = slug === "all";
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  // A/B test: legacy (A) vs new mobile-first filter UI (B). Desktop always uses full layout.
+  const [filterVariant] = useAbVariant("mobile_filter_v1", ["A", "B"]);
+  const useNewMobileFilters = isMobile && filterVariant === "B";
+
+  // Debounce filter inputs so users tapping multiple chips don't fire 5 separate queries.
+  const debouncedSort = useDebounce(sort, 200);
+  const debouncedTier = useDebounce(tierFilter, 200);
+
+  useEffect(() => {
+    trackEvent("category_view", { slug: slug || "", variant: filterVariant, is_mobile: isMobile });
+  }, [slug, filterVariant, isMobile]);
 
   const { data: category } = useQuery({
     queryKey: ["category", slug],
+    staleTime: STALE_5_MIN,
     queryFn: async () => {
       if (isAll) return { name: t("categoryPage.allCategories"), description: t("categories.subtitle"), slug: "all" };
       const { data } = await supabase.from("categories").select("*").eq("slug", slug!).single();
