@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures/deterministic";
-import type { Page, TestInfo } from "@playwright/test";
+import { attachFailureArtifacts } from "./fixtures/failure-artifacts";
+import type { Page } from "@playwright/test";
 
 // Parse every <script type="application/ld+json"> block on each key
 // public page and validate the required fields per @type. We mirror
