@@ -43,6 +43,7 @@ beforeAll(() => {
 
 afterAll(() => {
   vi.useRealTimers();
+  vi.setSystemTime(new Date());
   Math.random = originalRandom;
   if (originalRandomUUID) (crypto as any).randomUUID = originalRandomUUID;
 });
