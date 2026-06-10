@@ -235,15 +235,15 @@ export default function HomePage() {
         {/* 8. Popular Comparisons */}
         <PopularComparisonsSection />
 
-        {/* 9. How It Works */}
+        {/* 9. Recently Added */}
+        <RecentlyAddedSection />
+
+        {/* 10. How It Works */}
         <HowItWorksSection />
 
-        {/* 10. Blog Preview + Vendor CTA */}
+        {/* 11. Blog Preview + Vendor CTA */}
         <BlogPreviewSection />
         <VendorCTASection />
-
-        {/* 11. Recently Added */}
-        <RecentlyAddedSection />
 
         {/* 12. FAQ + Newsletter */}
         <FAQSection />
