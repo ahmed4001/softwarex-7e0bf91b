@@ -23,7 +23,7 @@ export function BlogPreviewSection() {
   if (!posts || posts.length === 0) return null;
 
   return (
-    <section className="py-20">
+    <section className="py-14">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 10 }}

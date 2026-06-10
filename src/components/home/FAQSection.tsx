@@ -43,7 +43,7 @@ const faqs = [
 
 export function FAQSection() {
   return (
-    <section className="py-20 md:py-24" aria-labelledby="faq-heading">
+    <section className="py-14 md:py-16" aria-labelledby="faq-heading">
       <div className="container">
         <motion.header
           initial={{ opacity: 0, y: 12 }}

@@ -62,7 +62,7 @@ export function TrendingProductsSection() {
   if (!trending || trending.length === 0) return null;
 
   return (
-    <section className="py-16 bg-gradient-to-b from-background to-muted/20" aria-labelledby="trending-heading">
+    <section className="py-10 bg-gradient-to-b from-background to-muted/20" aria-labelledby="trending-heading">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
