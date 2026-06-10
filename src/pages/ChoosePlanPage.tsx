@@ -90,23 +90,16 @@ export default function ChoosePlanPage() {
     }
     setSelecting(planId);
     try {
-      const { data: existing } = await supabase
-        .from("vendor_subscriptions")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (existing) {
-        await supabase.from("vendor_subscriptions").update({ plan: planId }).eq("id", existing.id);
-      } else {
-        await supabase.from("vendor_subscriptions").insert({ user_id: user.id, plan: planId });
-      }
-
       if (planId === "free") {
+        const { data, error } = await supabase.functions.invoke("activate-free-plan");
+        if (error || (data as any)?.error) {
+          throw new Error((data as any)?.error || error?.message || "Failed");
+        }
         toast.success("You're on the Free plan. Welcome aboard!");
         navigate("/dashboard");
       } else {
+        // Paid plans MUST flow through Paddle. The webhook is the only writer
+        // for vendor_subscriptions paid rows.
         toast.success(`${planId.charAt(0).toUpperCase() + planId.slice(1)} plan selected — redirecting to checkout`);
         navigate(`/checkout?plan=${planId}`);
       }

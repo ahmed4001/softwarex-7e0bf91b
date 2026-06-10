@@ -3795,30 +3795,48 @@ export type Database = {
       }
       vendor_subscriptions: {
         Row: {
+          canceled_at: string | null
           created_at: string
+          current_period_end: string | null
           expires_at: string | null
           id: string
+          last_event_at: string | null
           metadata: Json
+          paddle_customer_id: string | null
+          paddle_price_id: string | null
+          paddle_subscription_id: string | null
           plan: string
           started_at: string
           status: string
           user_id: string
         }
         Insert: {
+          canceled_at?: string | null
           created_at?: string
+          current_period_end?: string | null
           expires_at?: string | null
           id?: string
+          last_event_at?: string | null
           metadata?: Json
+          paddle_customer_id?: string | null
+          paddle_price_id?: string | null
+          paddle_subscription_id?: string | null
           plan?: string
           started_at?: string
           status?: string
           user_id: string
         }
         Update: {
+          canceled_at?: string | null
           created_at?: string
+          current_period_end?: string | null
           expires_at?: string | null
           id?: string
+          last_event_at?: string | null
           metadata?: Json
+          paddle_customer_id?: string | null
+          paddle_price_id?: string | null
+          paddle_subscription_id?: string | null
           plan?: string
           started_at?: string
           status?: string
