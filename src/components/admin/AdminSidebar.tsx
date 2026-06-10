@@ -57,6 +57,8 @@ const sidebarItems = [
   { label: "Submissions", icon: MessageSquare, to: "/admin/submissions" },
   { label: "Email Templates", icon: Mail, to: "/admin/emails" },
   { label: "Subscribers", icon: Inbox, to: "/admin/subscribers" },
+  { label: "Subscriptions", icon: CreditCard, to: "/admin/subscriptions" },
+  { label: "Paddle Events", icon: Activity, to: "/admin/paddle-events" },
   { label: "Analytics", icon: BarChart3, to: "/admin/analytics" },
   { label: "Settings", icon: Settings, to: "/admin/settings" },
   { label: "Activity Log", icon: Activity, to: "/admin/activity" },
