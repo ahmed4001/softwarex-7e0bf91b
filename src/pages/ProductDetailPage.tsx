@@ -349,11 +349,11 @@ export default function ProductDetailPage() {
         ]}
       />
 
-      <div className="container py-8">
+      <div className="container py-4 sm:py-8 pb-24 lg:pb-8">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex items-center gap-2 text-sm text-muted-foreground mb-8"
+          className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide"
         >
           <Link to="/" className="hover:text-foreground transition-colors">{t("productDetail.home")}</Link>
           <span className="opacity-30">/</span>
@@ -363,22 +363,35 @@ export default function ProductDetailPage() {
               <span className="opacity-30">/</span>
             </>
           )}
-          <span className="text-foreground font-medium">{product.name}</span>
+          <span className="text-foreground font-medium truncate">{product.name}</span>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 mb-8 relative overflow-hidden"
+          className="glass-card p-5 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/3 to-transparent rounded-bl-full pointer-events-none" />
           
-          <div className="flex flex-col lg:flex-row gap-8 relative">
-            <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-border/30 shadow-lg">
-              {product.logo_url ? <img src={product.logo_url} alt={product.name} className="h-full w-full object-cover" /> : <span className="text-4xl font-display font-bold gradient-text">{product.name.charAt(0)}</span>}
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 relative">
+            <div className="flex items-start gap-4 lg:block">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl lg:rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-border/30 shadow-lg">
+                {product.logo_url ? <img src={product.logo_url} alt={product.name} className="h-full w-full object-cover" /> : <span className="text-3xl sm:text-4xl font-display font-bold gradient-text">{product.name.charAt(0)}</span>}
+              </div>
+              <div className="flex-1 lg:hidden min-w-0">
+                <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground leading-tight">{product.name}</h1>
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  {product.is_verified && (
+                    <Badge className="bg-success/10 text-success border-0 gap-1 font-semibold text-[10px]"><CheckCircle className="h-3 w-3" />{t("productDetail.verified")}</Badge>
+                  )}
+                  {product.is_sponsored && (
+                    <Badge className="bg-gradient-to-r from-primary to-secondary text-primary-foreground border-0 font-semibold text-[10px]">{t("productDetail.sponsored")}</Badge>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="hidden lg:flex flex-wrap items-center gap-3 mb-3">
                 <h1 className="text-3xl font-display font-bold text-foreground">{product.name}</h1>
                 {product.is_verified && (
                   <Badge className="bg-success/10 text-success border-0 gap-1 font-semibold"><CheckCircle className="h-3.5 w-3.5" />{t("productDetail.verified")}</Badge>
@@ -387,17 +400,17 @@ export default function ProductDetailPage() {
                   <Badge className="bg-gradient-to-r from-primary to-secondary text-primary-foreground border-0 font-semibold">{t("productDetail.sponsored")}</Badge>
                 )}
               </div>
-              {product.tagline && <p className="text-lg text-muted-foreground mb-4">{product.tagline}</p>}
-              <div className="flex flex-wrap items-center gap-4 mb-6">
+              {product.tagline && <p className="text-base sm:text-lg text-muted-foreground mb-3 sm:mb-4">{product.tagline}</p>}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="flex items-center gap-2">
                   <StarRating rating={Number(product.avg_rating)} size="md" />
-                  <span className="text-lg font-display font-bold">{Number(product.avg_rating).toFixed(1)}</span>
-                  <span className="text-sm text-muted-foreground">({product.total_reviews} {t("product.reviews").toLowerCase()})</span>
+                  <span className="text-base sm:text-lg font-display font-bold">{Number(product.avg_rating).toFixed(1)}</span>
+                  <span className="text-xs sm:text-sm text-muted-foreground">({product.total_reviews})</span>
                 </div>
                 {product.pricing_model && <Badge variant="outline" className="capitalize rounded-lg font-medium">{product.pricing_model}</Badge>}
-                {product.starting_price && <span className="text-lg font-display font-bold text-foreground">${product.starting_price}<span className="text-sm font-normal text-muted-foreground">{t("product.perMonth")}</span></span>}
+                {product.starting_price && <span className="text-base sm:text-lg font-display font-bold text-foreground">${product.starting_price}<span className="text-xs sm:text-sm font-normal text-muted-foreground">{t("product.perMonth")}</span></span>}
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="hidden sm:flex flex-wrap gap-3">
                 {product.website_url && (
                   <Button
                     className="btn-premium rounded-xl text-primary-foreground gap-2 font-semibold"
@@ -410,8 +423,21 @@ export default function ProductDetailPage() {
                 <Link to={`/compare?products=${product.id}`}><Button variant="ghost" className="rounded-xl font-medium">{t("productDetail.compare")}</Button></Link>
                 <ProductWatchButton productId={product.id} />
               </div>
+              {/* Mobile actions: stacked, full-width */}
+              <div className="sm:hidden grid grid-cols-2 gap-2">
+                {product.website_url && (
+                  <Button
+                    className="btn-premium rounded-xl text-primary-foreground gap-1.5 font-semibold col-span-2 h-11"
+                    onClick={() => handleAffiliateClick(product.id, product.website_url!, (product as any).affiliate_url)}
+                  >
+                    <Globe className="h-4 w-4" />{t("productDetail.visitWebsite")}
+                  </Button>
+                )}
+                <Link to={`/product/${slug}/write-review`} className="col-span-1"><Button variant="outline" className="rounded-xl font-semibold w-full h-10 text-xs">{t("productDetail.writeReview")}</Button></Link>
+                <Link to={`/compare?products=${product.id}`} className="col-span-1"><Button variant="outline" className="rounded-xl font-medium w-full h-10 text-xs">{t("productDetail.compare")}</Button></Link>
+              </div>
             </div>
-            <div className="flex flex-col gap-4 lg:border-l lg:border-border/50 lg:pl-8 flex-shrink-0">
+            <div className="hidden lg:flex flex-col gap-4 lg:border-l lg:border-border/50 lg:pl-8 flex-shrink-0">
               <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                 {product.headquarters && <div className="flex items-center gap-2.5"><Building2 className="h-4 w-4 text-primary/60" />{product.headquarters}</div>}
                 {product.founded_year && <div className="flex items-center gap-2.5"><Calendar className="h-4 w-4 text-primary/60" />{t("productDetail.founded", { year: product.founded_year })}</div>}
@@ -435,19 +461,27 @@ export default function ProductDetailPage() {
               )}
             </div>
           </div>
+          {/* Mobile-only meta row */}
+          <div className="lg:hidden flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground">
+            {product.headquarters && <div className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-primary/60" />{product.headquarters}</div>}
+            {product.founded_year && <div className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-primary/60" />{t("productDetail.founded", { year: product.founded_year })}</div>}
+            {product.company_size && <div className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-primary/60" />{product.company_size}</div>}
+          </div>
         </motion.div>
 
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="bg-muted/50 p-1 rounded-xl">
-            <TabsTrigger value="overview" className="rounded-lg font-medium">{t("productDetail.overview")}</TabsTrigger>
-            <TabsTrigger value="screenshots" className="rounded-lg font-medium">Screenshots</TabsTrigger>
-            <TabsTrigger value="reviews" className="rounded-lg font-medium">{t("productDetail.reviews", { count: product.total_reviews })}</TabsTrigger>
-            <TabsTrigger value="pricing" className="rounded-lg font-medium">{t("productDetail.pricing")}</TabsTrigger>
-            <TabsTrigger value="alternatives" className="rounded-lg font-medium">{t("productDetail.alternatives")}</TabsTrigger>
-            <TabsTrigger value="qa" className="rounded-lg font-medium gap-1"><HelpCircle className="h-3.5 w-3.5" />Q&A</TabsTrigger>
-            <TabsTrigger value="integrations" className="rounded-lg font-medium">Integrations</TabsTrigger>
-            <TabsTrigger value="changelog" className="rounded-lg font-medium">Changelog</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="overview" className="space-y-6 sm:space-y-8">
+          <div className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto scrollbar-hide">
+            <TabsList className="bg-muted/50 p-1 rounded-xl inline-flex w-max sm:w-auto">
+              <TabsTrigger value="overview" className="rounded-lg font-medium text-xs sm:text-sm">{t("productDetail.overview")}</TabsTrigger>
+              <TabsTrigger value="screenshots" className="rounded-lg font-medium text-xs sm:text-sm">Screenshots</TabsTrigger>
+              <TabsTrigger value="reviews" className="rounded-lg font-medium text-xs sm:text-sm">{t("productDetail.reviews", { count: product.total_reviews })}</TabsTrigger>
+              <TabsTrigger value="pricing" className="rounded-lg font-medium text-xs sm:text-sm">{t("productDetail.pricing")}</TabsTrigger>
+              <TabsTrigger value="alternatives" className="rounded-lg font-medium text-xs sm:text-sm">{t("productDetail.alternatives")}</TabsTrigger>
+              <TabsTrigger value="qa" className="rounded-lg font-medium gap-1 text-xs sm:text-sm"><HelpCircle className="h-3.5 w-3.5" />Q&A</TabsTrigger>
+              <TabsTrigger value="integrations" className="rounded-lg font-medium text-xs sm:text-sm">Integrations</TabsTrigger>
+              <TabsTrigger value="changelog" className="rounded-lg font-medium text-xs sm:text-sm">Changelog</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             {product.description && (
