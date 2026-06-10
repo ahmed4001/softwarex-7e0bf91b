@@ -24,7 +24,7 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section className="py-14 bg-muted/40" aria-labelledby="how-it-works-heading">
+    <section className="py-16 md:py-20 bg-muted/40" aria-labelledby="how-it-works-heading">
       <div className="container">
         <motion.header
           initial={{ opacity: 0, y: 12 }}

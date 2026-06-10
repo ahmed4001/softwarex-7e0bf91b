@@ -46,7 +46,7 @@ export function StatsSection({ stats }: StatsSectionProps) {
   ];
 
   return (
-    <section className="py-10 md:py-14" aria-label="ReviewHunts platform statistics">
+    <section className="py-16 md:py-20" aria-label="ReviewHunts platform statistics">
       <div className="container">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {items.map(({ icon: Icon, label, value, suffix }) => (

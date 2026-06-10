@@ -25,7 +25,7 @@ export function RecentlyAddedSection() {
   if (!recentProducts || recentProducts.length === 0) return null;
 
   return (
-    <section className="py-14">
+    <section className="py-16 md:py-20">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
