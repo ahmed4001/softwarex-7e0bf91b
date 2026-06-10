@@ -315,6 +315,31 @@
     color: hsl(var(--primary));
   }
 
+  /* ── Unified responsive typography scale ─────────────────
+     Use across homepage sections so headings, body, and
+     captions stay consistent on mobile/tablet/desktop. */
+  .t-eyebrow {
+    @apply text-xs sm:text-sm font-semibold text-primary tracking-wide uppercase;
+  }
+  .t-h1 {
+    @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] text-foreground;
+  }
+  .t-h2 {
+    @apply text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-foreground;
+  }
+  .t-h3 {
+    @apply text-lg sm:text-xl font-bold tracking-tight text-foreground;
+  }
+  .t-lead {
+    @apply text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed;
+  }
+  .t-body {
+    @apply text-sm sm:text-base text-muted-foreground leading-relaxed;
+  }
+  .t-caption {
+    @apply text-xs sm:text-[13px] text-muted-foreground/80 leading-relaxed;
+  }
+
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 12px hsl(var(--primary) / 0.15); }
     50% { box-shadow: 0 0 20px hsl(var(--primary) / 0.25); }
