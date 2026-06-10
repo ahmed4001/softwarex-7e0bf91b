@@ -118,6 +118,15 @@ jobs:
           CI_MOCK_OG_IMAGES: "1"
         run: bunx playwright test tests/e2e/og-image-mocked.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
 
+      # Fully mocked smoke — images + sitemap.xml + robots.txt all
+      # served as deterministic 200s. Surfaces META/structure bugs
+      # without staging-CDN noise.
+      - name: SEO smoke (all staging assets mocked)
+        if: always()
+        env:
+          CI_MOCK_STAGING_ASSETS: "1"
+        run: bunx playwright test tests/e2e/seo-smoke-mocked.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
+
 
 
 
