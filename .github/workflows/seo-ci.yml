@@ -104,6 +104,20 @@ jobs:
           SEO_BROAD_BLOG_COUNT: "5"
         run: bunx playwright test tests/e2e/broad-detail-coverage.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
 
+      - name: Extended smoke — subcategories + deep blog pagination
+        if: always()
+        env:
+          SEO_SMOKE_BLOG_DEPTH: "4"
+        run: bunx playwright test tests/e2e/seo-smoke-extended.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
+
+      # Mocked og:image checks — intercepts every image request and
+      # returns 200 PNG, so we only fail on bad META, not staging CDN.
+      - name: og:image META validation (network mocked)
+        if: always()
+        env:
+          CI_MOCK_OG_IMAGES: "1"
+        run: bunx playwright test tests/e2e/og-image-mocked.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
+
 
 
 
