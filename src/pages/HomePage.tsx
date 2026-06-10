@@ -266,7 +266,7 @@ function SectionHeader({ label, title, subtitle, linkTo, id }: { label: string; 
       <div>
         <p className="t-eyebrow mb-1">{label}</p>
         <h2 id={id} className="t-h2">{title}</h2>
-        <p className="text-muted-foreground mt-2">{subtitle}</p>
+        <p className="t-body mt-2">{subtitle}</p>
       </div>
       {linkTo && (
         <Link to={linkTo}>
