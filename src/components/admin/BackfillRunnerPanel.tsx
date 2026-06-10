@@ -1,37 +1,108 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, Square, Settings2 } from "lucide-react";
+import { Loader2, Play, Save, Square, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type Summary = {
   total: number; updated: number; no_match: number; skipped: number; errors: number;
   aborted?: boolean; abort_reason?: string | null;
 };
 
+type Settings = {
+  batchSize: number; multiplier: number; concurrency: number;
+  minConfidence: number; maxMissRate: number; rateLimitMs: number;
+  batches: number; dryRun: boolean;
+};
+
+const DEFAULTS: Settings = {
+  batchSize: 15, multiplier: 30, concurrency: 2,
+  minConfidence: 0.7, maxMissRate: 0.7, rateLimitMs: 400,
+  batches: 5, dryRun: false,
+};
+
 const PROJECT_REF = "ffeimjfunghzxgeqiwma";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmZWltamZ1bmdoenhnZXFpd21hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MjI2MjEsImV4cCI6MjA4NzQ5ODYyMX0.SnPyI6XDg3zyI4fQTYUKRoAhu_gJ4QLvBw-y6muPYvg";
 
+const storageKey = (uid: string | null) => `backfill-runner-settings:${uid ?? "anon"}`;
+
 export function BackfillRunnerPanel() {
   const qc = useQueryClient();
-  const [batchSize, setBatchSize] = useState(15);
-  const [multiplier, setMultiplier] = useState(30);
-  const [concurrency, setConcurrency] = useState(2);
-  const [minConfidence, setMinConfidence] = useState(0.7);
-  const [maxMissRate, setMaxMissRate] = useState(0.7);
-  const [rateLimitMs, setRateLimitMs] = useState(400);
-  const [batches, setBatches] = useState(5);
-  const [dryRun, setDryRun] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [batchSize, setBatchSize] = useState(DEFAULTS.batchSize);
+  const [multiplier, setMultiplier] = useState(DEFAULTS.multiplier);
+  const [concurrency, setConcurrency] = useState(DEFAULTS.concurrency);
+  const [minConfidence, setMinConfidence] = useState(DEFAULTS.minConfidence);
+  const [maxMissRate, setMaxMissRate] = useState(DEFAULTS.maxMissRate);
+  const [rateLimitMs, setRateLimitMs] = useState(DEFAULTS.rateLimitMs);
+  const [batches, setBatches] = useState(DEFAULTS.batches);
+  const [dryRun, setDryRun] = useState(DEFAULTS.dryRun);
 
   const [running, setRunning] = useState(false);
   const [stopRequested, setStopRequested] = useState(false);
   const [history, setHistory] = useState<Summary[]>([]);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const savedAtRef = useRef<number>(0);
+  const [savedTick, setSavedTick] = useState(0);
+
+  // Load saved settings once we know the user
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      const uid = data.user?.id ?? null;
+      setUserId(uid);
+      try {
+        const raw = localStorage.getItem(storageKey(uid));
+        if (raw) {
+          const s = JSON.parse(raw) as Partial<Settings>;
+          if (typeof s.batchSize === "number") setBatchSize(s.batchSize);
+          if (typeof s.multiplier === "number") setMultiplier(s.multiplier);
+          if (typeof s.concurrency === "number") setConcurrency(s.concurrency);
+          if (typeof s.minConfidence === "number") setMinConfidence(s.minConfidence);
+          if (typeof s.maxMissRate === "number") setMaxMissRate(s.maxMissRate);
+          if (typeof s.rateLimitMs === "number") setRateLimitMs(s.rateLimitMs);
+          if (typeof s.batches === "number") setBatches(s.batches);
+          if (typeof s.dryRun === "boolean") setDryRun(s.dryRun);
+        }
+      } catch {/* ignore */}
+      setLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Auto-persist whenever settings change (after initial load)
+  useEffect(() => {
+    if (!loaded) return;
+    const s: Settings = {
+      batchSize, multiplier, concurrency, minConfidence,
+      maxMissRate, rateLimitMs, batches, dryRun,
+    };
+    try {
+      localStorage.setItem(storageKey(userId), JSON.stringify(s));
+      savedAtRef.current = Date.now();
+      setSavedTick((t) => t + 1);
+    } catch {/* ignore */}
+  }, [loaded, userId, batchSize, multiplier, concurrency, minConfidence, maxMissRate, rateLimitMs, batches, dryRun]);
+
+  function resetDefaults() {
+    setBatchSize(DEFAULTS.batchSize);
+    setMultiplier(DEFAULTS.multiplier);
+    setConcurrency(DEFAULTS.concurrency);
+    setMinConfidence(DEFAULTS.minConfidence);
+    setMaxMissRate(DEFAULTS.maxMissRate);
+    setRateLimitMs(DEFAULTS.rateLimitMs);
+    setBatches(DEFAULTS.batches);
+    setDryRun(DEFAULTS.dryRun);
+    toast.success("Reset to defaults");
+  }
 
   async function callOnce(): Promise<Summary | null> {
     const res = await fetch(
@@ -146,7 +217,7 @@ export function BackfillRunnerPanel() {
           </Field>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {!running ? (
             <Button onClick={run} className="gap-2">
               <Play className="h-4 w-4" /> Start
@@ -155,6 +226,14 @@ export function BackfillRunnerPanel() {
             <Button variant="destructive" onClick={() => setStopRequested(true)} className="gap-2">
               <Square className="h-4 w-4" /> Stop after current
             </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={resetDefaults} disabled={running}>
+            Reset defaults
+          </Button>
+          {loaded && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1" key={savedTick}>
+              <Save className="h-3 w-3" /> Saved for this admin
+            </span>
           )}
           {running && (
             <span className="text-sm text-muted-foreground flex items-center gap-2">
