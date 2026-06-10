@@ -53,6 +53,18 @@ export default function AdminPaddleEventsPage() {
     },
   });
 
+  const { data: auditLog } = useQuery({
+    queryKey: ["admin-paddle-reprocess-audit"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("paddle_reprocess_audit")
+        .select("id, admin_email, event_id, event_type, status, actions, error, ip_address, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return data ?? [];
+    },
+  });
+
   const resolveAlert = useMutation({
     mutationFn: async (id: string) => {
       await (supabase as any).from("paddle_alerts").update({ resolved_at: new Date().toISOString() }).eq("id", id);
