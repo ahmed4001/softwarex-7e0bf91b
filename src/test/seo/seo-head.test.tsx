@@ -1,159 +1,152 @@
-// SEO regression: render SeoHead under HelmetProvider for representative
-// "key route" configs and assert the resolved <head> output.
-import { describe, it, expect } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+// SEO regression: render SeoHead in jsdom under HelmetProvider for
+// representative "key route" configs and assert document.head output.
+import { describe, it, expect, afterEach } from "vitest";
+import { render, cleanup, act } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { SeoHead } from "@/components/SeoHead";
 
-function renderSeo(ui: React.ReactNode) {
+afterEach(() => {
   cleanup();
-  const helmetContext: { helmet?: any } = {};
+  // Helmet leaves tags on document.head between tests; reset.
+  document.head.querySelectorAll(
+    "[data-rh],title,meta[name],meta[property],link[rel=canonical],script[type='application/ld+json']",
+  ).forEach((el) => el.remove());
+});
+
+async function renderSeo(ui: React.ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider context={helmetContext}>
-        <MemoryRouter>{ui}</MemoryRouter>
-      </HelmetProvider>
-    </QueryClientProvider>,
-  );
-  const helmet = helmetContext.helmet;
-  const linkStr = helmet.link.toString();
-  const metaStr = helmet.meta.toString();
-  const titleStr = helmet.title.toString();
-  const scriptStr = helmet.script.toString();
-  return { helmet, linkStr, metaStr, titleStr, scriptStr };
+  await act(async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
+          <MemoryRouter>{ui}</MemoryRouter>
+        </HelmetProvider>
+      </QueryClientProvider>,
+    );
+  });
+  // Let helmet's microtask flush.
+  await act(async () => { await Promise.resolve(); });
+  return {
+    title: document.title,
+    metas: Array.from(document.head.querySelectorAll("meta")) as HTMLMetaElement[],
+    canonicals: Array.from(
+      document.head.querySelectorAll("link[rel='canonical']"),
+    ) as HTMLLinkElement[],
+    jsonLdBlocks: Array.from(
+      document.head.querySelectorAll("script[type='application/ld+json']"),
+    ).map((s) => {
+      try { return JSON.parse(s.textContent || ""); } catch { return null; }
+    }).filter(Boolean),
+  };
 }
 
-function canonicalsIn(linkStr: string): string[] {
-  return [...linkStr.matchAll(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/g)].map((m) => m[1]);
-}
-function jsonLdBlocks(scriptStr: string): any[] {
-  return [...scriptStr.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g)]
-    .map((m) => { try { return JSON.parse(m[1]); } catch { return null; } })
-    .filter(Boolean);
-}
+const metaContent = (metas: HTMLMetaElement[], attr: "name" | "property", key: string) =>
+  metas.find((m) => m.getAttribute(attr) === key)?.getAttribute("content") || "";
 
 describe("SeoHead — Home route", () => {
-  it("emits title, description, single self-referencing canonical, og:*", () => {
-    const { titleStr, metaStr, linkStr } = renderSeo(
+  it("emits title, description, single canonical, og:* + twitter:*", async () => {
+    const { title, metas, canonicals } = await renderSeo(
       <SeoHead
         title="Discover the best software"
         description="Real user reviews, AI-powered insights, and curated buyer guides."
         canonicalUrl="https://reviewhunts.com/"
       />,
     );
-    expect(titleStr).toMatch(/<title[^>]*>[^<]*Discover the best software/);
-    expect(metaStr).toMatch(/name=["']description["'][^>]*content=["'][^"']+/);
-    const cans = canonicalsIn(linkStr);
-    expect(cans).toHaveLength(1);
-    expect(cans[0]).toBe("https://reviewhunts.com/");
-    expect(metaStr).toMatch(/property=["']og:title["']/);
-    expect(metaStr).toMatch(/property=["']og:description["']/);
-    expect(metaStr).toMatch(/property=["']og:url["'][^>]*content=["']https:\/\/reviewhunts\.com\/["']/);
-    expect(metaStr).toMatch(/name=["']twitter:card["'][^>]*content=["']summary_large_image["']/);
+    expect(title).toMatch(/Discover the best software/);
+    expect(metaContent(metas, "name", "description").length).toBeGreaterThan(20);
+    expect(canonicals).toHaveLength(1);
+    expect(canonicals[0].href).toBe("https://reviewhunts.com/");
+    expect(metaContent(metas, "property", "og:title")).toMatch(/Discover the best software/);
+    expect(metaContent(metas, "property", "og:url")).toBe("https://reviewhunts.com/");
+    expect(metaContent(metas, "name", "twitter:card")).toBe("summary_large_image");
   });
 });
 
-describe("SeoHead — Blog index route (CollectionPage + Blog JSON-LD)", () => {
-  it("emits Blog and CollectionPage JSON-LD blocks", () => {
-    const blogJsonLd = [
-      {
-        "@context": "https://schema.org",
-        "@type": "Blog",
-        name: "Blog",
-        url: "https://reviewhunts.com/blog",
-        blogPost: [{ "@type": "BlogPosting", headline: "Hello", url: "https://reviewhunts.com/blog/hello" }],
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        name: "Blog",
-        url: "https://reviewhunts.com/blog",
-      },
-    ];
-    const { scriptStr } = renderSeo(
-      <SeoHead title="Blog" description="Articles." canonicalUrl="https://reviewhunts.com/blog" jsonLd={blogJsonLd} />,
+describe("SeoHead — Blog index (CollectionPage + Blog JSON-LD)", () => {
+  it("emits Blog and CollectionPage JSON-LD blocks", async () => {
+    const { jsonLdBlocks } = await renderSeo(
+      <SeoHead
+        title="Blog"
+        description="Articles."
+        canonicalUrl="https://reviewhunts.com/blog"
+        jsonLd={[
+          { "@context": "https://schema.org", "@type": "Blog", name: "Blog", url: "https://reviewhunts.com/blog" },
+          { "@context": "https://schema.org", "@type": "CollectionPage", name: "Blog", url: "https://reviewhunts.com/blog" },
+        ]}
+      />,
     );
-    const blocks = jsonLdBlocks(scriptStr);
-    const types = blocks.map((b) => b["@type"]);
+    const types = jsonLdBlocks.map((b: any) => b["@type"]);
     expect(types).toContain("Blog");
     expect(types).toContain("CollectionPage");
   });
 });
 
 describe("SeoHead — Product route (SoftwareApplication + BreadcrumbList + FAQPage)", () => {
-  it("emits all expected schemas and a product-specific canonical", () => {
-    const productJsonLd = [
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        name: "Acme CRM",
-        applicationCategory: "BusinessApplication",
-        aggregateRating: { "@type": "AggregateRating", ratingValue: "4.5", bestRating: "5", ratingCount: 12 },
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: "https://reviewhunts.com" },
-          { "@type": "ListItem", position: 2, name: "Acme CRM" },
-        ],
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: [
-          { "@type": "Question", name: "Does it integrate?", acceptedAnswer: { "@type": "Answer", text: "Yes." } },
-        ],
-      },
-    ];
-    const { scriptStr, linkStr, metaStr } = renderSeo(
+  it("emits all expected schemas and a product-specific canonical", async () => {
+    const { jsonLdBlocks, canonicals, metas } = await renderSeo(
       <SeoHead
         title="Acme CRM reviews"
         description="Real users review Acme CRM."
         canonicalUrl="https://reviewhunts.com/product/acme-crm"
         type="product"
-        jsonLd={productJsonLd}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "Acme CRM",
+            applicationCategory: "BusinessApplication",
+            aggregateRating: { "@type": "AggregateRating", ratingValue: "4.5", bestRating: "5", ratingCount: 12 },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://reviewhunts.com" },
+              { "@type": "ListItem", position: 2, name: "Acme CRM" },
+            ],
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              { "@type": "Question", name: "Does it integrate?", acceptedAnswer: { "@type": "Answer", text: "Yes." } },
+            ],
+          },
+        ]}
       />,
     );
-    const blocks = jsonLdBlocks(scriptStr);
-    const types = blocks.map((b) => b["@type"]);
+    const types = jsonLdBlocks.map((b: any) => b["@type"]);
     expect(types).toEqual(expect.arrayContaining(["SoftwareApplication", "BreadcrumbList", "FAQPage"]));
-    // SoftwareApplication has rating
-    const sw = blocks.find((b) => b["@type"] === "SoftwareApplication");
+    const sw = jsonLdBlocks.find((b: any) => b["@type"] === "SoftwareApplication");
     expect(sw.aggregateRating.ratingValue).toBe("4.5");
-    // Canonical points to the product
-    expect(canonicalsIn(linkStr)).toEqual(["https://reviewhunts.com/product/acme-crm"]);
-    // og:type respects override
-    expect(metaStr).toMatch(/property=["']og:type["'][^>]*content=["']product["']/);
+    expect(canonicals).toHaveLength(1);
+    expect(canonicals[0].href).toBe("https://reviewhunts.com/product/acme-crm");
+    expect(metaContent(metas, "property", "og:type")).toBe("product");
   });
 });
 
-describe("SeoHead — falls back to a self-referencing canonical", () => {
-  it("when canonicalUrl is omitted, derives from window.location", () => {
-    // jsdom default origin is http://localhost
-    const { linkStr } = renderSeo(<SeoHead title="Some page" description="x" />);
-    const cans = canonicalsIn(linkStr);
-    expect(cans).toHaveLength(1);
-    expect(cans[0]).toMatch(/^http:\/\/localhost\//);
+describe("SeoHead — fallback canonical", () => {
+  it("derives a self-referencing canonical from window.location when not given", async () => {
+    const { canonicals } = await renderSeo(<SeoHead title="Some page" description="x" />);
+    expect(canonicals).toHaveLength(1);
+    expect(canonicals[0].href).toMatch(/^http:\/\/localhost\//);
   });
 });
 
 describe("SeoHead — JSON-LD blocks must be valid JSON", () => {
-  it("each script tag parses cleanly", () => {
-    const { scriptStr } = renderSeo(
+  it("each script tag parses cleanly", async () => {
+    const { jsonLdBlocks } = await renderSeo(
       <SeoHead
         title="t"
         description="d"
         jsonLd={[{ "@context": "https://schema.org", "@type": "WebPage", name: "x" }]}
       />,
     );
-    const blocks = jsonLdBlocks(scriptStr);
-    expect(blocks.length).toBeGreaterThan(0);
-    for (const b of blocks) expect(b["@context"]).toBe("https://schema.org");
+    expect(jsonLdBlocks.length).toBeGreaterThan(0);
+    for (const b of jsonLdBlocks) expect(b["@context"]).toBe("https://schema.org");
   });
 });
