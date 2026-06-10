@@ -21,6 +21,7 @@ import { PricingTiersDisplay } from "@/components/PricingTiersDisplay";
 import { TCOCalculator } from "@/components/TCOCalculator";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import { ProductQASection } from "@/components/ProductQASection";
+import { useProductQA } from "@/hooks/useProductQA";
 import { PricingComparisonWidget } from "@/components/PricingComparisonWidget";
 import { AlsoViewedSection } from "@/components/AlsoViewedSection";
 import { ReviewDigestCard } from "@/components/ReviewDigestCard";
