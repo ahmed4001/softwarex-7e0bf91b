@@ -32,7 +32,7 @@ export function VendorCTASection() {
   });
 
   return (
-    <section className="py-16 md:py-20 md:py-16" aria-labelledby="vendor-cta-heading">
+    <section className="py-16 md:py-20" aria-labelledby="vendor-cta-heading">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
