@@ -43,8 +43,8 @@ export function TopCategoriesShowcase() {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <p className="text-sm font-semibold text-primary mb-2">Trending Software Categories</p>
-          <h2 id="trending-categories-heading" className="text-3xl md:text-4xl font-extrabold text-foreground">
+          <p className="t-eyebrow mb-2">Trending Software Categories</p>
+          <h2 id="trending-categories-heading" className="t-h2">
             Most Researched Software Categories in 2026
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">

@@ -39,8 +39,8 @@ export function ProductShowcaseSection() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-3"
         >
           <div>
-            <p className="text-sm font-semibold text-primary mb-1">See It in Action</p>
-            <h2 id="showcase-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">
+            <p className="t-eyebrow mb-1">See It in Action</p>
+            <h2 id="showcase-heading" className="t-h2">
               Real Product Screenshots
             </h2>
             <p className="text-muted-foreground mt-1">

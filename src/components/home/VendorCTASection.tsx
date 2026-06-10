@@ -41,8 +41,8 @@ export function VendorCTASection() {
           className="glass-card p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center gap-8"
         >
           <div className="flex-1">
-            <p className="text-sm font-semibold text-primary mb-2">For Software Vendors</p>
-            <h2 id="vendor-cta-heading" className="text-2xl md:text-3xl font-extrabold text-foreground mb-3">
+            <p className="t-eyebrow mb-2">For Software Vendors</p>
+            <h2 id="vendor-cta-heading" className="t-h2 mb-3">
               List Your Software on ReviewHunts
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-6 max-w-lg">

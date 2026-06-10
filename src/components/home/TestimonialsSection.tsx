@@ -35,8 +35,8 @@ export function TestimonialsSection() {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <p className="text-sm font-semibold text-primary mb-2">Testimonials</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground">
+          <p className="t-eyebrow mb-2">Testimonials</p>
+          <h2 className="t-h2">
             What teams are saying
           </h2>
         </motion.div>

@@ -32,8 +32,8 @@ export function HowItWorksSection() {
           viewport={{ once: true }}
           className="text-center mb-10"
         >
-          <p className="text-sm font-semibold text-primary mb-2">How It Works</p>
-          <h2 id="how-it-works-heading" className="text-3xl md:text-4xl font-extrabold text-foreground">
+          <p className="t-eyebrow mb-2">How It Works</p>
+          <h2 id="how-it-works-heading" className="t-h2">
             Find Your Perfect Software in 3 Steps
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">

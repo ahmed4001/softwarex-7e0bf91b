@@ -42,7 +42,7 @@ export function RecentReviewsFeed() {
               <MessageSquare className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold text-primary">Community Voice</p>
             </div>
-            <h2 id="reviews-feed-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">
+            <h2 id="reviews-feed-heading" className="t-h2">
               Latest Verified Reviews
             </h2>
             <p className="text-muted-foreground mt-1">Real feedback from real users — updated in real time</p>

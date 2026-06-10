@@ -54,7 +54,7 @@ export function CategoryLeadersSection() {
               <Crown className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold text-primary">Category Leaders</p>
             </div>
-            <h2 id="leaders-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">
+            <h2 id="leaders-heading" className="t-h2">
               #1 Software in Every Category
             </h2>
             <p className="text-muted-foreground mt-1">Top-rated tools leading their respective categories</p>

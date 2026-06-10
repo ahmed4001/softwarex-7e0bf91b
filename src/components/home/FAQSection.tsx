@@ -51,8 +51,8 @@ export function FAQSection() {
           viewport={{ once: true }}
           className="text-center mb-10 md:mb-12"
         >
-          <p className="text-sm font-semibold text-primary mb-2">Frequently Asked Questions</p>
-          <h2 id="faq-heading" className="text-3xl md:text-4xl font-extrabold text-foreground">
+          <p className="t-eyebrow mb-2">Frequently Asked Questions</p>
+          <h2 id="faq-heading" className="t-h2">
             Common Questions About Software Reviews
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">

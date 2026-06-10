@@ -264,9 +264,9 @@ function SectionHeader({ label, title, subtitle, linkTo, id }: { label: string; 
       className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-3"
     >
       <div>
-        <p className="text-sm font-semibold text-primary mb-1 tracking-wide uppercase">{label}</p>
-        <h2 id={id} className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{title}</h2>
-        <p className="text-muted-foreground mt-2">{subtitle}</p>
+        <p className="t-eyebrow mb-1">{label}</p>
+        <h2 id={id} className="t-h2">{title}</h2>
+        <p className="t-body mt-2">{subtitle}</p>
       </div>
       {linkTo && (
         <Link to={linkTo}>
