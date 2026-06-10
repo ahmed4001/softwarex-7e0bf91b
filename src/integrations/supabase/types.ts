@@ -1801,6 +1801,54 @@ export type Database = {
         }
         Relationships: []
       }
+      paddle_reprocess_audit: {
+        Row: {
+          actions: Json | null
+          admin_email: string | null
+          admin_user_id: string
+          created_at: string
+          error: string | null
+          event_id: string
+          event_type: string | null
+          id: string
+          ip_address: string | null
+          plan: string | null
+          status: string
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          admin_email?: string | null
+          admin_user_id: string
+          created_at?: string
+          error?: string | null
+          event_id: string
+          event_type?: string | null
+          id?: string
+          ip_address?: string | null
+          plan?: string | null
+          status: string
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          admin_email?: string | null
+          admin_user_id?: string
+          created_at?: string
+          error?: string | null
+          event_id?: string
+          event_type?: string | null
+          id?: string
+          ip_address?: string | null
+          plan?: string | null
+          status?: string
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       paddle_webhook_events: {
         Row: {
           event_id: string
