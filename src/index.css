@@ -497,3 +497,24 @@
     @apply pl-4 italic text-muted-foreground;
   }
 }
+/* ── Mobile optimizations ──────────────────────────────── */
+@layer utilities {
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+}
+
+@media (max-width: 640px) {
+  /* Tighter padding on glass-cards used across pages */
+  .glass-card.p-8 { padding: 1.25rem; }
+  .glass-card.p-12 { padding: 1.5rem; }
+  /* Prevent horizontal page scroll */
+  html, body { overflow-x: hidden; }
+  /* Bigger tap targets for inline links/buttons */
+  button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
+  /* Avoid iOS auto-zoom on form fields */
+  input, textarea, select { font-size: 16px; }
+  /* Smoother momentum scrolling in horizontal rails */
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+}
