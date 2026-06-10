@@ -53,6 +53,18 @@ export default function AdminPaddleEventsPage() {
     },
   });
 
+  const { data: auditLog } = useQuery({
+    queryKey: ["admin-paddle-reprocess-audit"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("paddle_reprocess_audit")
+        .select("id, admin_email, event_id, event_type, status, actions, error, ip_address, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return data ?? [];
+    },
+  });
+
   const resolveAlert = useMutation({
     mutationFn: async (id: string) => {
       await (supabase as any).from("paddle_alerts").update({ resolved_at: new Date().toISOString() }).eq("id", id);
@@ -80,6 +92,7 @@ export default function AdminPaddleEventsPage() {
       if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
       toast.success(`Reprocessed: ${((data as any)?.actions || []).join(", ") || "ok"}`);
       qc.invalidateQueries({ queryKey: ["admin-paddle-events"] });
+      qc.invalidateQueries({ queryKey: ["admin-paddle-reprocess-audit"] });
     } catch (e: any) {
       toast.error(e.message || "Reprocess failed");
     } finally {
@@ -169,6 +182,62 @@ export default function AdminPaddleEventsPage() {
               </Table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Reprocess audit log</CardTitle>
+          <p className="text-xs text-muted-foreground">Last 50 admin reprocess attempts. Rate limit: 10 per 5 min, 50 per hour per admin.</p>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>When</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions / Error</TableHead>
+                  <TableHead>IP</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(auditLog ?? []).map((row: any) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(row.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-xs">{row.admin_email ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-[10px] max-w-[180px] truncate">{row.event_id}</TableCell>
+                    <TableCell className="text-xs">{row.event_type ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          row.status === "success" ? "secondary"
+                          : row.status === "no_action" ? "outline"
+                          : row.status === "denied_rate_limited" ? "destructive"
+                          : row.status?.startsWith("denied") ? "destructive"
+                          : row.status === "error" ? "destructive"
+                          : "outline"
+                        }
+                        className="text-[10px]"
+                      >
+                        {row.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-[11px] max-w-[260px] truncate">
+                      {row.error ? <span className="text-destructive">{row.error}</span> : (Array.isArray(row.actions) ? row.actions.join(", ") : "—")}
+                    </TableCell>
+                    <TableCell className="font-mono text-[10px]">{row.ip_address ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+                {(!auditLog || auditLog.length === 0) && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6 text-sm">No reprocess attempts yet.</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
