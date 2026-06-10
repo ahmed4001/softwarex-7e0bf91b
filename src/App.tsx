@@ -199,6 +199,7 @@ function AppContent() {
           <Route path="products" element={<ErrorBoundary><AdminProductsPage /></ErrorBoundary>} />
           <Route path="products/new" element={<ErrorBoundary><AdminProductEditorPage /></ErrorBoundary>} />
           <Route path="products/sponsored" element={<ErrorBoundary><AdminProductsPage /></ErrorBoundary>} />
+          <Route path="products/cleanup" element={<ErrorBoundary><AdminProductCleanupPage /></ErrorBoundary>} />
           <Route path="products/:id/edit" element={<ErrorBoundary><AdminProductEditorPage /></ErrorBoundary>} />
           <Route path="categories" element={<ErrorBoundary><AdminCategoriesPage /></ErrorBoundary>} />
           <Route path="categories/new" element={<ErrorBoundary><AdminCategoriesPage /></ErrorBoundary>} />
