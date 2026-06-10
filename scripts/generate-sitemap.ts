@@ -22,7 +22,7 @@ const staticEntries: Entry[] = [
   { loc: "/leaderboard", changefreq: "weekly", priority: "0.6" },
   { loc: "/awards", changefreq: "monthly", priority: "0.6" },
   { loc: "/lists", changefreq: "weekly", priority: "0.6" },
-  { loc: "/tech-stacks", changefreq: "weekly", priority: "0.6" },
+  { loc: "/stacks", changefreq: "weekly", priority: "0.6" },
   { loc: "/buyer-guides", changefreq: "weekly", priority: "0.7" },
   { loc: "/glossary", changefreq: "monthly", priority: "0.5" },
   { loc: "/partners", changefreq: "monthly", priority: "0.5" },
