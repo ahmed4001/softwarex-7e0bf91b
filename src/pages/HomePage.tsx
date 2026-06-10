@@ -195,7 +195,7 @@ export default function HomePage() {
         <StatsSection stats={stats} />
 
         {/* 4. Smart Finder — convert intent right after credibility */}
-        <section className="py-12 md:py-16">
+        <section className="py-16 md:py-20">
           <div className="container">
             <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
               <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
@@ -211,7 +211,7 @@ export default function HomePage() {
         <MostPopularCategoriesSection />
 
         {/* 6. Editor's Choice */}
-        <section className="py-14" aria-labelledby="featured-heading">
+        <section className="py-16 md:py-20" aria-labelledby="featured-heading">
           <div className="container">
             <SectionHeader id="featured-heading" label="Editor's Choice" title="Top-Rated Software Picks for 2026" subtitle="Hand-picked by our expert analysts based on user reviews, features, and value" />
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -228,6 +228,7 @@ export default function HomePage() {
         </section>
 
         <div className="section-gradient-divider" aria-hidden="true" />
+
 
 
         {/* 7. Trending */}
