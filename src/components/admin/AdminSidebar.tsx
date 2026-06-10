@@ -5,7 +5,7 @@ import {
   ArrowLeftRight, BarChart3, Bot, Box, ChevronDown, DollarSign, FileText, FolderOpen,
   Image, LayoutDashboard, LogOut, Megaphone, MessageSquare, Settings,
   Star, Users, Activity, Mail, Database, Sparkles, Globe, Inbox, Compass, Shield,
-  BookOpen, TrendingUp, UserCheck, Handshake, MousePointerClick, Tag
+  BookOpen, TrendingUp, UserCheck, Handshake, MousePointerClick, Tag, CreditCard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 const logoAsset = { url: "/reviewhunts-logo.png" };
@@ -57,6 +57,8 @@ const sidebarItems = [
   { label: "Submissions", icon: MessageSquare, to: "/admin/submissions" },
   { label: "Email Templates", icon: Mail, to: "/admin/emails" },
   { label: "Subscribers", icon: Inbox, to: "/admin/subscribers" },
+  { label: "Subscriptions", icon: CreditCard, to: "/admin/subscriptions" },
+  { label: "Paddle Events", icon: Activity, to: "/admin/paddle-events" },
   { label: "Analytics", icon: BarChart3, to: "/admin/analytics" },
   { label: "Settings", icon: Settings, to: "/admin/settings" },
   { label: "Activity Log", icon: Activity, to: "/admin/activity" },

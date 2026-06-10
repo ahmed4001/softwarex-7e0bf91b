@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Check, Zap, Star, Rocket, Crown } from "lucide-react";
+import { VendorBillingStatusWidget } from "@/components/vendor/VendorBillingStatusWidget";
 import { toast } from "sonner";
 
 const plans = [
@@ -122,10 +123,15 @@ export default function VendorPlansPage() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-display font-bold">Pricing</h1>
         <p className="text-muted-foreground mt-1">Choose the right plan to grow on ReviewHunts</p>
       </div>
+
+      <div className="mb-8">
+        <VendorBillingStatusWidget />
+      </div>
+
 
       <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
         {plans.map((plan) => {
