@@ -28,7 +28,8 @@ async function renderSeo(ui: React.ReactNode) {
       </QueryClientProvider>,
     );
   });
-  // Let helmet's microtask flush.
+  // Helmet defers head mutations via requestAnimationFrame; wait a couple frames.
+  await new Promise((r) => setTimeout(r, 50));
   await act(async () => { await Promise.resolve(); });
   return {
     title: document.title,
