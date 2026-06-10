@@ -34,6 +34,35 @@ type ConfirmedSub = {
   expires_at: string | null;
 };
 
+// Session-cache helpers — avoid hitting the DB when the webhook has already
+// confirmed this subscription in the current browser session.
+const SUB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const subCacheKey = (userId: string) => `rh:vendor_sub:${userId}`;
+
+function readCachedSub(userId: string, expectedPlan: string): ConfirmedSub | null {
+  try {
+    const raw = sessionStorage.getItem(subCacheKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { sub: ConfirmedSub; cachedAt: number };
+    if (Date.now() - parsed.cachedAt > SUB_CACHE_TTL_MS) return null;
+    if (parsed.sub.plan !== expectedPlan || parsed.sub.status !== "active") return null;
+    return parsed.sub;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSub(userId: string, sub: ConfirmedSub) {
+  try {
+    sessionStorage.setItem(
+      subCacheKey(userId),
+      JSON.stringify({ sub, cachedAt: Date.now() }),
+    );
+  } catch {
+    /* sessionStorage unavailable — ignore */
+  }
+}
+
 export default function CheckoutPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
