@@ -359,14 +359,15 @@ export default function CategoryPage() {
               </div>
             )}
 
-            <div className="space-y-3 sm:space-y-4">
+            <div className={cn("space-y-3 sm:space-y-4 transition-opacity", isFetching && !isLoading && "opacity-60")}>
               {isLoading ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={i} />) :
-                products?.map((p: any) => (
+                products?.map((p: any, idx: number) => (
                   <ProductCard
                     key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline}
                     logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews}
                     pricing_model={p.pricing_model} category_name={p.categories?.name}
                     is_featured={p.is_featured} is_sponsored={p.is_sponsored} sponsor_tier={p.sponsor_tier}
+                    source={`category:${slug}:${filterVariant}:${idx}`}
                   />
                 ))
               }
