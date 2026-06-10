@@ -1,0 +1,35 @@
+name: SEO CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  seo-regression-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Run SEO regression tests (production base)
+        env:
+          SEO_BASE_URL: https://reviewhunts.com
+        run: bunx vitest run src/test/seo
+      - name: Run SEO regression tests (staging/preview base)
+        env:
+          SEO_BASE_URL: https://id-preview--example.lovable.app
+        run: bunx vitest run src/test/seo/routes-seo.test.tsx
+
+  lighthouse-ci:
+    runs-on: ubuntu-latest
+    needs: seo-regression-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Run Lighthouse CI
+        run: bunx lhci autorun --config=./lighthouserc.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
