@@ -87,11 +87,13 @@ Deno.serve(async (req) => {
     const dryRun = Boolean(body.dry_run);
     const ids: string[] | undefined = Array.isArray(body.ids) ? body.ids : undefined;
 
+    // Oversample so post-filter (already-tried) still yields `limit` rows.
+    const oversample = ids?.length ? limit : Math.min(limit * 30, 2000);
     let q = supabase
       .from("products")
       .select("id, name, slug")
       .or("website_url.is.null,website_url.eq.")
-      .limit(limit);
+      .limit(oversample);
     if (ids?.length) q = q.in("id", ids);
     const { data: rowsRaw, error } = await q;
     if (error) throw error;
@@ -105,7 +107,7 @@ Deno.serve(async (req) => {
         .select("product_id")
         .in("product_id", idList);
       const triedSet = new Set((tried || []).map((t: any) => t.product_id));
-      rows = rows.filter((r: any) => !triedSet.has(r.id));
+      rows = rows.filter((r: any) => !triedSet.has(r.id)).slice(0, limit);
     }
 
 
