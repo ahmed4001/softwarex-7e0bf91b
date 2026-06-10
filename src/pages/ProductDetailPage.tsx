@@ -696,7 +696,31 @@ export default function ProductDetailPage() {
         <AlsoViewedSection productId={product.id} categoryId={product.category_id} />
       </div>
 
+      {/* Sticky mobile CTA bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border pb-safe">
+        <div className="flex items-center gap-2 p-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] text-muted-foreground">{product.name}</div>
+            <div className="flex items-center gap-1.5">
+              <StarRating rating={Number(product.avg_rating)} size="sm" />
+              <span className="text-xs font-semibold">{Number(product.avg_rating).toFixed(1)}</span>
+              {product.starting_price && <span className="text-xs text-muted-foreground">· ${product.starting_price}{t("product.perMonth")}</span>}
+            </div>
+          </div>
+          {product.website_url && (
+            <Button
+              size="sm"
+              className="btn-premium rounded-xl text-primary-foreground gap-1.5 font-semibold h-10 px-4"
+              onClick={() => handleAffiliateClick(product.id, product.website_url!, (product as any).affiliate_url)}
+            >
+              <ExternalLink className="h-4 w-4" /> Visit
+            </Button>
+          )}
+        </div>
+      </div>
+
       <ProductAIChatbot productId={product.id} productName={product.name} />
     </>
+
   );
 }
