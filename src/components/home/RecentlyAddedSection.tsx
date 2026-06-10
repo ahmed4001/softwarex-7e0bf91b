@@ -17,7 +17,7 @@ export function RecentlyAddedSection() {
         .select("id, slug, name, tagline, logo_url, created_at, info_score, avg_rating, total_reviews, categories!products_category_id_fkey(name)")
         .eq("is_active", true);
       query = applyRealFirstOrder(query, "newest");
-      const { data } = await query.limit(6);
+      const { data } = await query.limit(12);
       return data || [];
     },
   });
@@ -45,7 +45,7 @@ export function RecentlyAddedSection() {
           </Link>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {recentProducts.map((p: any, i: number) => (
             <motion.div
               key={p.id}
