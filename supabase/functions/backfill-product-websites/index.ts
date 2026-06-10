@@ -83,12 +83,19 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    const limit = Math.min(Number(body.limit) || 25, 100);
+    const limit = Math.max(1, Math.min(Number(body.limit ?? body.batch_size) || 25, 200));
     const dryRun = Boolean(body.dry_run);
     const ids: string[] | undefined = Array.isArray(body.ids) ? body.ids : undefined;
+    // Tunables — tighter waste controls.
+    const multiplier = Math.max(1, Math.min(Number(body.oversample_multiplier) || 30, 100));
+    const concurrency = Math.max(1, Math.min(Number(body.concurrency) || 1, 10));
+    const minConfidence = Math.max(0, Math.min(Number(body.min_confidence) || 0, 1));
+    const maxMissRate = Math.max(0, Math.min(Number(body.max_miss_rate) || 1, 1));
+    const minSample = Math.max(1, Math.min(Number(body.miss_rate_min_sample) || 10, 200));
+    const rateLimitMs = Math.max(0, Math.min(Number(body.rate_limit_ms) ?? 400, 5000));
 
     // Oversample so post-filter (already-tried) still yields `limit` rows.
-    const oversample = ids?.length ? limit : Math.min(limit * 30, 2000);
+    const oversample = ids?.length ? limit : Math.min(limit * multiplier, 2000);
     let q = supabase
       .from("products")
       .select("id, name, slug")
@@ -101,8 +108,6 @@ Deno.serve(async (req) => {
     // Skip products we've already attempted in a prior run (any status).
     let rows = rowsRaw || [];
     if (rows.length && !ids?.length) {
-      // Fetch ALL tried product_ids (chunked to dodge PostgREST 1000-row default
-      // and URL length limits). Distinct list is small enough to hold in memory.
       const triedSet = new Set<string>();
       let from = 0;
       const page = 1000;
@@ -119,14 +124,14 @@ Deno.serve(async (req) => {
       rows = rows.filter((r: any) => !triedSet.has(r.id)).slice(0, limit);
     }
 
-
     const results: any[] = [];
+    let aborted = false;
+    let abortReason: string | null = null;
 
-    for (const p of rows || []) {
+    async function processOne(p: any) {
       const name = String(p.name || "").trim();
       const lower = name.toLowerCase();
       const query = `${name} official website software`;
-
       const logEntry: Record<string, any> = {
         product_id: p.id,
         product_name: name,
@@ -139,7 +144,7 @@ Deno.serve(async (req) => {
         await supabase.from("backfill_match_log").insert({
           ...logEntry, status: "skipped", reason: "junk/short name",
         });
-        continue;
+        return;
       }
 
       try {
@@ -157,17 +162,19 @@ Deno.serve(async (req) => {
           await supabase.from("backfill_match_log").insert({
             ...logEntry, status: "error", reason: data?.error || res.statusText,
           });
-          continue;
+          return;
         }
         const list = data?.data?.web || data?.web || data?.data || [];
         const pick = pickBestUrl(name, Array.isArray(list) ? list : []);
 
-        if (!pick.url) {
-          results.push({ id: p.id, name, status: "no_match" });
+        if (!pick.url || pick.confidence < minConfidence) {
+          const reason = pick.url ? `confidence ${pick.confidence} < ${minConfidence}` : undefined;
+          results.push({ id: p.id, name, status: "no_match", reason });
           await supabase.from("backfill_match_log").insert({
-            ...logEntry, status: "no_match", confidence: 0, candidates: pick.candidates,
+            ...logEntry, status: "no_match", reason,
+            confidence: pick.confidence, candidates: pick.candidates,
           });
-          continue;
+          return;
         }
 
         if (!dryRun) {
@@ -180,7 +187,7 @@ Deno.serve(async (req) => {
               matched_url: pick.url, matched_domain: pick.host,
               confidence: pick.confidence, candidates: pick.candidates,
             });
-            continue;
+            return;
           }
         }
         results.push({ id: p.id, name, status: dryRun ? "match" : "updated", website_url: pick.url, confidence: pick.confidence });
@@ -198,10 +205,30 @@ Deno.serve(async (req) => {
           ...logEntry, status: "error", reason: String(e),
         });
       }
-      // gentle rate limit
-      await new Promise((r) => setTimeout(r, 400));
     }
 
+    // Worker pool with bounded concurrency + mid-batch miss-rate abort.
+    let cursor = 0;
+    async function worker() {
+      while (!aborted) {
+        const i = cursor++;
+        if (i >= rows.length) return;
+        await processOne(rows[i]);
+        // Check miss rate among non-skipped attempts; abort if too high.
+        const attempted = results.filter((r) => r.status !== "skipped");
+        if (attempted.length >= minSample) {
+          const misses = attempted.filter((r) => r.status === "no_match" || r.status === "error").length;
+          const missRate = misses / attempted.length;
+          if (missRate > maxMissRate) {
+            aborted = true;
+            abortReason = `miss rate ${(missRate * 100).toFixed(0)}% > ${(maxMissRate * 100).toFixed(0)}%`;
+            return;
+          }
+        }
+        if (rateLimitMs) await new Promise((r) => setTimeout(r, rateLimitMs));
+      }
+    }
+    await Promise.all(Array.from({ length: concurrency }, worker));
 
     const summary = {
       total: results.length,
@@ -209,6 +236,8 @@ Deno.serve(async (req) => {
       no_match: results.filter((r) => r.status === "no_match").length,
       skipped: results.filter((r) => r.status === "skipped").length,
       errors: results.filter((r) => r.status === "error").length,
+      aborted, abort_reason: abortReason,
+      settings: { limit, multiplier, concurrency, minConfidence, maxMissRate, rateLimitMs },
     };
     return new Response(JSON.stringify({ success: true, dry_run: dryRun, summary, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
