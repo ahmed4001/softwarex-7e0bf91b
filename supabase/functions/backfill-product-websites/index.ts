@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
             return;
           }
         }
-        results.push({ id: p.id, name, status: dryRun ? "match" : "updated", website_url: pick.url, confidence: pick.confidence });
+        results.push({ id: p.id, name, status: dryRun ? "match" : "updated", website_url: pick.url, confidence: pick.confidence, source });
         await supabase.from("backfill_match_log").insert({
           ...logEntry,
           status: dryRun ? "match" : "updated",
@@ -218,6 +218,7 @@ Deno.serve(async (req) => {
           matched_domain: pick.host,
           confidence: pick.confidence,
           candidates: pick.candidates,
+          reason: `source:${source}`,
         });
       } catch (e) {
         results.push({ id: p.id, name, status: "error", reason: String(e) });
