@@ -5,7 +5,7 @@ const brands = [
 
 export function TrustedBySection() {
   return (
-    <section className="py-10 border-b border-border overflow-hidden">
+    <section className="py-10 md:py-12 border-b border-border overflow-hidden">
       <div className="container">
         <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-8">
           Reviewed & compared by teams at
