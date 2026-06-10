@@ -148,24 +148,44 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const res = await fetch("https://api.firecrawl.dev/v2/search", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ query, limit: 5 }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          results.push({ id: p.id, name, status: "error", reason: data?.error || res.statusText });
-          await supabase.from("backfill_match_log").insert({
-            ...logEntry, status: "error", reason: data?.error || res.statusText,
+        // Step 1: Clearbit Autocomplete (free, fast, high-precision for real SaaS brands).
+        let pick = { url: null as string | null, host: null as string | null, confidence: 0, candidates: [] as any[] };
+        let source = "clearbit";
+        try {
+          const cbRes = await fetch(
+            `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(name)}`,
+          );
+          if (cbRes.ok) {
+            const cbData = await cbRes.json();
+            if (Array.isArray(cbData) && cbData.length) {
+              const asResults = cbData.slice(0, 5).map((c: any) => ({ url: `https://${c.domain}` }));
+              pick = pickBestUrl(name, asResults);
+            }
+          }
+        } catch (_) { /* fall through to Firecrawl */ }
+
+        // Step 2: Fallback to Firecrawl search if Clearbit didn't yield a confident match.
+        if (!pick.url || pick.confidence < Math.max(minConfidence, 0.7)) {
+          source = "firecrawl";
+          const res = await fetch("https://api.firecrawl.dev/v2/search", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query, limit: 5 }),
           });
-          return;
+          const data = await res.json();
+          if (!res.ok) {
+            results.push({ id: p.id, name, status: "error", reason: data?.error || res.statusText });
+            await supabase.from("backfill_match_log").insert({
+              ...logEntry, status: "error", reason: data?.error || res.statusText,
+            });
+            return;
+          }
+          const list = data?.data?.web || data?.web || data?.data || [];
+          pick = pickBestUrl(name, Array.isArray(list) ? list : []);
         }
-        const list = data?.data?.web || data?.web || data?.data || [];
-        const pick = pickBestUrl(name, Array.isArray(list) ? list : []);
 
         if (!pick.url || pick.confidence < minConfidence) {
           const reason = pick.url ? `confidence ${pick.confidence} < ${minConfidence}` : undefined;
@@ -190,7 +210,7 @@ Deno.serve(async (req) => {
             return;
           }
         }
-        results.push({ id: p.id, name, status: dryRun ? "match" : "updated", website_url: pick.url, confidence: pick.confidence });
+        results.push({ id: p.id, name, status: dryRun ? "match" : "updated", website_url: pick.url, confidence: pick.confidence, source });
         await supabase.from("backfill_match_log").insert({
           ...logEntry,
           status: dryRun ? "match" : "updated",
@@ -198,6 +218,7 @@ Deno.serve(async (req) => {
           matched_domain: pick.host,
           confidence: pick.confidence,
           candidates: pick.candidates,
+          reason: `source:${source}`,
         });
       } catch (e) {
         results.push({ id: p.id, name, status: "error", reason: String(e) });
