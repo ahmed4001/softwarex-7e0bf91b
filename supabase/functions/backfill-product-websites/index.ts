@@ -261,6 +261,35 @@ Deno.serve(async (req) => {
           return;
         }
 
+        // Auto-accept threshold: Clearbit needs 0.85, Firecrawl needs 0.9.
+        // Below that but above minConfidence → queue for admin review instead of writing.
+        const autoAccept = source === "clearbit" ? 0.85 : 0.9;
+        const needsReview = pick.confidence < autoAccept;
+
+        if (needsReview && !dryRun) {
+          await supabase.from("website_url_review_queue").insert({
+            product_id: p.id,
+            product_name: name,
+            candidate_url: pick.url,
+            candidate_domain: pick.host,
+            confidence: pick.confidence,
+            source,
+            candidates: pick.candidates,
+            status: "pending",
+          });
+          results.push({ id: p.id, name, status: "queued_review", website_url: pick.url, confidence: pick.confidence, source });
+          await supabase.from("backfill_match_log").insert({
+            ...logEntry,
+            status: "queued_review",
+            matched_url: pick.url,
+            matched_domain: pick.host,
+            confidence: pick.confidence,
+            candidates: pick.candidates,
+            reason: `source:${source} below auto-accept ${autoAccept}`,
+          });
+          return;
+        }
+
         if (!dryRun) {
           const { error: upErr } = await supabase
             .from("products").update({ website_url: pick.url }).eq("id", p.id);
@@ -284,6 +313,7 @@ Deno.serve(async (req) => {
           candidates: pick.candidates,
           reason: `source:${source}`,
         });
+
       } catch (e) {
         results.push({ id: p.id, name, status: "error", reason: String(e) });
         await supabase.from("backfill_match_log").insert({
@@ -318,12 +348,14 @@ Deno.serve(async (req) => {
     const summary = {
       total: results.length,
       updated: results.filter((r) => r.status === "updated").length,
+      queued_review: results.filter((r) => r.status === "queued_review").length,
       no_match: results.filter((r) => r.status === "no_match").length,
       skipped: results.filter((r) => r.status === "skipped").length,
       errors: results.filter((r) => r.status === "error").length,
       aborted, abort_reason: abortReason,
       settings: { limit, multiplier, concurrency, minConfidence, maxMissRate, rateLimitMs },
     };
+
     return new Response(JSON.stringify({ success: true, dry_run: dryRun, summary, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
