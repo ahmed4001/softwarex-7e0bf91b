@@ -79,7 +79,7 @@ export function ProductCard({ id, slug, name, tagline, logo_url, avg_rating, tot
           </button>
         )}
       </div>
-      <Link to={`/product/${slug}`} className={cn("glass-card p-5 group block relative", is_sponsored && "ring-1 ring-primary/15 bg-primary/[0.02]")}>
+      <Link to={`/product/${slug}`} className={cn("glass-card p-3.5 sm:p-5 group block relative active:scale-[0.99] transition-transform", is_sponsored && "ring-1 ring-primary/15 bg-primary/[0.02]")}>
         {is_sponsored && (
           <TooltipProvider delayDuration={200}>
             <Tooltip>
