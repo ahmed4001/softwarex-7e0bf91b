@@ -195,14 +195,29 @@ Deno.serve(async (req) => {
           if (cbRes.ok) {
             const cbData = await cbRes.json();
             if (Array.isArray(cbData) && cbData.length) {
-              const asResults = cbData.slice(0, 5).map((c: any) => ({ url: `https://${c.domain}` }));
-              pick = pickBestUrl(name, asResults);
+              let bestClearbit: { url: string; host: string; confidence: number; name: string } | null = null;
+              const candidates: any[] = [];
+              for (const c of cbData.slice(0, 5)) {
+                const domain: string = c?.domain || "";
+                if (!domain) continue;
+                const host = domain.toLowerCase().replace(/^www\./, "");
+                const blocked = BLOCKED_HOSTS.some((b) => host === b || host.endsWith("." + b));
+                const clearbitName: string = c?.name || "";
+                const confidence = scoreClearbitMatch(name, clearbitName, host);
+                candidates.push({ url: `https://${host}`, host, blocked, confidence, clearbit_name: clearbitName });
+                if (!blocked && confidence >= 0.85 && (!bestClearbit || confidence > bestClearbit.confidence)) {
+                  bestClearbit = { url: `https://${host}`, host, confidence, name: clearbitName };
+                }
+              }
+              pick = bestClearbit
+                ? { url: bestClearbit.url, host: bestClearbit.host, confidence: bestClearbit.confidence, candidates }
+                : { url: null, host: null, confidence: 0, candidates };
             }
           }
         } catch (_) { /* fall through to Firecrawl */ }
 
         // Step 2: Fallback to Firecrawl search if Clearbit didn't yield a confident match.
-        if (!pick.url || pick.confidence < Math.max(minConfidence, 0.7)) {
+        if (!pick.url || pick.confidence < Math.max(minConfidence, 0.85)) {
           source = "firecrawl";
           const res = await fetch("https://api.firecrawl.dev/v2/search", {
             method: "POST",
