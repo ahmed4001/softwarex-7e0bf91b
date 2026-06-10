@@ -35,24 +35,38 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
-function pickBestUrl(name: string, results: any[]): string | null {
+function pickBestUrl(
+  name: string,
+  results: any[],
+): { url: string | null; host: string | null; confidence: number; candidates: any[] } {
   const slug = slugify(name);
-  if (slug.length < 3) return null;
+  const candidates: any[] = [];
+  let best: { url: string; host: string; confidence: number } | null = null;
+
   for (const r of results || []) {
     const url: string = r?.url || "";
     if (!url) continue;
     let host = "";
     try { host = new URL(url).hostname.toLowerCase().replace(/^www\./, ""); }
     catch { continue; }
-    if (BLOCKED_HOSTS.some((b) => host === b || host.endsWith("." + b))) continue;
+    const blocked = BLOCKED_HOSTS.some((b) => host === b || host.endsWith("." + b));
     const rootSlug = slugify(host.split(".")[0]);
-    // Confidence: host root contains slugified product name, or vice versa.
-    if (rootSlug.includes(slug) || slug.includes(rootSlug)) {
-      return `https://${host}`;
+    let confidence = 0;
+    if (!blocked && slug.length >= 3 && rootSlug.length >= 3) {
+      if (rootSlug === slug) confidence = 1;
+      else if (rootSlug.includes(slug) || slug.includes(rootSlug)) confidence = 0.7;
+      else if (rootSlug.startsWith(slug.slice(0, 4)) || slug.startsWith(rootSlug.slice(0, 4))) confidence = 0.4;
+    }
+    candidates.push({ url, host, blocked, confidence });
+    if (!blocked && confidence >= 0.7 && (!best || confidence > best.confidence)) {
+      best = { url: `https://${host}`, host, confidence };
     }
   }
-  return null;
+  return best
+    ? { url: best.url, host: best.host, confidence: best.confidence, candidates }
+    : { url: null, host: null, confidence: 0, candidates };
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -87,8 +101,20 @@ Deno.serve(async (req) => {
     for (const p of rows || []) {
       const name = String(p.name || "").trim();
       const lower = name.toLowerCase();
+      const query = `${name} official website software`;
+
+      const logEntry: Record<string, any> = {
+        product_id: p.id,
+        product_name: name,
+        source_query: query,
+        previous_url: null,
+      };
+
       if (!name || name.length < 2 || JUNK_NAMES.has(lower)) {
         results.push({ id: p.id, name, status: "skipped", reason: "junk/short name" });
+        await supabase.from("backfill_match_log").insert({
+          ...logEntry, status: "skipped", reason: "junk/short name",
+        });
         continue;
       }
 
@@ -99,34 +125,59 @@ Deno.serve(async (req) => {
             Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ query: `${name} official website software`, limit: 5 }),
+          body: JSON.stringify({ query, limit: 5 }),
         });
         const data = await res.json();
         if (!res.ok) {
           results.push({ id: p.id, name, status: "error", reason: data?.error || res.statusText });
+          await supabase.from("backfill_match_log").insert({
+            ...logEntry, status: "error", reason: data?.error || res.statusText,
+          });
           continue;
         }
         const list = data?.data?.web || data?.web || data?.data || [];
-        const url = pickBestUrl(name, Array.isArray(list) ? list : []);
-        if (!url) {
+        const pick = pickBestUrl(name, Array.isArray(list) ? list : []);
+
+        if (!pick.url) {
           results.push({ id: p.id, name, status: "no_match" });
+          await supabase.from("backfill_match_log").insert({
+            ...logEntry, status: "no_match", confidence: 0, candidates: pick.candidates,
+          });
           continue;
         }
+
         if (!dryRun) {
           const { error: upErr } = await supabase
-            .from("products").update({ website_url: url }).eq("id", p.id);
+            .from("products").update({ website_url: pick.url }).eq("id", p.id);
           if (upErr) {
             results.push({ id: p.id, name, status: "error", reason: upErr.message });
+            await supabase.from("backfill_match_log").insert({
+              ...logEntry, status: "error", reason: upErr.message,
+              matched_url: pick.url, matched_domain: pick.host,
+              confidence: pick.confidence, candidates: pick.candidates,
+            });
             continue;
           }
         }
-        results.push({ id: p.id, name, status: "updated", website_url: url });
+        results.push({ id: p.id, name, status: dryRun ? "match" : "updated", website_url: pick.url, confidence: pick.confidence });
+        await supabase.from("backfill_match_log").insert({
+          ...logEntry,
+          status: dryRun ? "match" : "updated",
+          matched_url: pick.url,
+          matched_domain: pick.host,
+          confidence: pick.confidence,
+          candidates: pick.candidates,
+        });
       } catch (e) {
         results.push({ id: p.id, name, status: "error", reason: String(e) });
+        await supabase.from("backfill_match_log").insert({
+          ...logEntry, status: "error", reason: String(e),
+        });
       }
       // gentle rate limit
       await new Promise((r) => setTimeout(r, 400));
     }
+
 
     const summary = {
       total: results.length,
