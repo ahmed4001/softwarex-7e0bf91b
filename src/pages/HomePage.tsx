@@ -22,6 +22,7 @@ import { TrendingProductsSection } from "@/components/home/TrendingProductsSecti
 import { ProductFinderQuiz } from "@/components/home/ProductFinderQuiz";
 import { ReadingProgress } from "@/components/home/ReadingProgress";
 import { StickyMobileCTA } from "@/components/home/StickyMobileCTA";
+import { RecentlyAddedSection } from "@/components/home/RecentlyAddedSection";
 
 const SITE_URL = "https://reviewhunts.com";
 
@@ -214,6 +215,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* 5.5 Recently Added */}
+        <RecentlyAddedSection />
 
         {/* 6. Interactive quiz — visually highlighted as a break */}
         <section className="py-16 md:py-20">
