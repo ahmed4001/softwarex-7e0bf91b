@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/deterministic";
-import type { Page } from "@playwright/test";
+import type { Page, TestInfo } from "@playwright/test";
 
 // Parse every <script type="application/ld+json"> block on each key
 // public page and validate the required fields per @type. We mirror
@@ -84,6 +84,66 @@ function validateBlock(block: any, index: number): ValidationIssue | null {
       }
       break;
     }
+    case "WebSite": {
+      requireFields(["name", "url"]);
+      if (block?.url && !/^https?:\/\//.test(String(block.url)))
+        errs.push("WebSite.url must be an absolute http(s) URL");
+      // potentialAction (SearchAction) is recommended but not required.
+      if (block?.potentialAction) {
+        const pa = Array.isArray(block.potentialAction)
+          ? block.potentialAction
+          : [block.potentialAction];
+        pa.forEach((a: any, i: number) => {
+          if (!a?.["@type"]) errs.push(`potentialAction[${i}] missing @type`);
+        });
+      }
+      break;
+    }
+    case "Organization": {
+      requireFields(["name", "url"]);
+      if (block?.url && !/^https?:\/\//.test(String(block.url)))
+        errs.push("Organization.url must be an absolute http(s) URL");
+      // sameAs (social profile URLs) — when present, every entry must be absolute.
+      if (block?.sameAs !== undefined) {
+        if (!Array.isArray(block.sameAs))
+          errs.push("Organization.sameAs must be an array of URLs");
+        else
+          block.sameAs.forEach((u: any, i: number) => {
+            if (typeof u !== "string" || !/^https?:\/\//.test(u))
+              errs.push(`Organization.sameAs[${i}] must be an absolute http(s) URL`);
+          });
+      }
+      if (block?.logo) {
+        const logoUrl = typeof block.logo === "string" ? block.logo : block.logo?.url;
+        if (logoUrl && !/^https?:\/\//.test(String(logoUrl)))
+          errs.push("Organization.logo URL must be absolute");
+      }
+      break;
+    }
+    case "BreadcrumbList": {
+      if (!Array.isArray(block?.itemListElement) || block.itemListElement.length === 0) {
+        errs.push("BreadcrumbList.itemListElement must be a non-empty array");
+      } else {
+        const positions: number[] = [];
+        block.itemListElement.forEach((li: any, i: number) => {
+          if (li?.["@type"] !== "ListItem")
+            errs.push(`itemListElement[${i}]["@type"] must be "ListItem"`);
+          const pos = li?.position;
+          if (!Number.isInteger(pos) || pos < 1)
+            errs.push(`itemListElement[${i}].position must be a positive integer (got ${JSON.stringify(pos)})`);
+          else positions.push(pos);
+          if (!li?.name && !li?.item?.name)
+            errs.push(`itemListElement[${i}] missing name`);
+        });
+        // Sequence must be contiguous and strictly ascending: 1, 2, 3, ...
+        const sorted = [...positions].sort((a, b) => a - b);
+        sorted.forEach((p, i) => {
+          if (p !== i + 1)
+            errs.push(`BreadcrumbList positions must be a 1..N sequence (got ${sorted.join(",")})`);
+        });
+      }
+      break;
+    }
     default:
       break;
   }
@@ -142,6 +202,36 @@ function assertAllValid(blocks: FlatBlock[], label: string) {
     `JSON-LD validation errors on ${label}:\n${JSON.stringify(issues, null, 2)}`,
   ).toEqual([]);
 }
+
+// On failure, attach the page HTML + every extracted JSON-LD block so
+// merge-gate diagnostics in CI don't require a re-run. Artifacts show
+// up under each failed test in the Playwright HTML report.
+test.afterEach(async ({ page }, testInfo: TestInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+  try {
+    const url = page.url();
+    const html = await page.content().catch(() => "<unavailable>");
+    const blocks = await readJsonLd(page).catch(() => []);
+    await testInfo.attach("page-url.txt", { body: url, contentType: "text/plain" });
+    await testInfo.attach("page.html", { body: html, contentType: "text/html" });
+    await testInfo.attach("jsonld-blocks.json", {
+      body: JSON.stringify(blocks, null, 2),
+      contentType: "application/json",
+    });
+    const consoleLog: string[] = (page as any).__consoleLog || [];
+    await testInfo.attach("browser-console.log", {
+      body: consoleLog.join("\n") || "(no console output)",
+      contentType: "text/plain",
+    });
+    await page.screenshot({ fullPage: true }).then((buf) =>
+      testInfo.attach("page.png", { body: buf, contentType: "image/png" }),
+    ).catch(() => {});
+  } catch {
+    // best-effort — never fail the test in cleanup.
+  }
+});
+
+
 
 // ---------- Base routes (every variant gets the general validator) ----------
 
@@ -234,4 +324,118 @@ test("Blog post emits BlogPosting with required fields and any FAQ items are val
   }
 
   assertAllValid(blocks, `/blog/${slug}`);
+});
+
+// ---------- WebSite + Organization on homepage and category pages ----------
+
+async function findCategorySlug(page: Page): Promise<string | null> {
+  await page.goto("/categories", { waitUntil: "networkidle" });
+  await page.waitForTimeout(600);
+  return page.evaluate(() => {
+    const link = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="/category/"], a[href^="/categories/"]'))
+      .map((a) => a.getAttribute("href") || "")
+      .find((h) => /^\/(category|categories)\/[\w-]+$/.test(h));
+    return link ? link.replace(/^\/(category|categories)\//, "") : null;
+  });
+}
+
+const SITE_SCHEMA_ROUTES: Array<{ label: string; resolve: (page: Page) => Promise<string | null> }> = [
+  { label: "homepage", resolve: async () => "/" },
+  { label: "categories index", resolve: async () => "/categories" },
+  { label: "category detail", resolve: async (page) => {
+      const slug = await findCategorySlug(page);
+      return slug ? `/category/${slug}` : null;
+    } },
+];
+
+for (const route of SITE_SCHEMA_ROUTES) {
+  test(`WebSite + Organization JSON-LD on ${route.label}`, async ({ page }) => {
+    const path = await route.resolve(page);
+    test.skip(!path, `no path resolved for ${route.label}`);
+    const blocks = await loadAndFlatten(page, path!);
+
+    const websites = blocks.filter((b) => b.type === "WebSite");
+    const orgs = blocks.filter((b) => b.type === "Organization");
+
+    expect(websites.length, `${route.label} must emit a WebSite schema`).toBeGreaterThan(0);
+    expect(orgs.length, `${route.label} must emit an Organization schema`).toBeGreaterThan(0);
+
+    for (const w of websites) {
+      expect(typeof w.data.name === "string" && w.data.name.length > 0, "WebSite.name").toBe(true);
+      expect(typeof w.data.url === "string" && /^https?:\/\//.test(w.data.url), "WebSite.url absolute").toBe(true);
+    }
+    for (const o of orgs) {
+      expect(typeof o.data.name === "string" && o.data.name.length > 0, "Organization.name").toBe(true);
+      expect(typeof o.data.url === "string" && /^https?:\/\//.test(o.data.url), "Organization.url absolute").toBe(true);
+      // sameAs (social profiles) is recommended on the homepage especially.
+      if (o.data.sameAs !== undefined) {
+        expect(Array.isArray(o.data.sameAs), "Organization.sameAs is array").toBe(true);
+        for (const u of o.data.sameAs) {
+          expect(typeof u === "string" && /^https?:\/\//.test(u), `sameAs entry ${u} absolute`).toBe(true);
+        }
+      }
+    }
+
+    // Homepage specifically should advertise at least one social profile.
+    if (route.label === "homepage") {
+      const anySameAs = orgs.some((o) => Array.isArray(o.data.sameAs) && o.data.sameAs.length > 0);
+      expect(anySameAs, "homepage Organization should include sameAs social profile links").toBe(true);
+    }
+
+    assertAllValid(blocks, path!);
+  });
+}
+
+// ---------- BreadcrumbList on product + blog detail pages ----------
+
+async function findDetailPath(page: Page, listPath: string, hrefPrefix: string) {
+  await page.goto(listPath, { waitUntil: "networkidle" });
+  await page.waitForTimeout(600);
+  return page.evaluate(({ prefix }) => {
+    const re = new RegExp("^" + prefix.replace(/[/]/g, "\\/") + "[\\w-]+$");
+    const link = Array.from(document.querySelectorAll<HTMLAnchorElement>(`a[href^="${prefix}"]`))
+      .map((a) => a.getAttribute("href") || "")
+      .find((h) => re.test(h));
+    return link;
+  }, { prefix: hrefPrefix });
+}
+
+function assertBreadcrumbValid(b: any) {
+  expect(b.type).toBe("BreadcrumbList");
+  expect(Array.isArray(b.data.itemListElement)).toBe(true);
+  expect(b.data.itemListElement.length).toBeGreaterThan(0);
+
+  const positions: number[] = [];
+  for (const li of b.data.itemListElement) {
+    expect(li["@type"]).toBe("ListItem");
+    expect(Number.isInteger(li.position), `position ${li.position} must be integer`).toBe(true);
+    expect(li.position).toBeGreaterThanOrEqual(1);
+    positions.push(li.position);
+  }
+  // Strict 1..N sequence with no duplicates / gaps.
+  const sorted = [...positions].sort((a, b) => a - b);
+  expect(new Set(sorted).size, "no duplicate breadcrumb positions").toBe(sorted.length);
+  sorted.forEach((p, i) => expect(p, `position[${i}] should be ${i + 1}`).toBe(i + 1));
+}
+
+test("BreadcrumbList on product detail page", async ({ page }) => {
+  const path = await findDetailPath(page, "/products", "/product/");
+  test.skip(!path, "no product link found on /products");
+
+  const blocks = await loadAndFlatten(page, path!);
+  const crumbs = blocks.filter((b) => b.type === "BreadcrumbList");
+  expect(crumbs.length, "product detail must emit BreadcrumbList").toBeGreaterThan(0);
+  for (const c of crumbs) assertBreadcrumbValid(c);
+  assertAllValid(blocks, path!);
+});
+
+test("BreadcrumbList on blog detail page", async ({ page }) => {
+  const path = await findDetailPath(page, "/blog", "/blog/");
+  test.skip(!path, "no blog link found on /blog");
+
+  const blocks = await loadAndFlatten(page, path!);
+  const crumbs = blocks.filter((b) => b.type === "BreadcrumbList");
+  expect(crumbs.length, "blog detail must emit BreadcrumbList").toBeGreaterThan(0);
+  for (const c of crumbs) assertBreadcrumbValid(c);
+  assertAllValid(blocks, path!);
 });

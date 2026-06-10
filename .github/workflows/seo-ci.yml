@@ -63,27 +63,55 @@ jobs:
     runs-on: ubuntu-latest
     needs: seo-regression-tests
     timeout-minutes: 20
+    env:
+      STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL || 'https://id-preview--8f8ab8bf-14f5-4085-9849-266b90f727c8.lovable.app' }}
+      # Tee console output so we can upload a job-level log artifact even
+      # if Playwright itself crashes before generating per-test attachments.
+      PW_CONSOLE_LOG: ${{ github.workspace }}/playwright-console.log
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
+
       - name: sitemap.xml + robots.txt directives
-        env:
-          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL || 'https://id-preview--8f8ab8bf-14f5-4085-9849-266b90f727c8.lovable.app' }}
-        run: bunx playwright test tests/e2e/sitemap-robots.spec.ts
+        run: bunx playwright test tests/e2e/sitemap-robots.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
+
       - name: Canonical / OG consistency across reload + SPA nav
         if: always()
-        env:
-          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL || 'https://id-preview--8f8ab8bf-14f5-4085-9849-266b90f727c8.lovable.app' }}
-        run: bunx playwright test tests/e2e/canonical-consistency.spec.ts
+        run: bunx playwright test tests/e2e/canonical-consistency.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
+
       - name: JSON-LD validation across paginated + filtered views
         if: always()
-        env:
-          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL || 'https://id-preview--8f8ab8bf-14f5-4085-9849-266b90f727c8.lovable.app' }}
-        run: bunx playwright test tests/e2e/jsonld-validation.spec.ts
-      - uses: actions/upload-artifact@v4
-        if: failure()
+        run: bunx playwright test tests/e2e/jsonld-validation.spec.ts 2>&1 | tee -a "$PW_CONSOLE_LOG"
+
+      # Always upload the full Playwright HTML report so failures are
+      # diagnosable from the GitHub Actions UI without re-running.
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report-merge-gate
           path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Per-test traces, screenshots, attached HTML / JSON-LD / console logs.
+      - name: Upload Playwright test-results (traces + attachments)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-merge-gate
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Job-level console capture (stdout/stderr of every step above).
+      - name: Upload aggregated console log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-console-log-merge-gate
+          path: ${{ env.PW_CONSOLE_LOG }}
+          if-no-files-found: ignore
+          retention-days: 14
