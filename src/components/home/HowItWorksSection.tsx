@@ -24,13 +24,13 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section className="py-14 md:py-16 bg-muted/40" aria-labelledby="how-it-works-heading">
+    <section className="py-14 bg-muted/40" aria-labelledby="how-it-works-heading">
       <div className="container">
         <motion.header
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-14"
+          className="text-center mb-10"
         >
           <p className="text-sm font-semibold text-primary mb-2">How It Works</p>
           <h2 id="how-it-works-heading" className="text-3xl md:text-4xl font-extrabold text-foreground">
