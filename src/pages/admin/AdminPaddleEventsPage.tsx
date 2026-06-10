@@ -92,6 +92,7 @@ export default function AdminPaddleEventsPage() {
       if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
       toast.success(`Reprocessed: ${((data as any)?.actions || []).join(", ") || "ok"}`);
       qc.invalidateQueries({ queryKey: ["admin-paddle-events"] });
+      qc.invalidateQueries({ queryKey: ["admin-paddle-reprocess-audit"] });
     } catch (e: any) {
       toast.error(e.message || "Reprocess failed");
     } finally {
