@@ -5,6 +5,9 @@ import { SeoHead } from "@/components/SeoHead";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { ListFilter, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -136,15 +139,16 @@ export default function CategoryPage() {
           }
         ]}
       />
-      <div className="container py-10">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+      <div className="container py-5 sm:py-10 pb-20 lg:pb-10">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
           <Link to="/" className="hover:text-foreground transition-colors">{t("nav.home")}</Link>
           <span className="opacity-30">/</span>
-          <span className="text-foreground font-medium">{category?.name || t("categories.title")}</span>
+          <span className="text-foreground font-medium truncate">{category?.name || t("categories.title")}</span>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10">
-          <aside className="w-full lg:w-60 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+          {/* Desktop sidebar */}
+          <aside className="hidden lg:block w-60 flex-shrink-0">
             <div className="glass-card p-5 lg:sticky lg:top-24">
               <h3 className="font-display font-bold text-foreground mb-4 text-sm uppercase tracking-wider">{t("categories.title")}</h3>
               <div className="space-y-0.5">
@@ -168,45 +172,140 @@ export default function CategoryPage() {
           </aside>
 
           <div className="flex-1 min-w-0">
+            {/* Title block */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4"
+              className="mb-4 sm:mb-6"
             >
-              <div>
-                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                  {isAll ? t("categoryPage.allSoftware") : `${t("categoryPage.best")} ${category?.name} ${category?.name?.endsWith("Software") ? "" : t("categoryPage.software")}`}
-                </h1>
-                <p className="text-muted-foreground mt-1">{t("categoryPage.productsFound", { count: totalCount ?? 0 })}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Select value={tierFilter} onValueChange={handleTierFilterChange}>
-                  <SelectTrigger className="w-40 rounded-xl"><SelectValue placeholder="Sponsor Tier" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Products</SelectItem>
-                    <SelectItem value="gold">🥇 Gold Sponsors</SelectItem>
-                    <SelectItem value="silver">🥈 Silver Sponsors</SelectItem>
-                    <SelectItem value="bronze">🥉 Bronze Sponsors</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={sort} onValueChange={handleSortChange}>
-                  <SelectTrigger className="w-44 rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
-                    <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
-                    <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
-                    <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <h1 className="text-[1.4rem] sm:text-2xl md:text-3xl font-display font-bold text-foreground leading-tight">
+                {isAll ? t("categoryPage.allSoftware") : `${t("categoryPage.best")} ${category?.name} ${category?.name?.endsWith("Software") ? "" : t("categoryPage.software")}`}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t("categoryPage.productsFound", { count: totalCount ?? 0 })}</p>
             </motion.div>
 
-            {/* G2-style Category Grid */}
+            {/* Mobile filter bar */}
+            <div className="lg:hidden sticky top-[56px] z-20 -mx-4 px-4 py-2.5 mb-4 bg-background/85 backdrop-blur-xl border-b border-border">
+              <div className="flex items-center gap-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="rounded-xl gap-1.5 h-9 px-3 text-xs font-medium flex-shrink-0">
+                      <LayoutGrid className="h-3.5 w-3.5" /> Categories
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[85%] sm:w-80 p-0">
+                    <SheetHeader className="p-4 border-b border-border">
+                      <SheetTitle>{t("categories.title")}</SheetTitle>
+                    </SheetHeader>
+                    <div className="p-3 overflow-y-auto max-h-[calc(100vh-4rem)] space-y-0.5">
+                      <Link to="/category/all" className={cn(
+                        "block px-3 py-2.5 text-sm rounded-xl transition-all font-medium",
+                        isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      )}>
+                        {t("categoryPage.allCategories")}
+                      </Link>
+                      {categories?.map((c) => (
+                        <Link key={c.id} to={`/category/${c.slug}`} className={cn(
+                          "flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all",
+                          slug === c.slug ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        )}>
+                          <span className="truncate">{c.name}</span>
+                          <span className="text-xs opacity-50 ml-2">{c.product_count}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+
+                {/* Horizontal sort chips */}
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 -mr-4 pr-4">
+                  {[
+                    { value: "rating", label: t("categoryPage.topRated") },
+                    { value: "reviews", label: t("categoryPage.mostReviews") },
+                    { value: "newest", label: t("categoryPage.newest") },
+                    { value: "name", label: t("categoryPage.az") },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleSortChange(opt.value)}
+                      className={cn(
+                        "h-9 px-3 rounded-xl text-xs font-medium whitespace-nowrap transition-colors border",
+                        sort === opt.value
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-muted-foreground border-border hover:text-foreground"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="rounded-xl h-9 w-9 p-0 flex-shrink-0 relative">
+                      <ListFilter className="h-4 w-4" />
+                      {tierFilter !== "all" && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="rounded-t-2xl">
+                    <SheetHeader>
+                      <SheetTitle>Filter</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4 space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sponsor tier</p>
+                      {[
+                        { value: "all", label: "All Products" },
+                        { value: "gold", label: "🥇 Gold Sponsors" },
+                        { value: "silver", label: "🥈 Silver Sponsors" },
+                        { value: "bronze", label: "🥉 Bronze Sponsors" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => handleTierFilterChange(opt.value)}
+                          className={cn(
+                            "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                            tierFilter === opt.value ? "bg-primary/10 text-primary" : "bg-muted/50 text-foreground hover:bg-muted"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+
+            {/* Desktop filter row */}
+            <div className="hidden lg:flex items-center justify-end gap-2 mb-6">
+              <Select value={tierFilter} onValueChange={handleTierFilterChange}>
+                <SelectTrigger className="w-40 rounded-xl"><SelectValue placeholder="Sponsor Tier" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="gold">🥇 Gold Sponsors</SelectItem>
+                  <SelectItem value="silver">🥈 Silver Sponsors</SelectItem>
+                  <SelectItem value="bronze">🥉 Bronze Sponsors</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sort} onValueChange={handleSortChange}>
+                <SelectTrigger className="w-44 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
+                  <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
+                  <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
+                  <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* G2-style Category Grid — desktop only (position chart doesn't suit mobile) */}
             {allGridProducts && allGridProducts.length >= 3 && (
-              <CategoryGrid products={allGridProducts} categoryName={category?.name || undefined} />
+              <div className="hidden md:block">
+                <CategoryGrid products={allGridProducts} categoryName={category?.name || undefined} />
+              </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {isLoading ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={i} />) :
                 products?.map((p: any) => (
                   <ProductCard
@@ -218,11 +317,11 @@ export default function CategoryPage() {
                 ))
               }
               {!isLoading && products?.length === 0 && (
-                <div className="glass-card p-16 text-center text-muted-foreground">{t("categoryPage.noProducts")}</div>
+                <div className="glass-card p-10 sm:p-16 text-center text-muted-foreground">{t("categoryPage.noProducts")}</div>
               )}
             </div>
 
-            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-10" />
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-8 sm:mt-10" />
           </div>
         </div>
       </div>
