@@ -96,8 +96,8 @@ export function PopularComparisonsSection() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-3"
         >
           <div>
-            <p className="text-sm font-semibold text-primary mb-1">Software Comparisons</p>
-            <h2 id="comparisons-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">Popular Software Comparisons</h2>
+            <p className="t-eyebrow mb-1">Software Comparisons</p>
+            <h2 id="comparisons-heading" className="t-h2">Popular Software Comparisons</h2>
             <p className="text-muted-foreground mt-1">See how leading SaaS tools stack up against each other in head-to-head comparisons</p>
           </div>
           <Link to="/compare">

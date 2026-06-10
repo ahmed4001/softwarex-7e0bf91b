@@ -100,7 +100,7 @@ export function ProductFinderQuiz() {
                   <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <Wand2 className="h-7 w-7 text-primary" />
                   </div>
-                  <h2 id="finder-heading" className="text-2xl md:text-3xl font-extrabold text-foreground mb-2">
+                  <h2 id="finder-heading" className="t-h2 mb-2">
                     Smart Product Finder
                   </h2>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">

@@ -34,8 +34,8 @@ export function RecentlyAddedSection() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-3"
         >
           <div>
-            <p className="text-sm font-semibold text-primary mb-1">New Arrivals</p>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">Recently added</h2>
+            <p className="t-eyebrow mb-1">New Arrivals</p>
+            <h2 className="t-h2">Recently added</h2>
             <p className="text-muted-foreground mt-1">The latest software added to our directory</p>
           </div>
           <Link to="/categories">

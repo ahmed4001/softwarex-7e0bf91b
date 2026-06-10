@@ -96,7 +96,7 @@ export function ResearchDirectorySection() {
           viewport={{ once: true }}
           className="mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground">
+          <h2 className="t-h2">
             Research popular software & services.
           </h2>
         </motion.div>

@@ -75,7 +75,7 @@ export function TrendingProductsSection() {
               <Flame className="h-4 w-4 text-destructive" />
               <p className="text-sm font-semibold text-destructive">Trending Now</p>
             </div>
-            <h2 id="trending-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">
+            <h2 id="trending-heading" className="t-h2">
               Most Reviewed This Month
             </h2>
             <p className="text-muted-foreground mt-1">Software getting the most attention from the community right now</p>

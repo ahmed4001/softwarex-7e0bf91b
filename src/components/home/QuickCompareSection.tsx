@@ -65,7 +65,7 @@ export function QuickCompareSection() {
               <ArrowLeftRight className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold text-primary">Head-to-Head</p>
             </div>
-            <h2 id="compare-heading" className="text-2xl md:text-3xl font-extrabold text-foreground">
+            <h2 id="compare-heading" className="t-h2">
               Popular Software Matchups
             </h2>
             <p className="text-muted-foreground mt-1">Side-by-side comparisons our community reads most</p>
