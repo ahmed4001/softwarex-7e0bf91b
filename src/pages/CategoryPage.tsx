@@ -55,6 +55,7 @@ export default function CategoryPage() {
 
   const { data: categories } = useQuery({
     queryKey: ["categories-list"],
+    staleTime: STALE_5_MIN,
     queryFn: async () => {
       const { data } = await supabase.from("categories").select("*").eq("is_active", true).order("name");
       return data || [];
@@ -63,12 +64,13 @@ export default function CategoryPage() {
 
   // Total count for pagination
   const { data: totalCount } = useQuery({
-    queryKey: ["products-category-count", slug, tierFilter],
+    queryKey: ["products-category-count", slug, debouncedTier],
+    staleTime: 60_000,
     queryFn: async () => {
       let query = supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
-      if (tierFilter !== "all") {
-        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      if (debouncedTier !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", debouncedTier as any);
       }
       const { count } = await query;
       return count ?? 0;
@@ -76,18 +78,19 @@ export default function CategoryPage() {
     enabled: !!category,
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["products-category", slug, sort, page, tierFilter],
+  const { data: products, isLoading, isFetching } = useQuery({
+    queryKey: ["products-category", slug, debouncedSort, page, debouncedTier],
+    staleTime: 60_000,
+    placeholderData: (prev) => prev, // keep previous results visible while refetching
     queryFn: async () => {
       const { applyRealFirstOrder, realFirstComparator } = await import("@/lib/product-order");
       let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
-      if (tierFilter !== "all") {
-        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      if (debouncedTier !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", debouncedTier as any);
       }
       const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
-      // Unified real-first ordering + requested sort
-      query = applyRealFirstOrder(query, sort as any);
+      query = applyRealFirstOrder(query, debouncedSort as any);
       const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       const results = data || [];
       return results.sort((a: any, b: any) => {
@@ -105,6 +108,7 @@ export default function CategoryPage() {
   // Fetch all products for the Grid (no pagination)
   const { data: allGridProducts } = useQuery({
     queryKey: ["products-grid", slug],
+    staleTime: STALE_5_MIN,
     queryFn: async () => {
       const { applyRealFirstOrder } = await import("@/lib/product-order");
       let query = supabase.from("products")
@@ -119,15 +123,21 @@ export default function CategoryPage() {
 
   const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
 
-  // Reset page when sort or slug changes
+  // Reset page when sort/filter/slug changes + track analytics
   const handleSortChange = (value: string) => {
     setSort(value);
     setPage(0);
+    trackEvent("category_sort_change", { slug: slug || "", sort: value, variant: filterVariant, is_mobile: isMobile });
   };
 
   const handleTierFilterChange = (value: string) => {
     setTierFilter(value);
     setPage(0);
+    trackEvent("category_filter_change", { slug: slug || "", tier: value, variant: filterVariant, is_mobile: isMobile });
+  };
+
+  const handleFilterDrawerOpen = (kind: "categories" | "tier") => {
+    trackEvent("category_filter_open", { slug: slug || "", kind, variant: filterVariant, is_mobile: isMobile });
   };
 
   return (
