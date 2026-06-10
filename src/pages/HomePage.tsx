@@ -2,38 +2,24 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { ProductCard } from "@/components/ProductCard";
-import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCardSkeleton } from "@/components/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Star, LayoutGrid } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import { HeroSection } from "@/components/home/HeroSection";
 import { StatsSection } from "@/components/home/StatsSection";
 import { TrustedBySection } from "@/components/home/TrustedBySection";
-import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { NewsletterSection } from "@/components/home/NewsletterSection";
-import { CTASection } from "@/components/home/CTASection";
 import { PopularComparisonsSection } from "@/components/home/PopularComparisonsSection";
-import { FeaturesGridSection } from "@/components/home/FeaturesGridSection";
 import { FAQSection } from "@/components/home/FAQSection";
-import { RecentlyAddedSection } from "@/components/home/RecentlyAddedSection";
 import { BlogPreviewSection } from "@/components/home/BlogPreviewSection";
-import { TopCategoriesShowcase } from "@/components/home/TopCategoriesShowcase";
-import { SocialProofBanner } from "@/components/home/SocialProofBanner";
 import { VendorCTASection } from "@/components/home/VendorCTASection";
 import { MostPopularCategoriesSection } from "@/components/home/MostPopularCategoriesSection";
-import { ResearchDirectorySection } from "@/components/home/ResearchDirectorySection";
-import { ProductShowcaseSection } from "@/components/home/ProductShowcaseSection";
 import { TrendingProductsSection } from "@/components/home/TrendingProductsSection";
-import { LiveStatsCounter } from "@/components/home/LiveStatsCounter";
 import { ProductFinderQuiz } from "@/components/home/ProductFinderQuiz";
-import { CategoryLeadersSection } from "@/components/home/CategoryLeadersSection";
-import { RecentReviewsFeed } from "@/components/home/RecentReviewsFeed";
-import { AwardsBannerSection } from "@/components/home/AwardsBannerSection";
-import { QuickCompareSection } from "@/components/home/QuickCompareSection";
 
 const SITE_URL = "https://reviewhunts.com";
 
@@ -137,18 +123,9 @@ const breadcrumbJsonLd = {
 };
 
 export default function HomePage() {
-  const { data: categories } = useQuery({
-    queryKey: ["categories-featured"],
-    queryFn: async () => {
-      const { data } = await supabase.from("categories").select("*").eq("is_active", true).order("sort_order").limit(16);
-      return data || [];
-    },
-  });
-
   const { data: featuredProducts, isLoading: loadingFeatured } = useQuery({
     queryKey: ["products-featured"],
     queryFn: async () => {
-      // First get featured products
       const { data: featured } = await supabase
         .from("products")
         .select("*, categories!products_category_id_fkey(name)")
@@ -157,12 +134,11 @@ export default function HomePage() {
         .order("info_score", { ascending: false })
         .order("avg_rating", { ascending: false })
         .limit(6);
-      
-      // If we have fewer than 6, fill with top-rated non-featured products
+
       const results = featured || [];
       if (results.length < 6) {
         const needed = 6 - results.length;
-        let query = supabase
+        const { data: extra } = await supabase
           .from("products")
           .select("*, categories!products_category_id_fkey(name)")
           .eq("is_active", true)
@@ -170,26 +146,12 @@ export default function HomePage() {
           .order("info_score", { ascending: false })
           .order("avg_rating", { ascending: false })
           .limit(needed);
-        const { data: extra } = await query;
         if (extra) results.push(...extra);
       }
       return results;
     },
   });
 
-  const { data: topProducts, isLoading: loadingTop } = useQuery({
-    queryKey: ["products-top"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("*, categories!products_category_id_fkey(name)")
-        .eq("is_active", true)
-        .order("info_score", { ascending: false })
-        .order("avg_rating", { ascending: false })
-        .limit(8);
-      return data || [];
-    },
-  });
 
   const { data: stats } = useQuery({
     queryKey: ["site-stats"],
@@ -217,42 +179,19 @@ export default function HomePage() {
       />
 
       <main>
+        {/* 1. Hero */}
         <HeroSection />
-        <StatsSection stats={stats} />
+
+        {/* 2. Trust strip + compact stats */}
         <TrustedBySection />
+        <StatsSection stats={stats} />
 
-        {/* Real Product Screenshots Showcase */}
-        <ProductShowcaseSection />
+        <div className="section-gradient-divider" aria-hidden="true" />
 
-        {/* Most Popular Categories - G2 style */}
+        {/* 3. Most Popular Categories (single categories surface) */}
         <MostPopularCategoriesSection />
 
-        <div className="section-gradient-divider" aria-hidden="true" />
-
-        {/* Software Categories Directory */}
-        <section className="py-20 bg-muted/30" aria-labelledby="categories-heading">
-          <div className="container">
-            <SectionHeader
-              id="categories-heading"
-              label="Software Categories"
-              title="Browse Business Software by Category"
-              subtitle="Explore top-rated tools across 50+ software categories for every business need"
-              linkTo="/categories"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {categories?.map((cat, i) => (
-                <CategoryCard key={cat.id} slug={cat.slug} name={cat.name} icon={cat.icon || ""} product_count={cat.product_count || 0} color={cat.color || "#3b82f6"} index={i} />
-              ))}
-              {(!categories || categories.length === 0) && (
-                <EmptyBlock icon={<LayoutGrid className="h-6 w-6 text-muted-foreground/30" />} text="Software categories coming soon" />
-              )}
-            </div>
-          </div>
-        </section>
-
-        <div className="section-gradient-divider" aria-hidden="true" />
-
-        {/* Featured Software */}
+        {/* 4. Editor's Choice */}
         <section className="py-20" aria-labelledby="featured-heading">
           <div className="container">
             <SectionHeader id="featured-heading" label="Editor's Choice" title="Top-Rated Software Picks for 2026" subtitle="Hand-picked by our expert analysts based on user reviews, features, and value" />
@@ -269,43 +208,25 @@ export default function HomePage() {
           </div>
         </section>
 
-        <TrendingProductsSection />
-        <CategoryLeadersSection />
+        {/* 5. Interactive quiz — engagement hook */}
         <ProductFinderQuiz />
-        <QuickCompareSection />
-        <PopularComparisonsSection />
 
         <div className="section-gradient-divider" aria-hidden="true" />
 
-        {/* Highest-Rated Software */}
-        <section className="py-20 bg-muted/30" aria-labelledby="top-rated-heading">
-          <div className="container">
-            <SectionHeader id="top-rated-heading" label="Highest Rated" title="Best-Reviewed Business Software" subtitle="Top-rated tools based on verified user reviews and satisfaction scores" linkTo="/categories" />
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {loadingTop ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) :
-                topProducts && topProducts.length > 0 ?
-                  topProducts.map((p: any) => (
-                    <ProductCard key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline} logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews} pricing_model={p.pricing_model} category_name={p.categories?.name} is_featured={p.is_featured} is_sponsored={p.is_sponsored} />
-                  )) : (
-                    <EmptyBlock icon={<Star className="h-6 w-6 text-muted-foreground/30" />} text="No rated products yet" sub="Be the first to leave a verified review" />
-                  )
-              }
-            </div>
-          </div>
-        </section>
+        {/* 6. Trending */}
+        <TrendingProductsSection />
 
-        <SocialProofBanner />
-        <RecentReviewsFeed />
-        <RecentlyAddedSection />
-        <AwardsBannerSection />
-        <TopCategoriesShowcase />
-        <FeaturesGridSection />
+        {/* 7. Popular Comparisons */}
+        <PopularComparisonsSection />
+
+        {/* 8. How It Works */}
         <HowItWorksSection />
-        <TestimonialsSection />
+
+        {/* 9. Blog Preview + Vendor CTA */}
         <BlogPreviewSection />
         <VendorCTASection />
-        <ResearchDirectorySection />
-        <CTASection />
+
+        {/* 10. FAQ + Newsletter */}
         <FAQSection />
         <NewsletterSection />
       </main>
