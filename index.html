@@ -43,10 +43,13 @@
     gtag('config', 'G-CYJDR8BBKJ');
   </script>
 
+  <!-- Paddle.js - preloaded before iubenda autoblocking so checkout always works -->
+  <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+
   <!-- iubenda Cookie Consent -->
   <script type="text/javascript">
     var _iub = _iub || [];
-    _iub.csConfiguration = {"siteId":4551587,"cookiePolicyId":49810184,"lang":"en","storage":{"useSiteId":true}};
+    _iub.csConfiguration = {"siteId":4551587,"cookiePolicyId":49810184,"lang":"en","storage":{"useSiteId":true},"whitelist":["paddle.com","cdn.paddle.com"]};
   </script>
   <script type="text/javascript" src="https://cs.iubenda.com/autoblocking/4551587.js"></script>
   <script type="text/javascript" src="//cdn.iubenda.com/cs/gpp/stub.js"></script>
