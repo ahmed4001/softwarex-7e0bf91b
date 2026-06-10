@@ -145,8 +145,10 @@ export default function CheckoutPage() {
         eventCallback: (ev) => {
           console.log("[Paddle.js] Checkout event:", ev.name, ev);
           if (ev.name === "checkout.completed") {
-            toast.success("Payment successful!");
-            navigate(`/dashboard?paid=1&plan=${planId}`);
+            toast.success("Payment received — confirming your subscription…");
+            setLoading(false);
+            // Kick off the post-checkout verification instead of redirecting blindly.
+            confirmAfterCheckout();
           }
           if (ev.name === "checkout.error") {
             toast.error("Checkout error. Please try again.");
@@ -176,7 +178,6 @@ export default function CheckoutPage() {
       customer: { email: data.email },
       customData: { user_id: data.userId, plan: planId },
       settings: {
-        successUrl: `${window.location.origin}/dashboard?paid=1&plan=${planId}`,
         displayMode: "overlay",
         theme: "light",
       },
