@@ -200,7 +200,7 @@ export default function HomePage() {
         <MostPopularCategoriesSection />
 
         {/* 5. Editor's Choice */}
-        <section className="py-20" aria-labelledby="featured-heading">
+        <section className="py-14" aria-labelledby="featured-heading">
           <div className="container">
             <SectionHeader id="featured-heading" label="Editor's Choice" title="Top-Rated Software Picks for 2026" subtitle="Hand-picked by our expert analysts based on user reviews, features, and value" />
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -217,7 +217,7 @@ export default function HomePage() {
         </section>
 
         {/* 6. Interactive quiz — visually highlighted as a break */}
-        <section className="py-16 md:py-20">
+        <section className="py-10 md:py-14">
           <div className="container">
             <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
               <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
