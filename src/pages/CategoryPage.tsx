@@ -8,14 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ListFilter, LayoutGrid } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { PaginationControls } from "@/components/PaginationControls";
 import { CategoryGrid } from "@/components/CategoryGrid";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAbVariant } from "@/hooks/useAbVariant";
+import { useDebounce } from "@/hooks/useDebounce";
+import { trackEvent } from "@/lib/analytics";
 
 const PAGE_SIZE = 20;
+const STALE_5_MIN = 5 * 60 * 1000;
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -24,9 +29,22 @@ export default function CategoryPage() {
   const [page, setPage] = useState(0);
   const isAll = slug === "all";
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  // A/B test: legacy (A) vs new mobile-first filter UI (B). Desktop always uses full layout.
+  const [filterVariant] = useAbVariant("mobile_filter_v1", ["A", "B"]);
+  const useNewMobileFilters = isMobile && filterVariant === "B";
+
+  // Debounce filter inputs so users tapping multiple chips don't fire 5 separate queries.
+  const debouncedSort = useDebounce(sort, 200);
+  const debouncedTier = useDebounce(tierFilter, 200);
+
+  useEffect(() => {
+    trackEvent("category_view", { slug: slug || "", variant: filterVariant, is_mobile: isMobile });
+  }, [slug, filterVariant, isMobile]);
 
   const { data: category } = useQuery({
     queryKey: ["category", slug],
+    staleTime: STALE_5_MIN,
     queryFn: async () => {
       if (isAll) return { name: t("categoryPage.allCategories"), description: t("categories.subtitle"), slug: "all" };
       const { data } = await supabase.from("categories").select("*").eq("slug", slug!).single();
@@ -37,6 +55,7 @@ export default function CategoryPage() {
 
   const { data: categories } = useQuery({
     queryKey: ["categories-list"],
+    staleTime: STALE_5_MIN,
     queryFn: async () => {
       const { data } = await supabase.from("categories").select("*").eq("is_active", true).order("name");
       return data || [];
@@ -45,12 +64,13 @@ export default function CategoryPage() {
 
   // Total count for pagination
   const { data: totalCount } = useQuery({
-    queryKey: ["products-category-count", slug, tierFilter],
+    queryKey: ["products-category-count", slug, debouncedTier],
+    staleTime: 60_000,
     queryFn: async () => {
       let query = supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
-      if (tierFilter !== "all") {
-        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      if (debouncedTier !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", debouncedTier as any);
       }
       const { count } = await query;
       return count ?? 0;
@@ -58,18 +78,19 @@ export default function CategoryPage() {
     enabled: !!category,
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["products-category", slug, sort, page, tierFilter],
+  const { data: products, isLoading, isFetching } = useQuery({
+    queryKey: ["products-category", slug, debouncedSort, page, debouncedTier],
+    staleTime: 60_000,
+    placeholderData: (prev) => prev, // keep previous results visible while refetching
     queryFn: async () => {
       const { applyRealFirstOrder, realFirstComparator } = await import("@/lib/product-order");
       let query = supabase.from("products").select("*, categories!products_category_id_fkey(name)").eq("is_active", true);
       if (!isAll && category && "id" in category) query = query.eq("category_id", (category as any).id);
-      if (tierFilter !== "all") {
-        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
+      if (debouncedTier !== "all") {
+        query = query.eq("is_sponsored", true).eq("sponsor_tier", debouncedTier as any);
       }
       const tierOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
-      // Unified real-first ordering + requested sort
-      query = applyRealFirstOrder(query, sort as any);
+      query = applyRealFirstOrder(query, debouncedSort as any);
       const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       const results = data || [];
       return results.sort((a: any, b: any) => {
@@ -87,6 +108,7 @@ export default function CategoryPage() {
   // Fetch all products for the Grid (no pagination)
   const { data: allGridProducts } = useQuery({
     queryKey: ["products-grid", slug],
+    staleTime: STALE_5_MIN,
     queryFn: async () => {
       const { applyRealFirstOrder } = await import("@/lib/product-order");
       let query = supabase.from("products")
@@ -101,15 +123,21 @@ export default function CategoryPage() {
 
   const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
 
-  // Reset page when sort or slug changes
+  // Reset page when sort/filter/slug changes + track analytics
   const handleSortChange = (value: string) => {
     setSort(value);
     setPage(0);
+    trackEvent("category_sort_change", { slug: slug || "", sort: value, variant: filterVariant, is_mobile: isMobile });
   };
 
   const handleTierFilterChange = (value: string) => {
     setTierFilter(value);
     setPage(0);
+    trackEvent("category_filter_change", { slug: slug || "", tier: value, variant: filterVariant, is_mobile: isMobile });
+  };
+
+  const handleFilterDrawerOpen = (kind: "categories" | "tier") => {
+    trackEvent("category_filter_open", { slug: slug || "", kind, variant: filterVariant, is_mobile: isMobile });
   };
 
   return (
@@ -184,97 +212,123 @@ export default function CategoryPage() {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t("categoryPage.productsFound", { count: totalCount ?? 0 })}</p>
             </motion.div>
 
-            {/* Mobile filter bar */}
-            <div className="lg:hidden sticky top-[56px] z-20 -mx-4 px-4 py-2.5 mb-4 bg-background/85 backdrop-blur-xl border-b border-border">
-              <div className="flex items-center gap-2">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="rounded-xl gap-1.5 h-9 px-3 text-xs font-medium flex-shrink-0">
-                      <LayoutGrid className="h-3.5 w-3.5" /> Categories
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-[85%] sm:w-80 p-0">
-                    <SheetHeader className="p-4 border-b border-border">
-                      <SheetTitle>{t("categories.title")}</SheetTitle>
-                    </SheetHeader>
-                    <div className="p-3 overflow-y-auto max-h-[calc(100vh-4rem)] space-y-0.5">
-                      <Link to="/category/all" className={cn(
-                        "block px-3 py-2.5 text-sm rounded-xl transition-all font-medium",
-                        isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                      )}>
-                        {t("categoryPage.allCategories")}
-                      </Link>
-                      {categories?.map((c) => (
-                        <Link key={c.id} to={`/category/${c.slug}`} className={cn(
-                          "flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all",
-                          slug === c.slug ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            {/* Mobile filter bar — Variant B (new) */}
+            {useNewMobileFilters && (
+              <div className="lg:hidden sticky top-[56px] z-20 -mx-4 px-4 py-2.5 mb-4 bg-background/85 backdrop-blur-xl border-b border-border" data-ab-variant="B">
+                <div className="flex items-center gap-2">
+                  <Sheet onOpenChange={(o) => o && handleFilterDrawerOpen("categories")}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="rounded-xl gap-1.5 h-9 px-3 text-xs font-medium flex-shrink-0">
+                        <LayoutGrid className="h-3.5 w-3.5" /> Categories
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-[85%] sm:w-80 p-0">
+                      <SheetHeader className="p-4 border-b border-border">
+                        <SheetTitle>{t("categories.title")}</SheetTitle>
+                      </SheetHeader>
+                      <div className="p-3 overflow-y-auto max-h-[calc(100vh-4rem)] space-y-0.5">
+                        <Link to="/category/all" className={cn(
+                          "block px-3 py-2.5 text-sm rounded-xl transition-all font-medium",
+                          isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                         )}>
-                          <span className="truncate">{c.name}</span>
-                          <span className="text-xs opacity-50 ml-2">{c.product_count}</span>
+                          {t("categoryPage.allCategories")}
                         </Link>
-                      ))}
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                        {categories?.map((c) => (
+                          <Link key={c.id} to={`/category/${c.slug}`} className={cn(
+                            "flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all",
+                            slug === c.slug ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                          )}>
+                            <span className="truncate">{c.name}</span>
+                            <span className="text-xs opacity-50 ml-2">{c.product_count}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
 
-                {/* Horizontal sort chips */}
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 -mr-4 pr-4">
-                  {[
-                    { value: "rating", label: t("categoryPage.topRated") },
-                    { value: "reviews", label: t("categoryPage.mostReviews") },
-                    { value: "newest", label: t("categoryPage.newest") },
-                    { value: "name", label: t("categoryPage.az") },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSortChange(opt.value)}
-                      className={cn(
-                        "h-9 px-3 rounded-xl text-xs font-medium whitespace-nowrap transition-colors border",
-                        sort === opt.value
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-muted-foreground border-border hover:text-foreground"
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                  {/* Horizontal sort chips */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 -mr-4 pr-4">
+                    {[
+                      { value: "rating", label: t("categoryPage.topRated") },
+                      { value: "reviews", label: t("categoryPage.mostReviews") },
+                      { value: "newest", label: t("categoryPage.newest") },
+                      { value: "name", label: t("categoryPage.az") },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleSortChange(opt.value)}
+                        className={cn(
+                          "h-9 px-3 rounded-xl text-xs font-medium whitespace-nowrap transition-colors border",
+                          sort === opt.value
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-muted-foreground border-border hover:text-foreground"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Sheet onOpenChange={(o) => o && handleFilterDrawerOpen("tier")}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="rounded-xl h-9 w-9 p-0 flex-shrink-0 relative">
+                        <ListFilter className="h-4 w-4" />
+                        {tierFilter !== "all" && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-2xl">
+                      <SheetHeader>
+                        <SheetTitle>Filter</SheetTitle>
+                      </SheetHeader>
+                      <div className="py-4 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sponsor tier</p>
+                        {[
+                          { value: "all", label: "All Products" },
+                          { value: "gold", label: "🥇 Gold Sponsors" },
+                          { value: "silver", label: "🥈 Silver Sponsors" },
+                          { value: "bronze", label: "🥉 Bronze Sponsors" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => handleTierFilterChange(opt.value)}
+                            className={cn(
+                              "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                              tierFilter === opt.value ? "bg-primary/10 text-primary" : "bg-muted/50 text-foreground hover:bg-muted"
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                 </div>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="rounded-xl h-9 w-9 p-0 flex-shrink-0 relative">
-                      <ListFilter className="h-4 w-4" />
-                      {tierFilter !== "all" && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />}
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom" className="rounded-t-2xl">
-                    <SheetHeader>
-                      <SheetTitle>Filter</SheetTitle>
-                    </SheetHeader>
-                    <div className="py-4 space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sponsor tier</p>
-                      {[
-                        { value: "all", label: "All Products" },
-                        { value: "gold", label: "🥇 Gold Sponsors" },
-                        { value: "silver", label: "🥈 Silver Sponsors" },
-                        { value: "bronze", label: "🥉 Bronze Sponsors" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => handleTierFilterChange(opt.value)}
-                          className={cn(
-                            "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors",
-                            tierFilter === opt.value ? "bg-primary/10 text-primary" : "bg-muted/50 text-foreground hover:bg-muted"
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </SheetContent>
-                </Sheet>
               </div>
-            </div>
+            )}
+
+            {/* Mobile filter bar — Variant A (legacy: two compact Selects) */}
+            {isMobile && !useNewMobileFilters && (
+              <div className="lg:hidden flex items-center gap-2 mb-4" data-ab-variant="A">
+                <Select value={tierFilter} onValueChange={handleTierFilterChange}>
+                  <SelectTrigger className="flex-1 rounded-xl h-10 text-sm"><SelectValue placeholder="Sponsor Tier" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="gold">🥇 Gold Sponsors</SelectItem>
+                    <SelectItem value="silver">🥈 Silver Sponsors</SelectItem>
+                    <SelectItem value="bronze">🥉 Bronze Sponsors</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sort} onValueChange={handleSortChange}>
+                  <SelectTrigger className="flex-1 rounded-xl h-10 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
+                    <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
+                    <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
+                    <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Desktop filter row */}
             <div className="hidden lg:flex items-center justify-end gap-2 mb-6">
@@ -305,14 +359,15 @@ export default function CategoryPage() {
               </div>
             )}
 
-            <div className="space-y-3 sm:space-y-4">
+            <div className={cn("space-y-3 sm:space-y-4 transition-opacity", isFetching && !isLoading && "opacity-60")}>
               {isLoading ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={i} />) :
-                products?.map((p: any) => (
+                products?.map((p: any, idx: number) => (
                   <ProductCard
                     key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline}
                     logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews}
                     pricing_model={p.pricing_model} category_name={p.categories?.name}
                     is_featured={p.is_featured} is_sponsored={p.is_sponsored} sponsor_tier={p.sponsor_tier}
+                    source={`category:${slug}:${filterVariant}:${idx}`}
                   />
                 ))
               }
