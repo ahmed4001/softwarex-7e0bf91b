@@ -217,7 +217,7 @@ export function BackfillRunnerPanel() {
           </Field>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {!running ? (
             <Button onClick={run} className="gap-2">
               <Play className="h-4 w-4" /> Start
@@ -226,6 +226,14 @@ export function BackfillRunnerPanel() {
             <Button variant="destructive" onClick={() => setStopRequested(true)} className="gap-2">
               <Square className="h-4 w-4" /> Stop after current
             </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={resetDefaults} disabled={running}>
+            Reset defaults
+          </Button>
+          {loaded && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1" key={savedTick}>
+              <Save className="h-3 w-3" /> Saved for this admin
+            </span>
           )}
           {running && (
             <span className="text-sm text-muted-foreground flex items-center gap-2">
