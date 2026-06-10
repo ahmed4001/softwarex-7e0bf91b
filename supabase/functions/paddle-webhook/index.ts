@@ -32,7 +32,6 @@ async function verifyPaddleSignature(rawBody: string, signatureHeader: string, s
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // constant-time compare
     if (computed.length !== h1.length) return false;
     let diff = 0;
     for (let i = 0; i < computed.length; i++) diff |= computed.charCodeAt(i) ^ h1.charCodeAt(i);
@@ -42,46 +41,58 @@ async function verifyPaddleSignature(rawBody: string, signatureHeader: string, s
   }
 }
 
-// Events we actually act on — everything else is acknowledged without DB work.
 const ACTIVATE_EVENTS = new Set([
   "transaction.completed",
   "subscription.activated",
   "subscription.created",
+  "subscription.updated",
+  "subscription.resumed",
 ]);
 const CANCEL_EVENTS = new Set(["subscription.canceled"]);
+const PAST_DUE_EVENTS = new Set(["subscription.past_due", "subscription.paused"]);
 
-const ackOk = () =>
-  new Response(JSON.stringify({ ok: true }), {
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+const ackOk = () => jsonResponse({ ok: true });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const rawBody = await req.text();
-
-    // Cheap pre-parse filter: skip events we don't care about before doing
-    // signature verification or spinning up a Supabase client.
-    const peekType = rawBody.match(/"event_type"\s*:\s*"([^"]+)"/)?.[1] || "";
-    if (peekType && !ACTIVATE_EVENTS.has(peekType) && !CANCEL_EVENTS.has(peekType)) {
-      return ackOk();
+    const webhookSecret = Deno.env.get("PADDLE_WEBHOOK_SECRET");
+    // === Fail closed if secret missing ==============================
+    if (!webhookSecret) {
+      console.error("paddle-webhook: PADDLE_WEBHOOK_SECRET is not configured — rejecting request");
+      return jsonResponse({ error: "webhook secret not configured" }, 500);
     }
 
+    const rawBody = await req.text();
     const signature = req.headers.get("paddle-signature") || "";
-    const webhookSecret = Deno.env.get("PADDLE_WEBHOOK_SECRET");
 
-    if (webhookSecret) {
-      const ok = await verifyPaddleSignature(rawBody, signature, webhookSecret);
-      if (!ok) {
-        console.warn("paddle-webhook: invalid signature");
-        return new Response(JSON.stringify({ error: "invalid signature" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      console.warn("paddle-webhook: PADDLE_WEBHOOK_SECRET not set — skipping verification");
+    // === Signature verification BEFORE any parsing or DB work =======
+    if (!signature) {
+      console.warn("paddle-webhook: missing paddle-signature header");
+      return jsonResponse({ error: "missing signature" }, 401);
+    }
+    const sigOk = await verifyPaddleSignature(rawBody, signature, webhookSecret);
+    if (!sigOk) {
+      console.warn("paddle-webhook: invalid signature");
+      return jsonResponse({ error: "invalid signature" }, 401);
+    }
+
+    // Cheap pre-parse filter for event types we don't process.
+    const peekType = rawBody.match(/"event_type"\s*:\s*"([^"]+)"/)?.[1] || "";
+    if (
+      peekType &&
+      !ACTIVATE_EVENTS.has(peekType) &&
+      !CANCEL_EVENTS.has(peekType) &&
+      !PAST_DUE_EVENTS.has(peekType)
+    ) {
+      return ackOk();
     }
 
     const payload = JSON.parse(rawBody);
@@ -95,27 +106,33 @@ Deno.serve(async (req) => {
 
     if (!userId || !plan) return ackOk();
 
+    // Pull billing period & paddle identifiers off the payload.
+    const periodEnd: string | null =
+      data?.current_billing_period?.ends_at ||
+      data?.billing_period?.ends_at ||
+      data?.next_billed_at ||
+      null;
+    const paddleSubId: string | null =
+      data?.subscription_id || (data?.id?.toString().startsWith("sub_") ? data.id : null);
+    const paddleCustomerId: string | null = data?.customer_id || null;
+    const paddlePriceId: string | null =
+      data?.items?.[0]?.price?.id || data?.items?.[0]?.price_id || null;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     // === Idempotency gate ===========================================
-    // Paddle retries webhook deliveries on any non-2xx response and can
-    // also re-fire events during incidents. Insert the event id into a
-    // dedupe table FIRST; if the insert is a primary-key conflict we
-    // know we've already processed this exact delivery and bail out.
     if (eventId) {
       const { error: dedupeErr } = await supabase
         .from("paddle_webhook_events")
         .insert({ event_id: eventId, event_type: eventType, user_id: userId, plan });
       if (dedupeErr) {
-        // 23505 = unique_violation → already processed, safe to ack.
         if ((dedupeErr as any).code === "23505") {
           console.log(`paddle-webhook: duplicate event ${eventId} ignored`);
           return ackOk();
         }
-        // Any other error: fail loud so Paddle retries.
         throw dedupeErr;
       }
     } else {
@@ -123,31 +140,67 @@ Deno.serve(async (req) => {
     }
 
     try {
-      if (ACTIVATE_EVENTS.has(eventType)) {
-        // Single round-trip: try update first, insert only if no active row exists.
-        const { data: updated, error: updErr } = await supabase
-          .from("vendor_subscriptions")
-          .update({ plan })
-          .eq("user_id", userId)
-          .eq("status", "active")
-          .select("id")
-          .maybeSingle();
+      const now = new Date().toISOString();
 
-        if (updErr) throw updErr;
-        if (!updated) {
+      if (ACTIVATE_EVENTS.has(eventType)) {
+        const patch: Record<string, unknown> = {
+          plan,
+          status: "active",
+          last_event_at: now,
+          canceled_at: null,
+        };
+        if (periodEnd) {
+          patch.current_period_end = periodEnd;
+          patch.expires_at = periodEnd;
+        }
+        if (paddleSubId) patch.paddle_subscription_id = paddleSubId;
+        if (paddleCustomerId) patch.paddle_customer_id = paddleCustomerId;
+        if (paddlePriceId) patch.paddle_price_id = paddlePriceId;
+
+        // Prefer update by paddle_subscription_id, else by user_id+active.
+        let updatedId: string | null = null;
+        if (paddleSubId) {
+          const { data: row } = await supabase
+            .from("vendor_subscriptions")
+            .update(patch)
+            .eq("paddle_subscription_id", paddleSubId)
+            .select("id")
+            .maybeSingle();
+          updatedId = row?.id ?? null;
+        }
+        if (!updatedId) {
+          const { data: row } = await supabase
+            .from("vendor_subscriptions")
+            .update(patch)
+            .eq("user_id", userId)
+            .in("status", ["active", "past_due"])
+            .select("id")
+            .maybeSingle();
+          updatedId = row?.id ?? null;
+        }
+        if (!updatedId) {
           await supabase
             .from("vendor_subscriptions")
-            .insert({ user_id: userId, plan, status: "active" });
+            .insert({ user_id: userId, ...patch });
         }
+      } else if (PAST_DUE_EVENTS.has(eventType)) {
+        await supabase
+          .from("vendor_subscriptions")
+          .update({ status: "past_due", last_event_at: now })
+          .eq("user_id", userId)
+          .eq("status", "active");
       } else if (CANCEL_EVENTS.has(eventType)) {
         await supabase
           .from("vendor_subscriptions")
-          .update({ status: "canceled" })
+          .update({
+            status: "canceled",
+            canceled_at: now,
+            last_event_at: now,
+          })
           .eq("user_id", userId)
-          .eq("status", "active");
+          .in("status", ["active", "past_due"]);
       }
     } catch (mutErr) {
-      // Roll back the dedupe row so Paddle's retry can actually re-process.
       if (eventId) {
         await supabase.from("paddle_webhook_events").delete().eq("event_id", eventId);
       }
@@ -157,9 +210,6 @@ Deno.serve(async (req) => {
     return ackOk();
   } catch (err: any) {
     console.error("paddle-webhook error", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: err.message }, 500);
   }
 });

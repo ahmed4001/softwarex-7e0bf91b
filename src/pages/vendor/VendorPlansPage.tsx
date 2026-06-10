@@ -99,22 +99,23 @@ export default function VendorPlansPage() {
 
   const selectPlan = useMutation({
     mutationFn: async (plan: string) => {
-      if (subscription) {
-        const { error } = await supabase
-          .from("vendor_subscriptions")
-          .update({ plan })
-          .eq("id", subscription.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("vendor_subscriptions")
-          .insert({ user_id: user!.id, plan });
-        if (error) throw error;
+      if (plan === "free") {
+        const { data, error } = await supabase.functions.invoke("activate-free-plan");
+        if (error || (data as any)?.error) {
+          throw new Error((data as any)?.error || error?.message || "Failed");
+        }
+        return { redirect: null as string | null };
       }
+      // Paid plan: route to Paddle checkout — DB row is created by webhook.
+      return { redirect: `/checkout?plan=${plan}` };
     },
-    onSuccess: () => {
-      toast.success("Plan updated!");
-      queryClient.invalidateQueries({ queryKey: ["vendor-subscription"] });
+    onSuccess: (result) => {
+      if (result.redirect) {
+        window.location.href = result.redirect;
+      } else {
+        toast.success("Plan updated!");
+        queryClient.invalidateQueries({ queryKey: ["vendor-subscription"] });
+      }
     },
     onError: (err: any) => toast.error(err.message),
   });
