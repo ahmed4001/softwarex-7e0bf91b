@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CreditCard, Lock, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
+import {
+  CreditCard,
+  Lock,
+  ArrowLeft,
+  Sparkles,
+  Loader2,
+  AlertTriangle,
+  Terminal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { SeoHead } from "@/components/SeoHead";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,8 +30,37 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [paddleError, setPaddleError] = useState<string | null>(null);
+  const hasLoggedRef = useRef(false);
   const planId = params.get("plan") || "featured";
   const plan = planPricing[planId] || planPricing.featured;
+
+  useEffect(() => {
+    if (hasLoggedRef.current) return;
+    hasLoggedRef.current = true;
+
+    const win = window as any;
+    const preloaded = win.__paddleLoaded === true;
+    const paddleObj = typeof win.Paddle !== "undefined";
+    const preloadError = win.__paddleLoadError as string | undefined;
+
+    console.log("[Paddle.js] CheckoutPage mount - diagnostics:", {
+      preloadedScriptSuccess: preloaded,
+      windowPaddleExists: paddleObj,
+      preloadError: preloadError || null,
+      userAgent: navigator.userAgent.slice(0, 60),
+    });
+
+    if (preloadError) {
+      console.error("[Paddle.js] Preload script reported error:", preloadError);
+      setPaddleError(preloadError);
+    } else if (!paddleObj && !preloaded) {
+      const reason =
+        "Paddle.js is not available. It may have been blocked by a browser extension, firewall, or cookie-consent tool.";
+      console.warn("[Paddle.js]", reason);
+      setPaddleError(reason);
+    }
+  }, []);
 
   const handlePay = async () => {
     if (!user) {
@@ -30,6 +68,9 @@ export default function CheckoutPage() {
       return;
     }
     setLoading(true);
+    setPaddleError(null);
+
+    console.log("[Paddle.js] handlePay invoked — fetching checkout config");
     try {
       const { data, error } = await supabase.functions.invoke("paddle-create-checkout", {
         body: { plan: planId },
@@ -41,26 +82,46 @@ export default function CheckoutPage() {
       if (data?.error) throw new Error(data.error);
       if (!data?.clientToken || !data?.priceId) throw new Error("Checkout configuration missing");
 
-      const paddle: Paddle | undefined = await initializePaddle({
-        environment: data.environment === "production" ? "production" : "sandbox",
-        token: data.clientToken,
-        eventCallback: (ev) => {
-          if (ev.name === "checkout.completed") {
-            toast.success("Payment successful!");
-            navigate(`/dashboard?paid=1&plan=${planId}`);
-          }
-          if (ev.name === "checkout.error") {
-            toast.error("Checkout error. Please try again.");
-            setLoading(false);
-          }
-          if (ev.name === "checkout.closed") {
-            setLoading(false);
-          }
-        },
+      console.log("[Paddle.js] Checkout config received:", {
+        environment: data.environment,
+        priceId: data.priceId,
+        hasClientToken: !!data.clientToken,
       });
 
-      if (!paddle) throw new Error("Could not initialize Paddle");
+      let paddle: Paddle | undefined;
+      try {
+        paddle = await initializePaddle({
+          environment: data.environment === "production" ? "production" : "sandbox",
+          token: data.clientToken,
+          eventCallback: (ev) => {
+            console.log("[Paddle.js] Checkout event:", ev.name, ev);
+            if (ev.name === "checkout.completed") {
+              toast.success("Payment successful!");
+              navigate(`/dashboard?paid=1&plan=${planId}`);
+            }
+            if (ev.name === "checkout.error") {
+              toast.error("Checkout error. Please try again.");
+              setLoading(false);
+            }
+            if (ev.name === "checkout.closed") {
+              setLoading(false);
+            }
+          },
+        });
+      } catch (initErr: any) {
+        console.error("[Paddle.js] initializePaddle threw:", initErr);
+        setPaddleError(initErr.message || "Paddle failed to initialize.");
+        throw initErr;
+      }
 
+      if (!paddle) {
+        const reason = "Could not initialize Paddle. The library may be blocked or the token is invalid.";
+        console.error("[Paddle.js]", reason);
+        setPaddleError(reason);
+        throw new Error(reason);
+      }
+
+      console.log("[Paddle.js] Opening checkout overlay");
       paddle.Checkout.open({
         items: [{ priceId: data.priceId, quantity: 1 }],
         customer: { email: data.email },
@@ -72,6 +133,7 @@ export default function CheckoutPage() {
         },
       });
     } catch (err: any) {
+      console.error("[Paddle.js] handlePay caught error:", err);
       toast.error(err.message || "Checkout failed. Please try again.");
       setLoading(false);
     }
@@ -98,6 +160,27 @@ export default function CheckoutPage() {
               <h1 className="text-3xl font-display font-bold">Complete your purchase</h1>
               <p className="text-muted-foreground mt-2">You're one step away from going live.</p>
             </div>
+
+            {paddleError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Checkout unavailable</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>{paddleError}</p>
+                  <details className="text-xs opacity-80">
+                    <summary className="cursor-pointer font-medium inline-flex items-center gap-1">
+                      <Terminal className="h-3 w-3" /> View technical details
+                    </summary>
+                    <pre className="mt-2 whitespace-pre-wrap">
+                      {`User-Agent: ${navigator.userAgent}
+window.Paddle defined: ${"Paddle" in window}
+window.__paddleLoaded: ${(window as any).__paddleLoaded ?? "undefined"}
+window.__paddleLoadError: ${(window as any).__paddleLoadError ?? "undefined"}`}
+                    </pre>
+                  </details>
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Card className="glass-card">
               <CardContent className="p-6 md:p-8">
@@ -139,10 +222,18 @@ export default function CheckoutPage() {
 
                 <Button
                   onClick={handlePay}
-                  disabled={loading}
+                  disabled={loading || !!paddleError}
                   className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
                 >
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…</> : <><Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe</>}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" /> Pay ${plan.price}.00 & Subscribe
+                    </>
+                  )}
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
@@ -153,7 +244,9 @@ export default function CheckoutPage() {
 
             <p className="text-center text-xs text-muted-foreground mt-6">
               Need help?{" "}
-              <Link to="/page/contact" className="text-primary hover:underline font-medium">Contact support</Link>
+              <Link to="/page/contact" className="text-primary hover:underline font-medium">
+                Contact support
+              </Link>
             </p>
           </motion.div>
         </div>
