@@ -9,7 +9,7 @@ import { SeoHead } from "@/components/SeoHead";
 
 function renderSeo(ui: React.ReactNode) {
   cleanup();
-  const helmetContext: Partial<FilledContext> = {};
+  const helmetContext: { helmet?: any } = {};
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -20,7 +20,7 @@ function renderSeo(ui: React.ReactNode) {
       </HelmetProvider>
     </QueryClientProvider>,
   );
-  const helmet = (helmetContext as FilledContext).helmet;
+  const helmet = helmetContext.helmet;
   const linkStr = helmet.link.toString();
   const metaStr = helmet.meta.toString();
   const titleStr = helmet.title.toString();
