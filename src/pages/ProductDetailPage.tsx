@@ -255,6 +255,25 @@ export default function ProductDetailPage() {
   });
   const responseMap = new Map((vendorResponses as any[]).map((r: any) => [r.review_id, r]));
 
+  // FAQPage schema source — only first-party answered questions count.
+  const { questions: qaQuestions, answers: qaAnswers } = useProductQA(product?.id);
+  const faqJsonLd = useMemo(() => {
+    const items = (qaQuestions || [])
+      .map((q: any) => {
+        const ans = qaAnswers(q.id);
+        const accepted = ans?.[0];
+        if (!accepted?.body) return null;
+        return {
+          "@type": "Question",
+          name: (q.body || "").slice(0, 240),
+          acceptedAnswer: { "@type": "Answer", text: (accepted.body || "").slice(0, 1000) },
+        };
+      })
+      .filter(Boolean);
+    if (!items.length) return null;
+    return { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: items };
+  }, [qaQuestions, qaAnswers]);
+
   const [reviewSort, setReviewSort] = useState<"newest" | "oldest" | "highest" | "lowest" | "most_helpful">("newest");
   const [reviewRatingFilter, setReviewRatingFilter] = useState<number | null>(null);
   const { handleAffiliateClick } = useAffiliateClick();
