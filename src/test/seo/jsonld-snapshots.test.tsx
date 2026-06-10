@@ -20,7 +20,7 @@ let originalRandomUUID: typeof crypto.randomUUID | undefined;
 let uuidCounter = 0;
 
 beforeAll(() => {
-  vi.useFakeTimers({ now: FROZEN_NOW, shouldAdvanceTime: false });
+  vi.setSystemTime(FROZEN_NOW);
   originalRandom = Math.random;
   let seed = 0x12345678;
   Math.random = () => {
