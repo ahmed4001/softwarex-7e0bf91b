@@ -25,6 +25,18 @@ const GENERIC_ROOTS = new Set([
   "io", "ai", "dev", "net", "org", "info", "hub", "center", "portal",
 ]);
 
+const JUNK_NAMES = new Set([
+  "pros", "cons", "first", "affordable", "real", "must", "key", "support",
+  "sales", "integration", "scalable", "hospitality", "conclusion", "gdpr",
+  "cloud-based", "highly customizable", "api integrations", "time tracking",
+  "expense tracking", "real-time collaboration", "tax compliance",
+  "automatic tax calculation", "customizable invoices", "ai-driven analytics",
+  "payment provider support", "automated financial reporting",
+  "multi-tier commissions", "agentless scanning", "ad trackers",
+  "affiliate marketing", "key strength", "summary", "overview", "features",
+  "pricing", "free", "freemium", "enterprise", "starter", "basic", "premium",
+]);
+
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
