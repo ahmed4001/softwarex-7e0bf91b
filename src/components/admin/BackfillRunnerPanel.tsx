@@ -75,12 +75,12 @@ export function BackfillRunnerPanel() {
 
       let applied = false;
       if (uid) {
-        const { data: profile } = await (supabase as any)
-          .from("profiles")
-          .select("backfill_runner_settings")
+        const { data: row } = await (supabase as any)
+          .from("profile_backfill_settings")
+          .select("settings")
           .eq("user_id", uid)
           .maybeSingle();
-        const remote = profile?.backfill_runner_settings as Partial<Settings> | null;
+        const remote = row?.settings as Partial<Settings> | null;
         if (remote && typeof remote === "object") {
           applySettings(remote);
           applied = true;
@@ -111,9 +111,8 @@ export function BackfillRunnerPanel() {
     saveTimer.current = setTimeout(async () => {
       setSaving(true);
       const { error } = await (supabase as any)
-        .from("profiles")
-        .update({ backfill_runner_settings: s })
-        .eq("user_id", userId);
+        .from("profile_backfill_settings")
+        .upsert({ user_id: userId, settings: s }, { onConflict: "user_id" });
       setSaving(false);
       if (error) {
         toast.error(`Could not sync settings: ${error.message}`);
