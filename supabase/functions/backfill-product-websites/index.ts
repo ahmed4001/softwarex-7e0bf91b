@@ -101,12 +101,21 @@ Deno.serve(async (req) => {
     // Skip products we've already attempted in a prior run (any status).
     let rows = rowsRaw || [];
     if (rows.length && !ids?.length) {
-      const idList = rows.map((r: any) => r.id);
-      const { data: tried } = await supabase
-        .from("backfill_match_log")
-        .select("product_id")
-        .in("product_id", idList);
-      const triedSet = new Set((tried || []).map((t: any) => t.product_id));
+      // Fetch ALL tried product_ids (chunked to dodge PostgREST 1000-row default
+      // and URL length limits). Distinct list is small enough to hold in memory.
+      const triedSet = new Set<string>();
+      let from = 0;
+      const page = 1000;
+      while (true) {
+        const { data: tried, error: tErr } = await supabase
+          .from("backfill_match_log")
+          .select("product_id")
+          .range(from, from + page - 1);
+        if (tErr || !tried || tried.length === 0) break;
+        for (const t of tried) triedSet.add(t.product_id);
+        if (tried.length < page) break;
+        from += page;
+      }
       rows = rows.filter((r: any) => !triedSet.has(r.id)).slice(0, limit);
     }
 
