@@ -35,6 +35,7 @@ const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage"));
+const AdminProductCleanupPage = lazy(() => import("./pages/admin/AdminProductCleanupPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/admin/AdminCategoriesPage"));
 const AdminReviewsPage = lazy(() => import("./pages/admin/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
