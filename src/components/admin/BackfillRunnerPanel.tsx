@@ -264,7 +264,8 @@ export function BackfillRunnerPanel() {
           </Button>
           {loaded && (
             <span className="text-xs text-muted-foreground flex items-center gap-1" key={savedTick}>
-              <Save className="h-3 w-3" /> Saved for this admin
+              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              {saving ? "Syncing…" : userId ? "Synced to your profile" : "Saved locally (sign in to sync)"}
             </span>
           )}
           {running && (
