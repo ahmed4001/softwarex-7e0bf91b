@@ -122,9 +122,7 @@ Deno.serve(async (req) => {
         .eq("status", "active");
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return ackOk();
   } catch (err: any) {
     console.error("paddle-webhook error", err);
     return new Response(JSON.stringify({ error: err.message }), {
