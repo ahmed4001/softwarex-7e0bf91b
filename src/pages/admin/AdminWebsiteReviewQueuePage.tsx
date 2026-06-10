@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Clock, Search, ExternalLink, Filter } from "lucide-react";
 
@@ -29,11 +33,14 @@ type ReviewItem = {
   created_at: string;
 };
 
+type BulkAction = "approve" | "reject" | null;
+
 export default function AdminWebsiteReviewQueuePage() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<BulkAction>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["website-review-queue", statusFilter],
@@ -61,51 +68,173 @@ export default function AdminWebsiteReviewQueuePage() {
     );
   }, [items, search]);
 
+  const pendingItems = useMemo(() => filtered.filter((i) => i.status === "pending"), [filtered]);
+  const allPendingSelected = pendingItems.length > 0 && pendingItems.every((i) => selectedIds.has(i.id));
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllPending = () => {
+    if (allPendingSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pendingItems.forEach((i) => next.delete(i.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pendingItems.forEach((i) => next.add(i.id));
+        return next;
+      });
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const selectedItems = useMemo(
+    () => filtered.filter((i) => selectedIds.has(i.id)),
+    [filtered, selectedIds],
+  );
+
+  const approveOne = async (item: ReviewItem) => {
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    const { error: upErr } = await supabase
+      .from("products")
+      .update({ website_url: item.candidate_url })
+      .eq("id", item.product_id);
+    if (upErr) throw upErr;
+    const { error: qErr } = await (supabase as any)
+      .from("website_url_review_queue")
+      .update({
+        status: "approved",
+        reviewed_by: uid,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", item.id);
+    if (qErr) throw qErr;
+  };
+
+  const rejectOne = async (item: ReviewItem) => {
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    const { error } = await (supabase as any)
+      .from("website_url_review_queue")
+      .update({
+        status: "rejected",
+        reviewed_by: uid,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", item.id);
+    if (error) throw error;
+  };
+
   const approve = useMutation({
-    mutationFn: async (item: ReviewItem) => {
-      const { data: userRes } = await supabase.auth.getUser();
-      const uid = userRes.user?.id;
-      const { error: upErr } = await supabase
-        .from("products")
-        .update({ website_url: item.candidate_url })
-        .eq("id", item.product_id);
-      if (upErr) throw upErr;
-      const { error: qErr } = await (supabase as any)
-        .from("website_url_review_queue")
-        .update({
-          status: "approved",
-          reviewed_by: uid,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", item.id);
-      if (qErr) throw qErr;
-    },
+    mutationFn: approveOne,
     onSuccess: () => {
-      toast({ title: "Approved", description: "Website URL applied to product." });
+      toast.success("Website URL applied to product.");
       qc.invalidateQueries({ queryKey: ["website-review-queue"] });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast.error(e.message || "Approval failed"),
   });
 
   const reject = useMutation({
-    mutationFn: async (item: ReviewItem) => {
-      const { data: userRes } = await supabase.auth.getUser();
-      const uid = userRes.user?.id;
-      const { error } = await (supabase as any)
-        .from("website_url_review_queue")
-        .update({
-          status: "rejected",
-          reviewed_by: uid,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", item.id);
-      if (error) throw error;
-    },
+    mutationFn: rejectOne,
     onSuccess: () => {
-      toast({ title: "Rejected", description: "Candidate URL discarded." });
+      toast.success("Candidate URL discarded.");
       qc.invalidateQueries({ queryKey: ["website-review-queue"] });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast.error(e.message || "Rejection failed"),
+  });
+
+  const bulkApprove = useMutation({
+    mutationFn: async (items: ReviewItem[]) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      let succeeded = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const item of items) {
+        try {
+          const { error: upErr } = await supabase
+            .from("products")
+            .update({ website_url: item.candidate_url })
+            .eq("id", item.product_id);
+          if (upErr) throw upErr;
+          const { error: qErr } = await (supabase as any)
+            .from("website_url_review_queue")
+            .update({
+              status: "approved",
+              reviewed_by: uid,
+              reviewed_at: new Date().toISOString(),
+            })
+            .eq("id", item.id);
+          if (qErr) throw qErr;
+          succeeded++;
+        } catch (e: any) {
+          failed++;
+          errors.push(`${item.product_name}: ${e.message}`);
+        }
+      }
+      return { succeeded, failed, errors };
+    },
+    onSuccess: (res) => {
+      if (res.failed === 0) {
+        toast.success(`${res.succeeded} item(s) approved.`);
+      } else {
+        toast.error(`${res.failed} approval(s) failed, ${res.succeeded} succeeded.`);
+      }
+      clearSelection();
+      qc.invalidateQueries({ queryKey: ["website-review-queue"] });
+    },
+    onError: (e: any) => toast.error(e.message || "Bulk approval failed"),
+  });
+
+  const bulkReject = useMutation({
+    mutationFn: async (items: ReviewItem[]) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      let succeeded = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const item of items) {
+        try {
+          const { error } = await (supabase as any)
+            .from("website_url_review_queue")
+            .update({
+              status: "rejected",
+              reviewed_by: uid,
+              reviewed_at: new Date().toISOString(),
+            })
+            .eq("id", item.id);
+          if (error) throw error;
+          succeeded++;
+        } catch (e: any) {
+          failed++;
+          errors.push(`${item.product_name}: ${e.message}`);
+        }
+      }
+      return { succeeded, failed, errors };
+    },
+    onSuccess: (res) => {
+      if (res.failed === 0) {
+        toast.success(`${res.succeeded} item(s) rejected.`);
+      } else {
+        toast.error(`${res.failed} rejection(s) failed, ${res.succeeded} succeeded.`);
+      }
+      clearSelection();
+      qc.invalidateQueries({ queryKey: ["website-review-queue"] });
+    },
+    onError: (e: any) => toast.error(e.message || "Bulk rejection failed"),
   });
 
   const counts = useMemo(() => {
@@ -113,6 +242,8 @@ export default function AdminWebsiteReviewQueuePage() {
     for (const i of items) (c as any)[i.status] = ((c as any)[i.status] || 0) + 1;
     return c;
   }, [items]);
+
+  const isBulkProcessing = bulkApprove.isPending || bulkReject.isPending;
 
   return (
     <>
@@ -140,7 +271,10 @@ export default function AdminWebsiteReviewQueuePage() {
               <label className="text-xs text-muted-foreground font-medium">Status</label>
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  clearSelection();
+                }}
                 className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm min-w-[140px]"
               >
                 <option value="pending">Pending ({counts.pending})</option>
@@ -152,11 +286,51 @@ export default function AdminWebsiteReviewQueuePage() {
           </CardContent>
         </Card>
 
+        {selectedIds.size > 0 && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-3 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-medium text-foreground">
+                {selectedIds.size} selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={isBulkProcessing}
+                  onClick={() => setBulkAction("approve")}
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" /> Approve Selected
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isBulkProcessing}
+                  onClick={() => setBulkAction("reject")}
+                >
+                  <XCircle className="h-3 w-3 mr-1" /> Reject Selected
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSelection}>
+                  Clear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  {statusFilter === "pending" && (
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={allPendingSelected}
+                        onCheckedChange={toggleSelectAllPending}
+                        aria-label="Select all pending"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Product</TableHead>
                   <TableHead>Candidate URL</TableHead>
                   <TableHead className="w-[110px]">Confidence</TableHead>
@@ -169,13 +343,13 @@ export default function AdminWebsiteReviewQueuePage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={statusFilter === "pending" ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12">
+                    <TableCell colSpan={statusFilter === "pending" ? 8 : 7} className="text-center py-12">
                       <Filter className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
                       <p className="text-muted-foreground text-sm">Nothing in this queue.</p>
                     </TableCell>
@@ -183,6 +357,15 @@ export default function AdminWebsiteReviewQueuePage() {
                 ) : (
                   filtered.map((item) => (
                     <TableRow key={item.id}>
+                      {statusFilter === "pending" && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.has(item.id)}
+                            onCheckedChange={() => toggleSelect(item.id)}
+                            aria-label={`Select ${item.product_name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <span className="font-medium text-sm">{item.product_name}</span>
                       </TableCell>
@@ -263,6 +446,51 @@ export default function AdminWebsiteReviewQueuePage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!bulkAction} onOpenChange={(open) => !open && setBulkAction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {bulkAction === "approve" ? "Approve selected items?" : "Reject selected items?"}
+            </DialogTitle>
+            <DialogDescription>
+              You are about to {bulkAction} {selectedItems.length} item(s). This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-48 overflow-y-auto space-y-1 text-sm text-muted-foreground border rounded-md p-3">
+            {selectedItems.map((item) => (
+              <div key={item.id} className="flex items-center gap-2">
+                {bulkAction === "approve" ? (
+                  <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                ) : (
+                  <XCircle className="h-3.5 w-3.5 text-red-600" />
+                )}
+                <span className="font-medium text-foreground">{item.product_name}</span>
+                <span className="truncate">— {item.candidate_domain || item.candidate_url}</span>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBulkAction(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant={bulkAction === "approve" ? "default" : "destructive"}
+              onClick={() => {
+                if (bulkAction === "approve") {
+                  bulkApprove.mutate(selectedItems);
+                } else if (bulkAction === "reject") {
+                  bulkReject.mutate(selectedItems);
+                }
+                setBulkAction(null);
+              }}
+              disabled={isBulkProcessing}
+            >
+              {bulkAction === "approve" ? "Approve" : "Reject"} {selectedItems.length}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
