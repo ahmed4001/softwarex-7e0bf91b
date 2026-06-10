@@ -4080,6 +4080,65 @@ export type Database = {
         }
         Relationships: []
       }
+      website_url_review_queue: {
+        Row: {
+          candidate_domain: string | null
+          candidate_url: string
+          candidates: Json | null
+          confidence: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          product_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_domain?: string | null
+          candidate_url: string
+          candidates?: Json | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          product_name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_domain?: string | null
+          candidate_url?: string
+          candidates?: Json | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          product_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_url_review_queue_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       active_comparisons: {
