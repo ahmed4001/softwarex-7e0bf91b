@@ -49,7 +49,7 @@ export function FAQSection() {
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-10 md:mb-10 md:mb-12"
+          className="text-center mb-10 md:mb-12"
         >
           <p className="text-sm font-semibold text-primary mb-2">Frequently Asked Questions</p>
           <h2 id="faq-heading" className="text-3xl md:text-4xl font-extrabold text-foreground">
