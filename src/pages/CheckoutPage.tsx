@@ -34,6 +34,35 @@ type ConfirmedSub = {
   expires_at: string | null;
 };
 
+// Session-cache helpers — avoid hitting the DB when the webhook has already
+// confirmed this subscription in the current browser session.
+const SUB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const subCacheKey = (userId: string) => `rh:vendor_sub:${userId}`;
+
+function readCachedSub(userId: string, expectedPlan: string): ConfirmedSub | null {
+  try {
+    const raw = sessionStorage.getItem(subCacheKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { sub: ConfirmedSub; cachedAt: number };
+    if (Date.now() - parsed.cachedAt > SUB_CACHE_TTL_MS) return null;
+    if (parsed.sub.plan !== expectedPlan || parsed.sub.status !== "active") return null;
+    return parsed.sub;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSub(userId: string, sub: ConfirmedSub) {
+  try {
+    sessionStorage.setItem(
+      subCacheKey(userId),
+      JSON.stringify({ sub, cachedAt: Date.now() }),
+    );
+  } catch {
+    /* sessionStorage unavailable — ignore */
+  }
+}
+
 export default function CheckoutPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -47,13 +76,12 @@ export default function CheckoutPage() {
   const planId = params.get("plan") || "featured";
   const plan = planPricing[planId] || planPricing.featured;
 
-  // Confirm the new plan after checkout. Strategy (to minimize DB reads on
-  // limited plans):
-  //   1. Subscribe to realtime changes on vendor_subscriptions for this user
-  //      so the webhook write notifies us with zero polling.
-  //   2. Run a short exponential-backoff poll as a fallback (≤5 reads total)
-  //      in case realtime is disabled for the table.
-  //   3. Pause polling while the tab is hidden.
+  // Confirm the new plan after checkout — tiered to minimize backend cost:
+  //   Tier 0: Session cache (sessionStorage) — zero network, instant.
+  //   Tier 1: Realtime channel — webhook write notifies us, zero polling.
+  //   Tier 2: Exponential-backoff DB poll (≤5 reads, paused while tab hidden).
+  // Every confirmation (any tier) is written back to the cache so subsequent
+  // visits in the same session skip the DB entirely.
   const fetchActiveSub = async (expectedPlan: string): Promise<ConfirmedSub | null> => {
     if (!user) return null;
     const { data } = await supabase
@@ -72,12 +100,24 @@ export default function CheckoutPage() {
     setConfirming(true);
     setConfirmError(null);
 
+    // Tier 0: session cache — short-circuit if we already confirmed this plan
+    // in the current session (e.g. user reopened checkout after paying).
+    const cached = readCachedSub(user.id, planId);
+    if (cached) {
+      console.log("[Paddle.js] Subscription confirmed from session cache", cached);
+      setConfirming(false);
+      setConfirmedSub(cached);
+      toast.success(`Your ${planPricing[cached.plan]?.name ?? cached.plan} plan is active!`);
+      return;
+    }
+
     let settled = false;
     const finish = (sub: ConfirmedSub | null) => {
       if (settled) return;
       settled = true;
       setConfirming(false);
       if (sub) {
+        writeCachedSub(user.id, sub);
         setConfirmedSub(sub);
         toast.success(`Your ${planPricing[sub.plan]?.name ?? sub.plan} plan is active!`);
       } else {
@@ -88,7 +128,7 @@ export default function CheckoutPage() {
       }
     };
 
-    // 1. Realtime listener — fires once the webhook writes the row.
+    // Tier 1: realtime listener — fires once the webhook writes the row.
     const channel = supabase
       .channel(`vendor_sub_${user.id}`)
       .on(
@@ -105,7 +145,7 @@ export default function CheckoutPage() {
       )
       .subscribe();
 
-    // 2. Fallback exponential-backoff poll (max 5 reads ≈ 30s).
+    // Tier 2: fallback exponential-backoff poll (max 5 reads ≈ 30s).
     const delays = [1500, 3000, 5000, 8000, 12000];
     for (let i = 0; i < delays.length && !settled; i++) {
       await new Promise((r) => setTimeout(r, delays[i]));
