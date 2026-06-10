@@ -1,4 +1,5 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "./fixtures/deterministic";
+import type { Page } from "@playwright/test";
 
 // SEO smoke tests for key public routes. For each route we assert:
 //   1) Exactly one <link rel="canonical"> exists and is absolute.
