@@ -255,13 +255,17 @@ window.__paddleLoadError: ${(window as any).__paddleLoadError ?? "undefined"}`}
                 </div>
 
                 <Button
-                  onClick={handlePay}
-                  disabled={loading || !!paddleError}
+                  onClick={paddleError ? handleRetry : handlePay}
+                  disabled={loading}
                   className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…
+                    </>
+                  ) : paddleError ? (
+                    <>
+                      <RefreshCw className="h-4 w-4" /> Retry Paddle Checkout
                     </>
                   ) : (
                     <>
