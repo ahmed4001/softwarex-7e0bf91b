@@ -344,7 +344,8 @@ export default function ProductDetailPage() {
               ...((product.categories as any)?.name ? [{ "@type": "ListItem", "position": 2, "name": (product.categories as any).name, "item": `${window.location.origin}/category/${(product.categories as any).slug}` }] : []),
               { "@type": "ListItem", "position": (product.categories as any)?.name ? 3 : 2, "name": product.name }
             ]
-          }
+          },
+          ...(faqJsonLd ? [faqJsonLd] : [])
         ]}
       />
 
