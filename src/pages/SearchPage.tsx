@@ -34,18 +34,30 @@ const QUICK_PRICING = ["all", "free", "freemium", "paid"] as const;
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") || "";
+  const debouncedQ = useDebounce(q, 250);
   const [page, setPage] = useState(0);
   const [tierFilter, setTierFilter] = useState("all");
   const [pricingFilter, setPricingFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [ratingRange, setRatingRange] = useState([0]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+
+  const debouncedTier = useDebounce(tierFilter, 200);
+  const debouncedPricing = useDebounce(pricingFilter, 200);
+  const debouncedCategory = useDebounce(categoryFilter, 200);
+  const debouncedRating = useDebounce(ratingRange[0], 200);
 
   const hasActiveFilters = pricingFilter !== "all" || categoryFilter !== "all" || ratingRange[0] > 0 || tierFilter !== "all";
+  const activeFilterCount = [pricingFilter !== "all", categoryFilter !== "all", ratingRange[0] > 0, tierFilter !== "all"].filter(Boolean).length;
 
-  useEffect(() => { setPage(0); }, [q, tierFilter, pricingFilter, categoryFilter, ratingRange]);
+  useEffect(() => { setPage(0); }, [debouncedQ, debouncedTier, debouncedPricing, debouncedCategory, debouncedRating]);
+  useEffect(() => {
+    if (debouncedQ) trackEvent("search_query", { query: debouncedQ, ai_mode: aiMode, is_mobile: isMobile });
+  }, [debouncedQ, aiMode, isMobile]);
 
   // AI-powered search
   const { data: aiResults, isLoading: aiLoading } = useQuery({
@@ -63,6 +75,7 @@ export default function SearchPage() {
 
   const { data: categories } = useQuery({
     queryKey: ["search-categories"],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data } = await supabase
         .from("categories")
@@ -75,54 +88,41 @@ export default function SearchPage() {
   });
 
   const { data: totalCount } = useQuery({
-    queryKey: ["search-count", q, tierFilter, pricingFilter, categoryFilter, ratingRange[0]],
+    queryKey: ["search-count", debouncedQ, debouncedTier, debouncedPricing, debouncedCategory, debouncedRating],
+    staleTime: 60_000,
     queryFn: async () => {
-      if (!q.trim()) return 0;
+      if (!debouncedQ.trim()) return 0;
       let query = supabase
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true)
-        .ilike("name", `%${q}%`);
-      if (tierFilter !== "all") {
-        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
-      }
-      if (pricingFilter !== "all") {
-        query = query.eq("pricing_model", pricingFilter as any);
-      }
-      if (categoryFilter !== "all") {
-        query = query.eq("category_id", categoryFilter);
-      }
-      if (ratingRange[0] > 0) {
-        query = query.gte("avg_rating", ratingRange[0]);
-      }
+        .ilike("name", `%${debouncedQ}%`);
+      if (debouncedTier !== "all") query = query.eq("is_sponsored", true).eq("sponsor_tier", debouncedTier as any);
+      if (debouncedPricing !== "all") query = query.eq("pricing_model", debouncedPricing as any);
+      if (debouncedCategory !== "all") query = query.eq("category_id", debouncedCategory);
+      if (debouncedRating > 0) query = query.gte("avg_rating", debouncedRating);
       const { count } = await query;
       return count ?? 0;
     },
-    enabled: q.length > 0,
+    enabled: debouncedQ.length > 0,
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["search", q, page, tierFilter, pricingFilter, categoryFilter, ratingRange[0]],
+  const { data: products, isLoading, isFetching } = useQuery({
+    queryKey: ["search", debouncedQ, page, debouncedTier, debouncedPricing, debouncedCategory, debouncedRating],
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
-      if (!q.trim()) return [];
+      if (!debouncedQ.trim()) return [];
       const { applyRealFirstOrder, realFirstComparator } = await import("@/lib/product-order");
       let query = supabase
         .from("products")
         .select("*, categories!products_category_id_fkey(name)")
         .eq("is_active", true)
-        .ilike("name", `%${q}%`);
-      if (tierFilter !== "all") {
-        query = query.eq("is_sponsored", true).eq("sponsor_tier", tierFilter as any);
-      }
-      if (pricingFilter !== "all") {
-        query = query.eq("pricing_model", pricingFilter as any);
-      }
-      if (categoryFilter !== "all") {
-        query = query.eq("category_id", categoryFilter);
-      }
-      if (ratingRange[0] > 0) {
-        query = query.gte("avg_rating", ratingRange[0]);
-      }
+        .ilike("name", `%${debouncedQ}%`);
+      if (debouncedTier !== "all") query = query.eq("is_sponsored", true).eq("sponsor_tier", debouncedTier as any);
+      if (debouncedPricing !== "all") query = query.eq("pricing_model", debouncedPricing as any);
+      if (debouncedCategory !== "all") query = query.eq("category_id", debouncedCategory);
+      if (debouncedRating > 0) query = query.gte("avg_rating", debouncedRating);
       query = query.order("is_sponsored", { ascending: false });
       query = applyRealFirstOrder(query, "rating");
       const { data } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -136,7 +136,7 @@ export default function SearchPage() {
         return realFirstComparator(a, b);
       });
     },
-    enabled: q.length > 0,
+    enabled: debouncedQ.length > 0,
   });
 
   const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
@@ -146,7 +146,14 @@ export default function SearchPage() {
     setCategoryFilter("all");
     setRatingRange([0]);
     setTierFilter("all");
+    trackEvent("search_filters_clear", { query: debouncedQ, is_mobile: isMobile });
   };
+
+  const handlePricingChange = (v: string) => {
+    setPricingFilter(v);
+    trackEvent("search_filter_change", { type: "pricing", value: v, is_mobile: isMobile });
+  };
+
 
   const displayProducts = aiMode ? (aiResults?.results || []) : products;
   const displayLoading = aiMode ? aiLoading : isLoading;
