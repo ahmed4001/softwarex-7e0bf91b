@@ -2649,6 +2649,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          backfill_runner_settings: Json | null
           ban_reason: string | null
           bio: string | null
           company: string | null
@@ -2677,6 +2678,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          backfill_runner_settings?: Json | null
           ban_reason?: string | null
           bio?: string | null
           company?: string | null
@@ -2705,6 +2707,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          backfill_runner_settings?: Json | null
           ban_reason?: string | null
           bio?: string | null
           company?: string | null
@@ -4230,6 +4233,7 @@ export type Database = {
         Args: never
         Returns: {
           avatar_url: string | null
+          backfill_runner_settings: Json | null
           ban_reason: string | null
           bio: string | null
           company: string | null
