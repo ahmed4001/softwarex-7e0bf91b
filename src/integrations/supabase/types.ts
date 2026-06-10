@@ -1714,26 +1714,119 @@ export type Database = {
         }
         Relationships: []
       }
+      paddle_alerts: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          message: string
+          paddle_subscription_id: string | null
+          resolved_at: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          message: string
+          paddle_subscription_id?: string | null
+          resolved_at?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          message?: string
+          paddle_subscription_id?: string | null
+          resolved_at?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      paddle_checkout_attempts: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          plan: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          plan: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      paddle_drift_events: {
+        Row: {
+          created_at: string
+          details: Json
+          fields_changed: string[]
+          id: string
+          paddle_subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          fields_changed?: string[]
+          id?: string
+          paddle_subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          fields_changed?: string[]
+          id?: string
+          paddle_subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       paddle_webhook_events: {
         Row: {
           event_id: string
           event_type: string
+          payload: Json | null
           plan: string | null
           received_at: string
+          signature_valid: boolean
           user_id: string | null
         }
         Insert: {
           event_id: string
           event_type: string
+          payload?: Json | null
           plan?: string | null
           received_at?: string
+          signature_valid?: boolean
           user_id?: string | null
         }
         Update: {
           event_id?: string
           event_type?: string
+          payload?: Json | null
           plan?: string | null
           received_at?: string
+          signature_valid?: boolean
           user_id?: string | null
         }
         Relationships: []
