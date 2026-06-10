@@ -107,21 +107,7 @@ async function main() {
     entries.push({ loc: `${BASE_URL}/author/${id}`, priority: "0.4" });
   }
 
-  const push = (rows: any[], prefix: string, priority = "0.7") => {
-    for (const r of rows || []) {
-      if (!r?.slug) continue;
-      entries.push({ loc: `${BASE_URL}${prefix}/${r.slug}`, lastmod: fmt(r.updated_at), priority });
-    }
-  };
-  push(products, "/product", "0.8");
-  push(categories, "/category", "0.8");
-  push(posts, "/blog", "0.7");
-  push(comparisons, "/compare", "0.7");
-  push(pages, "/page", "0.5");
-  push(guides, "/buyer-guides", "0.6");
-  push(lists, "/lists", "0.5");
-  push(glossary, "/glossary", "0.4");
-  push(landing, "", "0.6");
+
 
   const body = entries.map(e => [
     "  <url>",
