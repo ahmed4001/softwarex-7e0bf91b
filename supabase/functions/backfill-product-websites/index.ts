@@ -18,21 +18,48 @@ const BLOCKED_HOSTS = [
   "crunchbase.com", "bloomberg.com", "forbes.com", "techcrunch.com",
 ];
 
-// Generic English words that are clearly NOT product names — skip outright.
-const JUNK_NAMES = new Set([
-  "pros", "cons", "first", "affordable", "real", "must", "key", "support",
-  "sales", "integration", "scalable", "hospitality", "conclusion", "gdpr",
-  "cloud-based", "highly customizable", "api integrations", "time tracking",
-  "expense tracking", "real-time collaboration", "tax compliance",
-  "automatic tax calculation", "customizable invoices", "ai-driven analytics",
-  "payment provider support", "automated financial reporting",
-  "multi-tier commissions", "agentless scanning", "ad trackers",
-  "affiliate marketing", "key strength", "summary", "overview", "features",
-  "pricing", "free", "freemium", "enterprise", "starter", "basic", "premium",
+const GENERIC_ROOTS = new Set([
+  "app", "apps", "software", "platform", "tool", "tools", "suite", "solution",
+  "solutions", "service", "services", "cloud", "web", "online", "digital",
+  "tech", "system", "systems", "pro", "hq", "inc", "corp", "co", "company",
+  "io", "ai", "dev", "net", "org", "info", "hub", "center", "portal",
 ]);
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function normalizeName(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+}
+
+function nameSimilarity(a: string, b: string): number {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1.0;
+  // One contains the other (e.g. "Stripe" vs "Stripe Payments")
+  if (na.includes(nb) || nb.includes(na)) return 0.85;
+  // Same first 4 chars + length within 40%
+  if (na.slice(0, 4) === nb.slice(0, 4)) {
+    const ratio = Math.min(na.length, nb.length) / Math.max(na.length, nb.length);
+    if (ratio >= 0.6) return 0.6;
+  }
+  return 0;
+}
+
+function isGenericRoot(root: string): boolean {
+  return GENERIC_ROOTS.has(root) || root.length <= 2;
+}
+
+function domainConfidence(productSlug: string, host: string): number {
+  const rootSlug = slugify(host.split(".")[0]);
+  if (!rootSlug || rootSlug.length < 3 || productSlug.length < 3) return 0;
+  if (isGenericRoot(rootSlug)) return 0; // generic roots are untrustworthy
+  if (rootSlug === productSlug) return 1.0;
+  if (rootSlug.includes(productSlug) || productSlug.includes(rootSlug)) return 0.75;
+  if (rootSlug.startsWith(productSlug.slice(0, 4)) || productSlug.startsWith(rootSlug.slice(0, 4))) return 0.35;
+  return 0;
 }
 
 function pickBestUrl(
@@ -50,21 +77,31 @@ function pickBestUrl(
     try { host = new URL(url).hostname.toLowerCase().replace(/^www\./, ""); }
     catch { continue; }
     const blocked = BLOCKED_HOSTS.some((b) => host === b || host.endsWith("." + b));
-    const rootSlug = slugify(host.split(".")[0]);
-    let confidence = 0;
-    if (!blocked && slug.length >= 3 && rootSlug.length >= 3) {
-      if (rootSlug === slug) confidence = 1;
-      else if (rootSlug.includes(slug) || slug.includes(rootSlug)) confidence = 0.7;
-      else if (rootSlug.startsWith(slug.slice(0, 4)) || slug.startsWith(rootSlug.slice(0, 4))) confidence = 0.4;
+    if (blocked) {
+      candidates.push({ url, host, blocked: true, confidence: 0 });
+      continue;
     }
-    candidates.push({ url, host, blocked, confidence });
-    if (!blocked && confidence >= 0.7 && (!best || confidence > best.confidence)) {
+    const confidence = domainConfidence(slug, host);
+    candidates.push({ url, host, blocked: false, confidence });
+    if (confidence >= 0.75 && (!best || confidence > best.confidence)) {
       best = { url: `https://${host}`, host, confidence };
     }
   }
   return best
     ? { url: best.url, host: best.host, confidence: best.confidence, candidates }
     : { url: null, host: null, confidence: 0, candidates };
+}
+
+function scoreClearbitMatch(productName: string, clearbitName: string, domain: string): number {
+  const nameConf = nameSimilarity(productName, clearbitName);
+  const domConf = domainConfidence(slugify(productName), domain);
+  // Both name AND domain must look right; weight name similarity heavily
+  // to avoid "Salesforce" matching some unrelated "sales-" domain.
+  if (nameConf >= 0.85 && domConf >= 0.75) return 1.0;
+  if (nameConf >= 0.85 && domConf >= 0.35) return 0.9;
+  if (nameConf >= 0.6 && domConf >= 0.75) return 0.85;
+  if (nameConf >= 0.6 && domConf >= 0.35) return 0.5;
+  return Math.max(0, nameConf * 0.3 + domConf * 0.3); // low unless both decent
 }
 
 
