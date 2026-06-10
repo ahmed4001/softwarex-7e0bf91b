@@ -218,6 +218,11 @@ test.afterEach(async ({ page }, testInfo: TestInfo) => {
       body: JSON.stringify(blocks, null, 2),
       contentType: "application/json",
     });
+    const consoleLog: string[] = (page as any).__consoleLog || [];
+    await testInfo.attach("browser-console.log", {
+      body: consoleLog.join("\n") || "(no console output)",
+      contentType: "text/plain",
+    });
     await page.screenshot({ fullPage: true }).then((buf) =>
       testInfo.attach("page.png", { body: buf, contentType: "image/png" }),
     ).catch(() => {});
