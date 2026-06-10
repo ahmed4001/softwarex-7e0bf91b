@@ -194,21 +194,10 @@ export default function HomePage() {
         {/* 3. Bold stats — moved up for instant credibility */}
         <StatsSection stats={stats} />
 
-        {/* 4. Smart Finder — convert intent right after credibility */}
-        <section className="py-16 md:py-20">
-          <div className="container">
-            <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
-              <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
-                <ProductFinderQuiz />
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* 4. Most Popular Categories */}
+        <MostPopularCategoriesSection />
 
         <div className="section-gradient-divider" aria-hidden="true" />
-
-        {/* 5. Most Popular Categories */}
-        <MostPopularCategoriesSection />
 
         {/* 6. Editor's Choice */}
         <section className="py-16 md:py-20" aria-labelledby="featured-heading">
@@ -240,7 +229,18 @@ export default function HomePage() {
         {/* 9. Recently Added */}
         <RecentlyAddedSection />
 
-        {/* 10. How It Works */}
+        {/* 10. Smart Finder — convert intent before How It Works */}
+        <section className="py-16 md:py-20">
+          <div className="container">
+            <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
+              <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
+                <ProductFinderQuiz />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 11. How It Works */}
         <HowItWorksSection />
 
         {/* 11. Blog Preview + Vendor CTA */}
