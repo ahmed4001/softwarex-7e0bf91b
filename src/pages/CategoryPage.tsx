@@ -212,97 +212,123 @@ export default function CategoryPage() {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t("categoryPage.productsFound", { count: totalCount ?? 0 })}</p>
             </motion.div>
 
-            {/* Mobile filter bar */}
-            <div className="lg:hidden sticky top-[56px] z-20 -mx-4 px-4 py-2.5 mb-4 bg-background/85 backdrop-blur-xl border-b border-border">
-              <div className="flex items-center gap-2">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="rounded-xl gap-1.5 h-9 px-3 text-xs font-medium flex-shrink-0">
-                      <LayoutGrid className="h-3.5 w-3.5" /> Categories
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-[85%] sm:w-80 p-0">
-                    <SheetHeader className="p-4 border-b border-border">
-                      <SheetTitle>{t("categories.title")}</SheetTitle>
-                    </SheetHeader>
-                    <div className="p-3 overflow-y-auto max-h-[calc(100vh-4rem)] space-y-0.5">
-                      <Link to="/category/all" className={cn(
-                        "block px-3 py-2.5 text-sm rounded-xl transition-all font-medium",
-                        isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                      )}>
-                        {t("categoryPage.allCategories")}
-                      </Link>
-                      {categories?.map((c) => (
-                        <Link key={c.id} to={`/category/${c.slug}`} className={cn(
-                          "flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all",
-                          slug === c.slug ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            {/* Mobile filter bar — Variant B (new) */}
+            {useNewMobileFilters && (
+              <div className="lg:hidden sticky top-[56px] z-20 -mx-4 px-4 py-2.5 mb-4 bg-background/85 backdrop-blur-xl border-b border-border" data-ab-variant="B">
+                <div className="flex items-center gap-2">
+                  <Sheet onOpenChange={(o) => o && handleFilterDrawerOpen("categories")}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="rounded-xl gap-1.5 h-9 px-3 text-xs font-medium flex-shrink-0">
+                        <LayoutGrid className="h-3.5 w-3.5" /> Categories
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-[85%] sm:w-80 p-0">
+                      <SheetHeader className="p-4 border-b border-border">
+                        <SheetTitle>{t("categories.title")}</SheetTitle>
+                      </SheetHeader>
+                      <div className="p-3 overflow-y-auto max-h-[calc(100vh-4rem)] space-y-0.5">
+                        <Link to="/category/all" className={cn(
+                          "block px-3 py-2.5 text-sm rounded-xl transition-all font-medium",
+                          isAll ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                         )}>
-                          <span className="truncate">{c.name}</span>
-                          <span className="text-xs opacity-50 ml-2">{c.product_count}</span>
+                          {t("categoryPage.allCategories")}
                         </Link>
-                      ))}
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                        {categories?.map((c) => (
+                          <Link key={c.id} to={`/category/${c.slug}`} className={cn(
+                            "flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all",
+                            slug === c.slug ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                          )}>
+                            <span className="truncate">{c.name}</span>
+                            <span className="text-xs opacity-50 ml-2">{c.product_count}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
 
-                {/* Horizontal sort chips */}
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 -mr-4 pr-4">
-                  {[
-                    { value: "rating", label: t("categoryPage.topRated") },
-                    { value: "reviews", label: t("categoryPage.mostReviews") },
-                    { value: "newest", label: t("categoryPage.newest") },
-                    { value: "name", label: t("categoryPage.az") },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSortChange(opt.value)}
-                      className={cn(
-                        "h-9 px-3 rounded-xl text-xs font-medium whitespace-nowrap transition-colors border",
-                        sort === opt.value
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-muted-foreground border-border hover:text-foreground"
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                  {/* Horizontal sort chips */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 -mr-4 pr-4">
+                    {[
+                      { value: "rating", label: t("categoryPage.topRated") },
+                      { value: "reviews", label: t("categoryPage.mostReviews") },
+                      { value: "newest", label: t("categoryPage.newest") },
+                      { value: "name", label: t("categoryPage.az") },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleSortChange(opt.value)}
+                        className={cn(
+                          "h-9 px-3 rounded-xl text-xs font-medium whitespace-nowrap transition-colors border",
+                          sort === opt.value
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-muted-foreground border-border hover:text-foreground"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Sheet onOpenChange={(o) => o && handleFilterDrawerOpen("tier")}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="rounded-xl h-9 w-9 p-0 flex-shrink-0 relative">
+                        <ListFilter className="h-4 w-4" />
+                        {tierFilter !== "all" && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-2xl">
+                      <SheetHeader>
+                        <SheetTitle>Filter</SheetTitle>
+                      </SheetHeader>
+                      <div className="py-4 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sponsor tier</p>
+                        {[
+                          { value: "all", label: "All Products" },
+                          { value: "gold", label: "🥇 Gold Sponsors" },
+                          { value: "silver", label: "🥈 Silver Sponsors" },
+                          { value: "bronze", label: "🥉 Bronze Sponsors" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => handleTierFilterChange(opt.value)}
+                            className={cn(
+                              "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                              tierFilter === opt.value ? "bg-primary/10 text-primary" : "bg-muted/50 text-foreground hover:bg-muted"
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                 </div>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="rounded-xl h-9 w-9 p-0 flex-shrink-0 relative">
-                      <ListFilter className="h-4 w-4" />
-                      {tierFilter !== "all" && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />}
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom" className="rounded-t-2xl">
-                    <SheetHeader>
-                      <SheetTitle>Filter</SheetTitle>
-                    </SheetHeader>
-                    <div className="py-4 space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sponsor tier</p>
-                      {[
-                        { value: "all", label: "All Products" },
-                        { value: "gold", label: "🥇 Gold Sponsors" },
-                        { value: "silver", label: "🥈 Silver Sponsors" },
-                        { value: "bronze", label: "🥉 Bronze Sponsors" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => handleTierFilterChange(opt.value)}
-                          className={cn(
-                            "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors",
-                            tierFilter === opt.value ? "bg-primary/10 text-primary" : "bg-muted/50 text-foreground hover:bg-muted"
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </SheetContent>
-                </Sheet>
               </div>
-            </div>
+            )}
+
+            {/* Mobile filter bar — Variant A (legacy: two compact Selects) */}
+            {isMobile && !useNewMobileFilters && (
+              <div className="lg:hidden flex items-center gap-2 mb-4" data-ab-variant="A">
+                <Select value={tierFilter} onValueChange={handleTierFilterChange}>
+                  <SelectTrigger className="flex-1 rounded-xl h-10 text-sm"><SelectValue placeholder="Sponsor Tier" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="gold">🥇 Gold Sponsors</SelectItem>
+                    <SelectItem value="silver">🥈 Silver Sponsors</SelectItem>
+                    <SelectItem value="bronze">🥉 Bronze Sponsors</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sort} onValueChange={handleSortChange}>
+                  <SelectTrigger className="flex-1 rounded-xl h-10 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rating">{t("categoryPage.topRated")}</SelectItem>
+                    <SelectItem value="reviews">{t("categoryPage.mostReviews")}</SelectItem>
+                    <SelectItem value="newest">{t("categoryPage.newest")}</SelectItem>
+                    <SelectItem value="name">{t("categoryPage.az")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Desktop filter row */}
             <div className="hidden lg:flex items-center justify-end gap-2 mb-6">
