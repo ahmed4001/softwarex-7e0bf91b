@@ -110,6 +110,8 @@ export default function AdminBackfillLogPage() {
           </p>
         </div>
 
+        <BackfillRunnerPanel />
+
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Card>
