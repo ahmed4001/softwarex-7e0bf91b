@@ -134,7 +134,7 @@ describe("SeoHead — fallback canonical", () => {
   it("derives a self-referencing canonical from window.location when not given", async () => {
     const { canonicals } = await renderSeo(<SeoHead title="Some page" description="x" />);
     expect(canonicals).toHaveLength(1);
-    expect(canonicals[0].href).toMatch(/^http:\/\/localhost\//);
+    expect(canonicals[0].href).toMatch(/^http:\/\/localhost(:\d+)?\//);
   });
 });
 
