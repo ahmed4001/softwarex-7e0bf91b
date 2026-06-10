@@ -22,6 +22,7 @@ import { TrendingProductsSection } from "@/components/home/TrendingProductsSecti
 import { ProductFinderQuiz } from "@/components/home/ProductFinderQuiz";
 import { ReadingProgress } from "@/components/home/ReadingProgress";
 import { StickyMobileCTA } from "@/components/home/StickyMobileCTA";
+import { RecentlyAddedSection } from "@/components/home/RecentlyAddedSection";
 
 const SITE_URL = "https://reviewhunts.com";
 
