@@ -1,81 +1,157 @@
-import { test, expect, request } from "@playwright/test";
+import { test, expect } from "./fixtures/deterministic";
+import { request } from "@playwright/test";
 
-// Fetch sitemap.xml and robots.txt directly from STAGING_BASE_URL and
-// assert SEO directives + allowed/disallowed paths. These run as raw
-// HTTP requests (no browser) so we see exactly what crawlers see.
+// Fetch sitemap.xml and robots.txt from STAGING_BASE_URL and assert
+// the exact directives. These run as raw HTTP requests (no browser)
+// so we see exactly what crawlers see.
 
 const BASE =
   process.env.STAGING_BASE_URL ||
   process.env.PLAYWRIGHT_BASE_URL ||
   "https://id-preview--8f8ab8bf-14f5-4085-9849-266b90f727c8.lovable.app";
 
-const EXPECTED_DISALLOW = ["/admin/", "/vendor/", "/login", "/dashboard"];
-const EXPECTED_ALLOWED = ["/", "/products", "/blog", "/categories"];
+// EXACT expected wildcard Disallow set. Keep in lock-step with
+// public/robots.txt. Adding/removing a path here forces the author to
+// update robots.txt too — preventing accidental indexing drift.
+const EXPECTED_WILDCARD_DISALLOW = [
+  "/admin/",
+  "/vendor/",
+  "/login",
+  "/dashboard",
+] as const;
+
+// Path prefixes that MUST NOT appear in sitemap.xml under any
+// circumstances (private/admin surfaces).
+const FORBIDDEN_SITEMAP_PREFIXES = [
+  "/admin",
+  "/vendor",
+  "/login",
+  "/dashboard",
+  "/auth",
+  "/checkout",
+  "/settings",
+];
+
+// Public sections the sitemap is expected to cover.
+const EXPECTED_PUBLIC_SECTIONS = ["/", "/products", "/blog", "/categories"];
+
+function parseRobots(body: string) {
+  const lines = body.split(/\r?\n/);
+  const blocks: Array<{ agents: string[]; allow: string[]; disallow: string[] }> = [];
+  let current: { agents: string[]; allow: string[]; disallow: string[] } | null = null;
+  const sitemaps: string[] = [];
+
+  for (const raw of lines) {
+    const line = raw.replace(/#.*$/, "").trim();
+    if (!line) continue;
+    const [k, ...rest] = line.split(":");
+    const key = k.trim().toLowerCase();
+    const value = rest.join(":").trim();
+    if (key === "user-agent") {
+      if (!current || current.allow.length || current.disallow.length) {
+        current = { agents: [], allow: [], disallow: [] };
+        blocks.push(current);
+      }
+      current.agents.push(value);
+    } else if (key === "allow" && current) {
+      current.allow.push(value);
+    } else if (key === "disallow" && current) {
+      current.disallow.push(value);
+    } else if (key === "sitemap") {
+      sitemaps.push(value);
+    }
+  }
+  return { blocks, sitemaps };
+}
 
 test.describe("robots.txt", () => {
-  test("serves a valid robots.txt with expected directives", async () => {
+  test("matches the exact expected directive set", async () => {
     const ctx = await request.newContext({ ignoreHTTPSErrors: true });
     const res = await ctx.get(`${BASE}/robots.txt`);
     expect(res.status(), "robots.txt should 200").toBe(200);
-    const ct = res.headers()["content-type"] || "";
-    expect(ct).toMatch(/text\/plain/i);
+    expect(res.headers()["content-type"] || "").toMatch(/text\/plain/i);
 
     const body = await res.text();
-    expect(body).toMatch(/User-agent:\s*\*/i);
-    expect(body).toMatch(/Allow:\s*\//i);
+    const { blocks, sitemaps } = parseRobots(body);
 
-    for (const path of EXPECTED_DISALLOW) {
-      expect(body, `should disallow ${path}`).toMatch(
-        new RegExp(`Disallow:\\s*${path.replace(/[/]/g, "\\/")}`, "i"),
-      );
-    }
+    // ---- wildcard block ----
+    const wildcard = blocks.find((b) => b.agents.includes("*"));
+    expect(wildcard, "User-agent: * block present").toBeTruthy();
 
-    // Global block (`Disallow: /` on User-agent: *) would deindex the site.
-    const wildcardBlock = /User-agent:\s*\*[\s\S]*?Disallow:\s*\/\s*(\n|$)/i;
-    const globallyBlocked =
-      wildcardBlock.test(body) &&
-      !/User-agent:\s*\*[\s\S]*?Allow:\s*\//i.test(body);
-    expect(globallyBlocked, "site must not be globally blocked").toBe(false);
+    expect(
+      wildcard!.allow.some((p) => p === "/"),
+      "wildcard block must Allow: /",
+    ).toBe(true);
 
-    // Sitemap directive should be present and absolute.
-    const sitemapLine = body.match(/Sitemap:\s*(\S+)/i);
-    expect(sitemapLine, "Sitemap: directive present").not.toBeNull();
-    expect(sitemapLine![1]).toMatch(/^https?:\/\//);
+    // Never a global block on *.
+    expect(
+      wildcard!.disallow.includes("/"),
+      "site must not be globally blocked",
+    ).toBe(false);
+
+    // Exact match — sort both sides for stable comparison.
+    expect(
+      [...wildcard!.disallow].sort(),
+      "wildcard Disallow set must match exactly",
+    ).toEqual([...EXPECTED_WILDCARD_DISALLOW].sort());
+
+    // ---- sitemap directive ----
+    expect(sitemaps.length, "exactly one Sitemap: directive").toBe(1);
+    expect(sitemaps[0]).toMatch(/^https?:\/\//);
+    expect(sitemaps[0]).toMatch(/sitemap\.xml$/);
   });
 });
 
 test.describe("sitemap.xml", () => {
-  test("serves a valid sitemap.xml with expected URLs", async () => {
+  test("contains only allowed public URLs", async () => {
     const ctx = await request.newContext({ ignoreHTTPSErrors: true });
     const res = await ctx.get(`${BASE}/sitemap.xml`);
     expect(res.status(), "sitemap.xml should 200").toBe(200);
-    const ct = res.headers()["content-type"] || "";
-    expect(ct).toMatch(/xml/i);
+    expect(res.headers()["content-type"] || "").toMatch(/xml/i);
 
     const body = await res.text();
     expect(body).toMatch(/<\?xml/);
     expect(body).toMatch(/<urlset[\s>]|<sitemapindex[\s>]/);
 
-    // Extract all <loc> values.
     const locs = Array.from(body.matchAll(/<loc>([^<]+)<\/loc>/g)).map(
       (m) => m[1].trim(),
     );
     expect(locs.length, "sitemap must contain at least one <loc>").toBeGreaterThan(0);
+
+    // Every loc is an absolute URL with no whitespace and exactly once.
+    const seen = new Set<string>();
     for (const loc of locs) {
-      expect(loc, `${loc} should be absolute`).toMatch(/^https?:\/\//);
+      expect(loc).toMatch(/^https?:\/\/\S+$/);
+      expect(seen.has(loc), `duplicate <loc> for ${loc}`).toBe(false);
+      seen.add(loc);
     }
 
-    // None of the disallowed paths should appear in the sitemap.
-    for (const blocked of EXPECTED_DISALLOW) {
-      const hit = locs.find((l) => new URL(l).pathname.startsWith(blocked));
-      expect(hit, `sitemap must not include disallowed path ${blocked}`).toBeUndefined();
-    }
-
-    // At least one of the canonical public paths should be present.
+    // No disallowed/private path is ever indexed.
     const paths = locs.map((l) => new URL(l).pathname);
-    const hasAllowed = EXPECTED_ALLOWED.some((p) =>
-      paths.some((sp) => sp === p || sp.startsWith(p === "/" ? "/" : p + "/")),
+    const leaked = paths.filter((p) =>
+      FORBIDDEN_SITEMAP_PREFIXES.some(
+        (pref) => p === pref || p.startsWith(pref + "/") || p.startsWith(pref) && p.length > pref.length && !/^[a-z0-9]/i.test(p[pref.length]),
+      ),
     );
-    expect(hasAllowed, "sitemap should include core public routes").toBe(true);
+    expect(leaked, `forbidden paths in sitemap: ${leaked.join(", ")}`).toEqual([]);
+
+    // Also assert exact wildcard-Disallow prefixes are absent.
+    for (const blocked of EXPECTED_WILDCARD_DISALLOW) {
+      const hit = paths.find((p) => p === blocked.replace(/\/$/, "") || p.startsWith(blocked));
+      expect(hit, `sitemap leaks disallowed path ${blocked}`).toBeUndefined();
+    }
+
+    // At least one of every expected public section should be present.
+    for (const section of EXPECTED_PUBLIC_SECTIONS) {
+      const hasIt = paths.some(
+        (p) => p === section || (section !== "/" && p.startsWith(section + "/")),
+      );
+      // "/" must exist explicitly.
+      if (section === "/") {
+        expect(paths, `sitemap missing root URL`).toContain("/");
+      } else {
+        expect(hasIt, `sitemap missing ${section}*`).toBe(true);
+      }
+    }
   });
 });
