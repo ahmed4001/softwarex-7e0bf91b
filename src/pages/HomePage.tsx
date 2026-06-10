@@ -242,7 +242,10 @@ export default function HomePage() {
         <BlogPreviewSection />
         <VendorCTASection />
 
-        {/* 11. FAQ + Newsletter */}
+        {/* 11. Recently Added */}
+        <RecentlyAddedSection />
+
+        {/* 12. FAQ + Newsletter */}
         <FAQSection />
         <NewsletterSection />
       </main>
