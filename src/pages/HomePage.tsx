@@ -135,11 +135,11 @@ export default function HomePage() {
         .eq("is_featured", true)
         .order("info_score", { ascending: false })
         .order("avg_rating", { ascending: false })
-        .limit(6);
+        .limit(12);
 
       const results = featured || [];
-      if (results.length < 6) {
-        const needed = 6 - results.length;
+      if (results.length < 12) {
+        const needed = 12 - results.length;
         const { data: extra } = await supabase
           .from("products")
           .select("*, categories!products_category_id_fkey(name)")
@@ -202,8 +202,8 @@ export default function HomePage() {
         <section className="py-20" aria-labelledby="featured-heading">
           <div className="container">
             <SectionHeader id="featured-heading" label="Editor's Choice" title="Top-Rated Software Picks for 2026" subtitle="Hand-picked by our expert analysts based on user reviews, features, and value" />
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {loadingFeatured ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />) :
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {loadingFeatured ? Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />) :
                 featuredProducts && featuredProducts.length > 0 ?
                   featuredProducts.map((p: any) => (
                     <ProductCard key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline} logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews} pricing_model={p.pricing_model} category_name={p.categories?.name} is_featured={p.is_featured} is_sponsored={p.is_sponsored} />

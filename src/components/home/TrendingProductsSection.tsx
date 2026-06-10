@@ -29,7 +29,7 @@ export function TrendingProductsSection() {
           .select("id, name, slug, logo_url, avg_rating, total_reviews, tagline, view_count, info_score, categories!products_category_id_fkey(name)")
           .eq("is_active", true);
         q = applyRealFirstOrder(q, "reviews");
-        const { data } = await q.limit(6);
+        const { data } = await q.limit(12);
         return (data || []).map((p: any) => ({ ...p, recentReviewCount: 0 }));
       }
 
@@ -41,7 +41,7 @@ export function TrendingProductsSection() {
 
       const topIds = Object.entries(countMap)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 12)
         .map(([id]) => id);
 
       if (topIds.length === 0) return [];
@@ -87,7 +87,7 @@ export function TrendingProductsSection() {
           </Link>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {trending.map((p: any, i: number) => (
             <motion.div
               key={p.id}
