@@ -217,42 +217,19 @@ export default function HomePage() {
       />
 
       <main>
+        {/* 1. Hero */}
         <HeroSection />
-        <StatsSection stats={stats} />
+
+        {/* 2. Trust strip + compact stats */}
         <TrustedBySection />
+        <StatsSection stats={stats} />
 
-        {/* Real Product Screenshots Showcase */}
-        <ProductShowcaseSection />
+        <div className="section-gradient-divider" aria-hidden="true" />
 
-        {/* Most Popular Categories - G2 style */}
+        {/* 3. Most Popular Categories (single categories surface) */}
         <MostPopularCategoriesSection />
 
-        <div className="section-gradient-divider" aria-hidden="true" />
-
-        {/* Software Categories Directory */}
-        <section className="py-20 bg-muted/30" aria-labelledby="categories-heading">
-          <div className="container">
-            <SectionHeader
-              id="categories-heading"
-              label="Software Categories"
-              title="Browse Business Software by Category"
-              subtitle="Explore top-rated tools across 50+ software categories for every business need"
-              linkTo="/categories"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {categories?.map((cat, i) => (
-                <CategoryCard key={cat.id} slug={cat.slug} name={cat.name} icon={cat.icon || ""} product_count={cat.product_count || 0} color={cat.color || "#3b82f6"} index={i} />
-              ))}
-              {(!categories || categories.length === 0) && (
-                <EmptyBlock icon={<LayoutGrid className="h-6 w-6 text-muted-foreground/30" />} text="Software categories coming soon" />
-              )}
-            </div>
-          </div>
-        </section>
-
-        <div className="section-gradient-divider" aria-hidden="true" />
-
-        {/* Featured Software */}
+        {/* 4. Editor's Choice */}
         <section className="py-20" aria-labelledby="featured-heading">
           <div className="container">
             <SectionHeader id="featured-heading" label="Editor's Choice" title="Top-Rated Software Picks for 2026" subtitle="Hand-picked by our expert analysts based on user reviews, features, and value" />
@@ -269,43 +246,25 @@ export default function HomePage() {
           </div>
         </section>
 
-        <TrendingProductsSection />
-        <CategoryLeadersSection />
+        {/* 5. Interactive quiz — engagement hook */}
         <ProductFinderQuiz />
-        <QuickCompareSection />
-        <PopularComparisonsSection />
 
         <div className="section-gradient-divider" aria-hidden="true" />
 
-        {/* Highest-Rated Software */}
-        <section className="py-20 bg-muted/30" aria-labelledby="top-rated-heading">
-          <div className="container">
-            <SectionHeader id="top-rated-heading" label="Highest Rated" title="Best-Reviewed Business Software" subtitle="Top-rated tools based on verified user reviews and satisfaction scores" linkTo="/categories" />
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {loadingTop ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) :
-                topProducts && topProducts.length > 0 ?
-                  topProducts.map((p: any) => (
-                    <ProductCard key={p.id} id={p.id} slug={p.slug} name={p.name} tagline={p.tagline} logo_url={p.logo_url} avg_rating={Number(p.avg_rating)} total_reviews={p.total_reviews} pricing_model={p.pricing_model} category_name={p.categories?.name} is_featured={p.is_featured} is_sponsored={p.is_sponsored} />
-                  )) : (
-                    <EmptyBlock icon={<Star className="h-6 w-6 text-muted-foreground/30" />} text="No rated products yet" sub="Be the first to leave a verified review" />
-                  )
-              }
-            </div>
-          </div>
-        </section>
+        {/* 6. Trending */}
+        <TrendingProductsSection />
 
-        <SocialProofBanner />
-        <RecentReviewsFeed />
-        <RecentlyAddedSection />
-        <AwardsBannerSection />
-        <TopCategoriesShowcase />
-        <FeaturesGridSection />
+        {/* 7. Popular Comparisons */}
+        <PopularComparisonsSection />
+
+        {/* 8. How It Works */}
         <HowItWorksSection />
-        <TestimonialsSection />
+
+        {/* 9. Blog Preview + Vendor CTA */}
         <BlogPreviewSection />
         <VendorCTASection />
-        <ResearchDirectorySection />
-        <CTASection />
+
+        {/* 10. FAQ + Newsletter */}
         <FAQSection />
         <NewsletterSection />
       </main>
