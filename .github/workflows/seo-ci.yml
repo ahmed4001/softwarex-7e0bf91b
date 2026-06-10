@@ -121,18 +121,39 @@ jobs:
 
       - name: Lighthouse CI (homepage + product)
         if: always()
-        run: bunx lhci autorun --config=./lighthouserc.merge-gate.rendered.json 2>&1 | tee -a "$PW_CONSOLE_LOG"
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          LHCI_CONSOLE_LOG: ${{ github.workspace }}/lighthouse-console.log
+        run: |
+          set -o pipefail
+          bunx lhci autorun --config=./lighthouserc.merge-gate.rendered.json 2>&1 \
+            | tee -a "$LHCI_CONSOLE_LOG" \
+            | tee -a "$PW_CONSOLE_LOG"
 
-      - name: Upload Lighthouse reports
+      # Raw .lighthouseci dir — contains lhr-*.json (full audit JSON),
+      # manifest.json, and HTML reports. Always upload so a red merge
+      # gate is debuggable from the GitHub Actions UI.
+      - name: Upload Lighthouse reports (HTML + raw JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report-merge-gate
-          path: .lighthouseci
+          path: |
+            .lighthouseci/**/*.json
+            .lighthouseci/**/*.html
+            .lighthouseci/**/*.txt
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Upload Lighthouse console log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-console-log-merge-gate
+          path: ${{ github.workspace }}/lighthouse-console.log
+          if-no-files-found: ignore
+          retention-days: 14
+
 
 
       # Always upload the full Playwright HTML report so failures are
