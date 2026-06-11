@@ -200,8 +200,8 @@ export function HeroSection() {
             <picture>
               <source
                 type="image/webp"
-                srcSet={`${softwareCollage800} 800w, ${softwareCollage} 1024w`}
-                sizes="(max-width: 768px) 100vw, 1024px"
+                srcSet={`${softwareCollage480} 480w, ${softwareCollage800} 800w, ${softwareCollage} 1024w`}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 800px, 1024px"
               />
               <img
                 src={softwareCollageJpg}
