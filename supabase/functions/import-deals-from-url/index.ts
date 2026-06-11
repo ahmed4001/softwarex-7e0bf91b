@@ -12,6 +12,27 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
+// Strip deal-marketing noise from an extracted product name so it becomes the
+// clean official brand name (used for both display and slug).
+function cleanProductName(raw: string | null | undefined): string {
+  if (!raw) return "";
+  let name = String(raw).trim();
+  // Cut at common separators that usually precede marketing copy
+  name = name.split(/\s+[\-|–—:•]\s+/)[0];
+  // Remove parenthetical extras: "Notion (50% off)" -> "Notion"
+  name = name.replace(/\s*[\(\[\{][^\)\]\}]*[\)\]\}]\s*/g, " ");
+  // Remove discount tokens like "30%", "$50", "USD 20"
+  name = name.replace(/\b(?:\$|usd\s*|€|£)?\d+(?:\.\d+)?\s*%?(?:\s*off)?\b/gi, " ");
+  // Remove deal-y stop words
+  name = name.replace(/\b(deal|deals|coupon|coupons|promo|promotion|discount|offer|offers|sale|savings?|black\s*friday|cyber\s*monday|lifetime|ltd|exclusive|review|reviews|pricing|price)\b/gi, " ");
+  // Collapse whitespace and trim residual punctuation
+  name = name.replace(/[\-|–—:•]+/g, " ").replace(/\s+/g, " ").trim();
+  name = name.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "");
+  return name;
+}
+
+
+
 function extractDomain(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
