@@ -315,8 +315,13 @@ Deno.serve(async (req) => {
         const domain = extractDomain(d.merchant_domain) || extractDomain(d.deal_url) || extractDomain(d.official_website);
         const matched = domain ? productMap.get(domain) : null;
         const resolvedLogo = matched?.logo_url || await resolveLogoUrl(d.logo_url, domain);
+        // Prefer the matched product's canonical name; otherwise sanitize the
+        // AI-extracted name so it's the clean official brand (no "deal/coupon/%").
+        const cleaned = cleanProductName(d.product_name);
+        const finalName = matched?.name || cleaned || d.product_name;
         return {
           ...d,
+          product_name: finalName,
           domain,
           logo_url: resolvedLogo,
           matched_product_id: matched?.id ?? null,
