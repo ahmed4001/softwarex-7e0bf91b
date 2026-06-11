@@ -9,6 +9,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 
+function useCountdown(endDate: string | null) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!endDate) return;
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [endDate]);
+  if (!endDate) return null;
+  const diff = new Date(endDate).getTime() - now;
+  if (diff <= 0) return "Expired";
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  return `${h}h ${m}m ${s}s`;
+}
+
+function isExpiringSoon(endDate: string | null): boolean {
+  if (!endDate) return false;
+  const diff = new Date(endDate).getTime() - Date.now();
+  return diff > 0 && diff <= 48 * 3600000;
+}
+
 export function RecentlyAddedSection() {
   const { data: recentProducts } = useQuery({
     queryKey: ["products-recent"],
