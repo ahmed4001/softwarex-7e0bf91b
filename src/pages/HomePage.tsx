@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
@@ -8,23 +9,26 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
+// Above-the-fold: eager
 import { HeroSection } from "@/components/home/HeroSection";
-import { StatsSection } from "@/components/home/StatsSection";
 import { TrustedBySection } from "@/components/home/TrustedBySection";
-import { HowItWorksSection } from "@/components/home/HowItWorksSection";
-import { NewsletterSection } from "@/components/home/NewsletterSection";
-import { PopularComparisonsSection } from "@/components/home/PopularComparisonsSection";
-import { FAQSection } from "@/components/home/FAQSection";
-import { BlogPreviewSection } from "@/components/home/BlogPreviewSection";
-import { VendorCTASection } from "@/components/home/VendorCTASection";
+import { StatsSection } from "@/components/home/StatsSection";
 import { MostPopularCategoriesSection } from "@/components/home/MostPopularCategoriesSection";
-import { TrendingProductsSection } from "@/components/home/TrendingProductsSection";
-import { ProductFinderQuiz } from "@/components/home/ProductFinderQuiz";
 import { ReadingProgress } from "@/components/home/ReadingProgress";
 import { StickyMobileCTA } from "@/components/home/StickyMobileCTA";
-import { RecentlyAddedSection } from "@/components/home/RecentlyAddedSection";
-import { DealsShowcaseSection } from "@/components/home/DealsShowcaseSection";
 import { useHomepageSection } from "@/hooks/useHomepageSection";
+
+// Below-the-fold: lazy-loaded to shrink initial JS
+const HowItWorksSection = lazy(() => import("@/components/home/HowItWorksSection").then(m => ({ default: m.HowItWorksSection })));
+const NewsletterSection = lazy(() => import("@/components/home/NewsletterSection").then(m => ({ default: m.NewsletterSection })));
+const PopularComparisonsSection = lazy(() => import("@/components/home/PopularComparisonsSection").then(m => ({ default: m.PopularComparisonsSection })));
+const FAQSection = lazy(() => import("@/components/home/FAQSection").then(m => ({ default: m.FAQSection })));
+const BlogPreviewSection = lazy(() => import("@/components/home/BlogPreviewSection").then(m => ({ default: m.BlogPreviewSection })));
+const VendorCTASection = lazy(() => import("@/components/home/VendorCTASection").then(m => ({ default: m.VendorCTASection })));
+const TrendingProductsSection = lazy(() => import("@/components/home/TrendingProductsSection").then(m => ({ default: m.TrendingProductsSection })));
+const ProductFinderQuiz = lazy(() => import("@/components/home/ProductFinderQuiz").then(m => ({ default: m.ProductFinderQuiz })));
+const RecentlyAddedSection = lazy(() => import("@/components/home/RecentlyAddedSection").then(m => ({ default: m.RecentlyAddedSection })));
+const DealsShowcaseSection = lazy(() => import("@/components/home/DealsShowcaseSection").then(m => ({ default: m.DealsShowcaseSection })));
 
 const SITE_URL = "https://reviewhunts.com";
 
@@ -232,41 +236,41 @@ export default function HomePage() {
 
         <div className="section-gradient-divider" aria-hidden="true" />
 
+        <Suspense fallback={<div className="py-16" />}>
+          {/* 7. Trending */}
+          <TrendingProductsSection />
 
+          {/* 7.5 Deals Showcase */}
+          {dealsCfg.enabled && <DealsShowcaseSection />}
 
-        {/* 7. Trending */}
-        <TrendingProductsSection />
+          {/* 8. Popular Comparisons */}
+          <PopularComparisonsSection />
 
-        {/* 7.5 Deals Showcase */}
-        {dealsCfg.enabled && <DealsShowcaseSection />}
+          {/* 9. Recently Added */}
+          <RecentlyAddedSection />
 
-        {/* 8. Popular Comparisons */}
-        <PopularComparisonsSection />
-
-        {/* 9. Recently Added */}
-        <RecentlyAddedSection />
-
-        {/* 10. Smart Finder — convert intent before How It Works */}
-        <section className="py-16 md:py-20">
-          <div className="container">
-            <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
-              <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
-                <ProductFinderQuiz />
+          {/* 10. Smart Finder — convert intent before How It Works */}
+          <section className="py-16 md:py-20">
+            <div className="container">
+              <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
+                <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
+                  <ProductFinderQuiz />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* 11. How It Works */}
-        <HowItWorksSection />
+          {/* 11. How It Works */}
+          <HowItWorksSection />
 
-        {/* 11. Blog Preview + Vendor CTA */}
-        <BlogPreviewSection />
-        <VendorCTASection />
+          {/* 11. Blog Preview + Vendor CTA */}
+          <BlogPreviewSection />
+          <VendorCTASection />
 
-        {/* 12. FAQ + Newsletter */}
-        <FAQSection />
-        <NewsletterSection />
+          {/* 12. FAQ + Newsletter */}
+          <FAQSection />
+          <NewsletterSection />
+        </Suspense>
       </main>
     </>
   );
