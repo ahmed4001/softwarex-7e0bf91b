@@ -207,29 +207,29 @@ export default function AdminDealsPage() {
       if (ids.length === 0) return { ok: 0, failed: 0 };
       let ok = 0, failed = 0;
 
-      const apply = async (op: () => Promise<{ error: any }>) => {
-        const { error } = await op();
+      const apply = async (p: any) => {
+        const { error } = await p;
         if (error) failed++; else ok += ids.length;
       };
 
       switch (bulkAction) {
         case "feature":
-          await apply(() => supabase.from("deals" as any).update({ is_featured: true }).in("id", ids));
+          await apply((supabase.from("deals" as any) as any).update({ is_featured: true }).in("id", ids));
           break;
         case "unfeature":
-          await apply(() => supabase.from("deals" as any).update({ is_featured: false }).in("id", ids));
+          await apply((supabase.from("deals" as any) as any).update({ is_featured: false }).in("id", ids));
           break;
         case "hide":
-          await apply(() => supabase.from("deals" as any).update({ is_visible: false }).in("id", ids));
+          await apply((supabase.from("deals" as any) as any).update({ is_visible: false }).in("id", ids));
           break;
         case "show":
-          await apply(() => supabase.from("deals" as any).update({ is_visible: true }).in("id", ids));
+          await apply((supabase.from("deals" as any) as any).update({ is_visible: true }).in("id", ids));
           break;
         case "delete":
-          await apply(() => supabase.from("deals" as any).delete().in("id", ids));
+          await apply((supabase.from("deals" as any) as any).delete().in("id", ids));
           break;
         case "set_category":
-          await apply(() => supabase.from("deals" as any).update({ category: bulkCategory || null }).in("id", ids));
+          await apply((supabase.from("deals" as any) as any).update({ category: bulkCategory || null }).in("id", ids));
           break;
         case "extend": {
           // Per-row: add N days to existing end_date, or set to now+N days if null
@@ -262,7 +262,7 @@ export default function AdminDealsPage() {
     toast.info("Exporting all deals...");
     const { data, error } = await supabase.from("deals" as any).select("*").order("created_at", { ascending: false });
     if (error) { toast.error(error.message); return; }
-    const rows = (data ?? []) as Deal[];
+    const rows = (data ?? []) as unknown as Deal[];
     const cols: (keyof Deal)[] = [
       "id", "product_id", "product_name", "slug", "logo_url", "description", "deal_url",
       "discount_amount", "discount_type", "coupon_code", "category",
