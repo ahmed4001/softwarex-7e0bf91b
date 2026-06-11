@@ -367,17 +367,20 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Always store the clean official brand name (used for display + slug)
+        const cleanName = cleanProductName(d.product_name) || d.product_name;
+
         // Auto-create the product when the deal isn't linked to one — slug is
-        // derived from the product name so URLs look like /product/<product-name>
+        // derived from the clean product name so URLs look like /product/<product-name>
         let productId: string | null = d.matched_product_id || d.product_id || null;
         if (!productId) {
           try {
-            const productSlug = await ensureUniqueProductSlug(d.product_name);
+            const productSlug = await ensureUniqueProductSlug(cleanName);
             const websiteUrl = d.official_website || (d.domain ? `https://${d.domain}` : null);
             const { data: created, error: pErr } = await supabase
               .from("products")
               .insert({
-                name: d.product_name,
+                name: cleanName,
                 slug: productSlug,
                 tagline: d.description ? String(d.description).slice(0, 160) : null,
                 description: d.description || null,
