@@ -42,14 +42,19 @@
       {"@context":"https://schema.org","@type":"WebSite","name":"ReviewHunts","url":"https://reviewhunts.com/","potentialAction":{"@type":"SearchAction","target":"https://reviewhunts.com/search?q={search_term_string}","query-input":"required name=search_term_string"}}
     </script>
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CYJDR8BBKJ"></script>
+  <!-- Google tag (gtag.js) - deferred to avoid blocking LCP -->
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-CYJDR8BBKJ');
+    window.addEventListener('load', function() {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-CYJDR8BBKJ';
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', 'G-CYJDR8BBKJ');
+    });
   </script>
 
   <!-- Paddle.js - preloaded before iubenda autoblocking so checkout always works -->
