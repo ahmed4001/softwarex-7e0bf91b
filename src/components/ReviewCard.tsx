@@ -29,7 +29,9 @@ interface ReviewCardProps {
   features_rating?: number | null;
   reviewer_name?: string;
   reviewer_user_id?: string;
+  reviewer_username?: string;
   reviewer_role?: string;
+
   company_size?: string;
   verified_reviewer?: boolean;
   verified_purchase?: boolean;
