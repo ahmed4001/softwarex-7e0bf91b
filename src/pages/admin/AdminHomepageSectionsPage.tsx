@@ -38,6 +38,13 @@ interface SectionProduct {
 export default function AdminHomepageSectionsPage() {
   const qc = useQueryClient();
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "remove" | "add";
+    sectionKey: string;
+    ids: string[];
+    count: number;
+  } | null>(null);
 
   const { data: sections } = useQuery({
     queryKey: ["admin-homepage-sections"],
