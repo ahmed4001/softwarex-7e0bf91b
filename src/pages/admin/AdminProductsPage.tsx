@@ -129,6 +129,46 @@ export default function AdminProductsPage() {
     }
   }, [queryClient]);
 
+  const bulkEnrich = useCallback(async () => {
+    setIsEnriching(true);
+    setActiveFetchMode("enrich");
+    abortRef.current = false;
+
+    const { count: totalCount } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true)
+      .not("website_url", "is", null)
+      .neq("website_url", "");
+    const total = totalCount || 0;
+    setFetchProgress({ processed: 0, succeeded: 0, failed: 0, total });
+    let offset = 0;
+    let totalProcessed = 0, totalSucceeded = 0, totalFailed = 0;
+
+    try {
+      while (!abortRef.current) {
+        const { data, error } = await supabase.functions.invoke("enrich-product-details", {
+          body: { batchSize: 5, offset, overwrite: false },
+        });
+        if (error) throw error;
+        totalProcessed += data.processed || 0;
+        totalSucceeded += data.succeeded || 0;
+        totalFailed += data.failed || 0;
+        setFetchProgress({ processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, total });
+        if (data.done || data.processed === 0) break;
+        offset = data.nextOffset;
+      }
+      toast.success(`Enrichment complete: ${totalSucceeded} updated, ${totalFailed} failed`);
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    } catch (e: any) {
+      toast.error(`Enrichment stopped: ${e.message || "Unknown error"}`);
+    } finally {
+      setIsEnriching(false);
+      setActiveFetchMode(null);
+    }
+  }, [queryClient]);
+
+
   // Reset page when filters change
   const handleSearch = (val: string) => { setSearch(val); setPage(0); };
   const handleMediaFilter = (val: "all" | "missing_logo" | "missing_screenshot") => { setMediaFilter(val); setPage(0); };
