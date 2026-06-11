@@ -217,6 +217,9 @@ Deno.serve(async (req) => {
           is_visible: false,
           is_featured: !!d.is_featured,
           review_status: "pending_review",
+          meta_title: d.meta_title || null,
+          meta_description: d.meta_description || null,
+          seo_keywords: Array.isArray(d.seo_keywords) ? d.seo_keywords.slice(0, 10) : null,
         };
 
         let { error } = await supabase.from("deals").insert(record);
