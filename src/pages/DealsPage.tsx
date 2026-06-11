@@ -274,10 +274,11 @@ export default function DealsPage() {
       featured: deals.filter((d) => d.is_featured).length,
       trending: deals.filter((d) => d.is_trending).length,
       expiring: deals.filter((d) => d.end_date && new Date(d.end_date).getTime() > now).length,
+      expired: deals.filter((d) => d.end_date && new Date(d.end_date).getTime() <= now).length,
     };
   }, [deals]);
 
-  const hasFilters = !!search || selectedCats.length > 0 || sort !== "featured";
+  const hasFilters = !!search || selectedCats.length > 0 || sort !== "featured" || includeExpired;
 
   const toggleCategory = (cat: string) => {
     const set = new Set(selectedCats);
