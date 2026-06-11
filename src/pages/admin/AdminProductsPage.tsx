@@ -294,7 +294,7 @@ export default function AdminProductsPage() {
           <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-foreground">
-                {activeFetchMode === "screenshot" ? "Fetching Screenshots" : "Fetching Logos"}
+                {activeFetchMode === "screenshot" ? "Fetching Screenshots" : activeFetchMode === "enrich" ? "Enriching Product Details" : "Fetching Logos"}
               </span>
               <span className="text-muted-foreground">
                 {fetchProgress.processed} / {fetchProgress.total} processed · {fetchProgress.total - fetchProgress.processed} remaining
