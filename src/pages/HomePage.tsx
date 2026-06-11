@@ -236,41 +236,41 @@ export default function HomePage() {
 
         <div className="section-gradient-divider" aria-hidden="true" />
 
+        <Suspense fallback={<div className="py-16" />}>
+          {/* 7. Trending */}
+          <TrendingProductsSection />
 
+          {/* 7.5 Deals Showcase */}
+          {dealsCfg.enabled && <DealsShowcaseSection />}
 
-        {/* 7. Trending */}
-        <TrendingProductsSection />
+          {/* 8. Popular Comparisons */}
+          <PopularComparisonsSection />
 
-        {/* 7.5 Deals Showcase */}
-        {dealsCfg.enabled && <DealsShowcaseSection />}
+          {/* 9. Recently Added */}
+          <RecentlyAddedSection />
 
-        {/* 8. Popular Comparisons */}
-        <PopularComparisonsSection />
-
-        {/* 9. Recently Added */}
-        <RecentlyAddedSection />
-
-        {/* 10. Smart Finder — convert intent before How It Works */}
-        <section className="py-16 md:py-20">
-          <div className="container">
-            <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
-              <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
-                <ProductFinderQuiz />
+          {/* 10. Smart Finder — convert intent before How It Works */}
+          <section className="py-16 md:py-20">
+            <div className="container">
+              <div className="rounded-3xl bg-gradient-to-br from-primary/[0.06] via-primary/[0.03] to-transparent border border-primary/15 p-1 md:p-2">
+                <div className="rounded-[20px] bg-background/40 backdrop-blur-sm">
+                  <ProductFinderQuiz />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* 11. How It Works */}
-        <HowItWorksSection />
+          {/* 11. How It Works */}
+          <HowItWorksSection />
 
-        {/* 11. Blog Preview + Vendor CTA */}
-        <BlogPreviewSection />
-        <VendorCTASection />
+          {/* 11. Blog Preview + Vendor CTA */}
+          <BlogPreviewSection />
+          <VendorCTASection />
 
-        {/* 12. FAQ + Newsletter */}
-        <FAQSection />
-        <NewsletterSection />
+          {/* 12. FAQ + Newsletter */}
+          <FAQSection />
+          <NewsletterSection />
+        </Suspense>
       </main>
     </>
   );
