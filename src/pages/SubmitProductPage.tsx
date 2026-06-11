@@ -155,34 +155,32 @@ export default function SubmitProductPage() {
   return (
     <>
       <SeoHead title="Submit Your Product" description="List your software on ReviewHunts and reach thousands of potential customers." />
-      <div className="min-h-[80vh] py-16 relative">
+      <div className="py-6 relative">
         <div className="absolute inset-0 mesh-gradient opacity-20" />
         <div className="container max-w-2xl relative">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="text-center mb-10">
-              <div className="h-14 w-14 rounded-2xl gradient-hero flex items-center justify-center mx-auto mb-5">
-                <Send className="h-6 w-6 text-primary-foreground" />
+            <div className="text-center mb-4">
+              <div className="h-10 w-10 rounded-xl gradient-hero flex items-center justify-center mx-auto mb-2">
+                <Send className="h-5 w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-3xl font-display font-bold text-foreground">Submit Your Product</h1>
-              <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                Get your software listed on ReviewHunts. Our team will review your submission within 48 hours.
-              </p>
+              <h1 className="text-2xl font-display font-bold text-foreground">Submit Your Product</h1>
+              <p className="text-xs text-muted-foreground mt-1">Reviewed within 48 hours.</p>
             </div>
 
             {/* Step indicators */}
-            <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
               <div className="flex items-center gap-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${step === "product" ? "bg-primary text-primary-foreground" : "bg-primary/20 text-primary"}`}>
-                  {step === "account" ? <CheckCircle2 className="h-4 w-4" /> : "1"}
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${step === "product" ? "bg-primary text-primary-foreground" : "bg-primary/20 text-primary"}`}>
+                  {step === "account" ? <CheckCircle2 className="h-3.5 w-3.5" /> : "1"}
                 </div>
-                <span className="text-sm font-medium text-foreground">Product Info</span>
+                <span className="text-xs font-medium text-foreground">Product Info</span>
               </div>
               <div className="h-px w-8 bg-border" />
               <div className="flex items-center gap-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${step === "account" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                  {user ? <CheckCircle2 className="h-4 w-4" /> : "2"}
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${step === "account" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {user ? <CheckCircle2 className="h-3.5 w-3.5" /> : "2"}
                 </div>
-                <span className={`text-sm font-medium ${step === "account" ? "text-foreground" : "text-muted-foreground"}`}>
+                <span className={`text-xs font-medium ${step === "account" ? "text-foreground" : "text-muted-foreground"}`}>
                   {user ? "Signed In" : "Account"}
                 </span>
               </div>
@@ -197,8 +195,8 @@ export default function SubmitProductPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="glass-card p-8">
-                    <div className="space-y-6">
+                  <div className="glass-card p-5">
+                    <div className="space-y-3">
                       <div>
                         <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" /> Product Name *
