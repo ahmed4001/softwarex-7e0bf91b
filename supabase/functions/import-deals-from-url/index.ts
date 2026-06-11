@@ -523,8 +523,19 @@ Deno.serve(async (req) => {
           }
         }
 
-        const baseSlug = slugify(`${cleanName}-${d.discount_amount || "deal"}`);
-        let slug = baseSlug || `deal-${Date.now()}`;
+        // SEO-friendly: slug from clean brand name only (no discount suffix).
+        // Collision handling below appends a short token only when needed.
+        const baseSlug = slugify(cleanName) || `deal-${Date.now()}`;
+        let slug = baseSlug;
+        // Pre-check for existing slug; append short suffix only on collision.
+        const { data: existingSlug } = await supabase
+          .from("deals")
+          .select("id")
+          .eq("slug", baseSlug)
+          .maybeSingle();
+        if (existingSlug) {
+          slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+        }
 
         const record: any = {
           product_name: cleanName,
