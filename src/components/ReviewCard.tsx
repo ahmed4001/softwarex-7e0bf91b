@@ -198,7 +198,7 @@ export function ReviewCard({ id, title, body, pros, cons, overall_rating, ease_o
           <div>
             <span className="font-semibold text-foreground">
               {reviewer_user_id ? (
-                <Link to={`/user/${reviewer_user_id}`} className="hover:text-primary transition-colors">{reviewer_name || "Anonymous"}</Link>
+                <Link to={`/user/${reviewer_username || reviewer_user_id}`} className="hover:text-primary transition-colors">{reviewer_name || "Anonymous"}</Link>
               ) : (reviewer_name || "Anonymous")}
             </span>
             {reviewerBadges.length > 0 && <BadgeRow badges={reviewerBadges} max={3} size="xs" />}
