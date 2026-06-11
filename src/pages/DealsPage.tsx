@@ -42,15 +42,47 @@ type Deal = {
 
 type SortKey = "featured" | "popular" | "newest" | "expiring" | "discount";
 
-function useCountdown(endDate: string | null, tick: number) {
+type Urgency = "safe" | "soon" | "urgent" | "expired";
+type CountdownInfo = { label: string; urgency: Urgency; expired: boolean } | null;
+
+function useCountdown(endDate: string | null, tick: number): CountdownInfo {
   if (!endDate) return null;
-  const diff = new Date(endDate).getTime() - tick;
-  if (diff <= 0) return "Expired";
+  const end = new Date(endDate).getTime();
+  const diff = end - tick;
+  if (diff <= 0) {
+    const past = tick - end;
+    const days = Math.floor(past / 86400000);
+    return {
+      label: days > 0 ? `Expired ${days}d ago` : "Expired",
+      urgency: "expired",
+      expired: true,
+    };
+  }
   const d = Math.floor(diff / 86400000);
   const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
-  return `${d}d ${h}h ${m}m`;
+  const s = Math.floor((diff % 60000) / 1000);
+  let label: string;
+  let urgency: Urgency;
+  if (d >= 1) {
+    label = `${d}d ${h}h`;
+    urgency = d > 7 ? "safe" : "soon";
+  } else if (h >= 1) {
+    label = `${h}h ${m}m`;
+    urgency = "urgent";
+  } else {
+    label = `${m}m ${s}s`;
+    urgency = "urgent";
+  }
+  return { label, urgency, expired: false };
 }
+
+const urgencyStyles: Record<Urgency, { wrap: string; dot: string }> = {
+  safe:    { wrap: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30", dot: "bg-emerald-500" },
+  soon:    { wrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",         dot: "bg-amber-500" },
+  urgent:  { wrap: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 animate-pulse",   dot: "bg-red-500" },
+  expired: { wrap: "bg-muted text-muted-foreground border-border",                                    dot: "bg-muted-foreground" },
+};
 
 function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; tick: number }) {
   const countdown = useCountdown(deal.end_date, tick);
@@ -125,9 +157,12 @@ function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; ti
           )}
 
           {countdown && (
-            <div className={`flex items-center gap-1.5 text-xs mb-3 ${countdown === "Expired" ? "text-destructive" : "text-amber-600 dark:text-amber-400"}`}>
-              <Clock className="h-3.5 w-3.5" />
-              <span className="font-medium">{countdown === "Expired" ? "Expired" : `Ends in ${countdown}`}</span>
+            <div className={`inline-flex items-center gap-1.5 text-xs mb-3 px-2 py-1 rounded-md border w-fit ${urgencyStyles[countdown.urgency].wrap}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${urgencyStyles[countdown.urgency].dot}`} />
+              <Clock className="h-3 w-3" />
+              <span className="font-medium tabular-nums">
+                {countdown.expired ? countdown.label : `Ends in ${countdown.label}`}
+              </span>
             </div>
           )}
 
@@ -164,9 +199,12 @@ export default function DealsPage() {
   const [email, setEmail] = useState("");
   const [tick, setTick] = useState(Date.now());
   useEffect(() => {
-    const i = setInterval(() => setTick(Date.now()), 60_000);
+    const i = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
+
+  const includeExpired = params.get("expired") === "1";
+  const setIncludeExpired = (v: boolean) => setParam("expired", v ? "1" : null);
 
   const { data: deals = [], isLoading } = useQuery({
     queryKey: ["deals-public"],
@@ -191,6 +229,7 @@ export default function DealsPage() {
   const filtered = useMemo(() => {
     const now = Date.now();
     let list = deals.filter((d) => {
+      if (!includeExpired && d.end_date && new Date(d.end_date).getTime() <= now) return false;
       if (selectedCats.length && (!d.category || !selectedCats.includes(d.category))) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -235,10 +274,11 @@ export default function DealsPage() {
       featured: deals.filter((d) => d.is_featured).length,
       trending: deals.filter((d) => d.is_trending).length,
       expiring: deals.filter((d) => d.end_date && new Date(d.end_date).getTime() > now).length,
+      expired: deals.filter((d) => d.end_date && new Date(d.end_date).getTime() <= now).length,
     };
   }, [deals]);
 
-  const hasFilters = !!search || selectedCats.length > 0 || sort !== "featured";
+  const hasFilters = !!search || selectedCats.length > 0 || sort !== "featured" || includeExpired;
 
   const toggleCategory = (cat: string) => {
     const set = new Set(selectedCats);
@@ -366,6 +406,12 @@ export default function DealsPage() {
               <SelectItem value="discount">Biggest discount</SelectItem>
             </SelectContent>
           </Select>
+
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none px-2 py-1.5 rounded-md hover:bg-muted/50">
+            <Checkbox checked={includeExpired} onCheckedChange={(v) => setIncludeExpired(!!v)} />
+            <span>Include expired{counts.expired > 0 && ` (${counts.expired})`}</span>
+          </label>
+
 
           {hasFilters && (
             <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={clearAll}>
