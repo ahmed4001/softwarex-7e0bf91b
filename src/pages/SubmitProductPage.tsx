@@ -299,23 +299,22 @@ export default function SubmitProductPage() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="glass-card p-8">
-                    <div className="mb-6">
+                  <div className="glass-card p-5">
+                    <div className="mb-3">
                       <button
                         onClick={() => setStep("product")}
-                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        <ArrowLeft className="h-3.5 w-3.5" /> Back to product info
+                        <ArrowLeft className="h-3.5 w-3.5" /> Back
                       </button>
                     </div>
 
-                    <div className="rounded-xl bg-muted/50 p-4 mb-6">
-                      <p className="text-xs text-muted-foreground mb-1">Submitting:</p>
+                    <div className="rounded-lg bg-muted/50 p-3 mb-3">
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Submitting:</p>
                       <p className="text-sm font-semibold text-foreground">{form.name}</p>
-                      {form.tagline && <p className="text-xs text-muted-foreground mt-0.5">{form.tagline}</p>}
                     </div>
 
-                    <div className="flex gap-2 mb-6">
+                    <div className="flex gap-2 mb-3">
                       <Button
                         variant={authMode === "signup" ? "default" : "outline"}
                         size="sm"
@@ -334,7 +333,7 @@ export default function SubmitProductPage() {
                       </Button>
                     </div>
 
-                    <form onSubmit={handleAuth} className="space-y-4">
+                    <form onSubmit={handleAuth} className="space-y-3">
                       {authMode === "signup" && (
                         <div>
                           <Label htmlFor="fullName" className="text-sm font-semibold flex items-center gap-2">
