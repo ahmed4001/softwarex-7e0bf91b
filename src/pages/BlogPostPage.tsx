@@ -188,7 +188,7 @@ export default function BlogPostPage() {
                 )}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Written by</p>
-                  <Link to={`/author/${(author as any).user_id}`} className="text-lg font-bold text-foreground hover:text-primary">
+                  <Link to={`/author/${(author as any).username || (author as any).user_id}`} className="text-lg font-bold text-foreground hover:text-primary">
                     {(author as any).name || "Author"}
                   </Link>
                   <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{(author as any).bio}</p>
