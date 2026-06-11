@@ -407,6 +407,12 @@ export default function DealsPage() {
             </SelectContent>
           </Select>
 
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none px-2 py-1.5 rounded-md hover:bg-muted/50">
+            <Checkbox checked={includeExpired} onCheckedChange={(v) => setIncludeExpired(!!v)} />
+            <span>Include expired{counts.expired > 0 && ` (${counts.expired})`}</span>
+          </label>
+
+
           {hasFilters && (
             <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={clearAll}>
               <X className="h-3.5 w-3.5" /> Clear filters
