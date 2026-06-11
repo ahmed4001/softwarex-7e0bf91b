@@ -51,6 +51,7 @@ async function plainFetchScrape(url: string): Promise<{ markdown: string; links:
     .replace(/\s+/g, " ")
     .trim();
   return { markdown: text.slice(0, 20000), links: [...linkSet], url };
+}
 
 async function firecrawlScrape(apiKey: string, url: string) {
   const res = await fetch(`${FIRECRAWL_V2}/scrape`, {
@@ -72,8 +73,7 @@ async function firecrawlCrawl(apiKey: string, url: string, limit: number) {
     body: JSON.stringify({
       url,
       limit,
-      maxDiscoveryDepth: 2,
-      scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+      scrapeOptions: { formats: ["markdown"] },
     }),
   });
   const startJson = await startRes.json();
