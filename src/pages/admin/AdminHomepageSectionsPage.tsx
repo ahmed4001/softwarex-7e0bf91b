@@ -10,6 +10,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { ArrowUp, ArrowDown, X, Plus, Search, Trash2 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Section {
   key: string;
@@ -28,6 +38,13 @@ interface SectionProduct {
 export default function AdminHomepageSectionsPage() {
   const qc = useQueryClient();
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "remove" | "add";
+    sectionKey: string;
+    ids: string[];
+    count: number;
+  } | null>(null);
 
   const { data: sections } = useQuery({
     queryKey: ["admin-homepage-sections"],
@@ -134,6 +151,17 @@ export default function AdminHomepageSectionsPage() {
     });
   };
 
+  const executeConfirm = async () => {
+    if (!confirmAction) return;
+    setConfirmOpen(false);
+    if (confirmAction.type === "remove") {
+      await removeItems(confirmAction.ids);
+    } else {
+      await addProducts(confirmAction.sectionKey, confirmAction.ids);
+    }
+    setConfirmAction(null);
+  };
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
@@ -176,7 +204,11 @@ export default function AdminHomepageSectionsPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => removeItems(sectionItems.filter((i) => selectedItemIds.has(i.id)).map((i) => i.id))}
+                      onClick={() => {
+                        const ids = sectionItems.filter((i) => selectedItemIds.has(i.id)).map((i) => i.id);
+                        setConfirmAction({ type: "remove", sectionKey: s.key, ids, count: ids.length });
+                        setConfirmOpen(true);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 mr-1.5" />
                       Remove selected ({sectionSelectedCount})
@@ -202,15 +234,37 @@ export default function AdminHomepageSectionsPage() {
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => move(item, -1)} disabled={idx === 0}><ArrowUp className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => move(item, 1)} disabled={idx === sectionItems.length - 1}><ArrowDown className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeItems([item.id])}><X className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => { setConfirmAction({ type: "remove", sectionKey: s.key, ids: [item.id], count: 1 }); setConfirmOpen(true); }}><X className="h-4 w-4" /></Button>
                   </div>
                 ))}
               </div>
-              <ProductPicker existingIds={sectionItems.map((i) => i.product_id)} onPickMultiple={(ids) => addProducts(s.key, ids)} />
+              <ProductPicker existingIds={sectionItems.map((i) => i.product_id)} onPickMultiple={(ids) => { setConfirmAction({ type: "add", sectionKey: s.key, ids, count: ids.length }); setConfirmOpen(true); }} />
             </CardContent>
           </Card>
         );
       })}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "remove"
+                ? `Remove ${confirmAction?.count} product${confirmAction?.count !== 1 ? "s" : ""}?`
+                : `Add ${confirmAction?.count} product${confirmAction?.count !== 1 ? "s" : ""}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "remove"
+                ? `This will permanently remove ${confirmAction?.count} curated product${confirmAction?.count !== 1 ? "s" : ""} from the section.`
+                : `This will add ${confirmAction?.count} product${confirmAction?.count !== 1 ? "s" : ""} to the curated list.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmAction(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeConfirm}>
+              {confirmAction?.type === "remove" ? "Remove" : "Add"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
