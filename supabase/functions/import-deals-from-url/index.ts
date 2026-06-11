@@ -102,15 +102,12 @@ async function firecrawlScrape(apiKey: string, url: string) {
 }
 
 async function firecrawlCrawl(apiKey: string, url: string, limit: number) {
+  const body = validateCrawlBody({ url, limit, scrapeOptions: { formats: ["markdown"] } });
   // Start crawl
   const startRes = await fetch(`${FIRECRAWL_V2}/crawl`, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      url,
-      limit,
-      scrapeOptions: { formats: ["markdown"] },
-    }),
+    body: JSON.stringify(body),
   });
   const startJson = await startRes.json();
   if (!startRes.ok) throw new Error(startJson?.error || `Firecrawl crawl start failed`);
