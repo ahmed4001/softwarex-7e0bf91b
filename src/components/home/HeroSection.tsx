@@ -3,12 +3,15 @@ import { Award, TrendingUp, CheckCircle } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import softwareCollage from "@/assets/bestsoftware.webp";
 import softwareCollage800 from "@/assets/bestsoftware-800.webp";
+import softwareCollage480 from "@/assets/bestsoftware-480.webp";
 import softwareCollageJpg from "@/assets/bestsoftware.jpg";
 import { Link } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function HeroSection() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   return (
     <section className="relative overflow-hidden" style={{ background: "hsl(15 60% 96%)" }} aria-label={t("hero.searchPlaceholder")}>
