@@ -16,7 +16,7 @@ type Deal = {
   discount_type: string | null; coupon_code: string | null; category: string | null;
   start_date: string | null; end_date: string | null; is_featured: boolean;
   is_trending: boolean; is_visible: boolean; click_count: number | null;
-  product_id: string | null; created_at: string;
+  product_id: string | null; created_at: string; review_status: string;
 };
 
 function useCountdown(endDate: string | null) {
@@ -52,6 +52,7 @@ export default function DealDetailPage() {
         .select("*")
         .eq("slug", slug!)
         .eq("is_visible", true)
+        .eq("review_status", "approved")
         .maybeSingle();
       return data as unknown as Deal | null;
     },
@@ -61,7 +62,7 @@ export default function DealDetailPage() {
     queryKey: ["deal-related", deal?.id, deal?.category],
     enabled: !!deal,
     queryFn: async () => {
-      let q = supabase.from("deals" as any).select("*").eq("is_visible", true).neq("id", deal!.id).limit(4);
+      let q = supabase.from("deals" as any).select("*").eq("is_visible", true).eq("review_status", "approved").neq("id", deal!.id).limit(4);
       if (deal!.category) q = q.eq("category", deal!.category);
       const { data } = await q;
       return (data ?? []) as unknown as Deal[];

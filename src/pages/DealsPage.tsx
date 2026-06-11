@@ -37,6 +37,7 @@ type Deal = {
   is_trending: boolean;
   click_count: number | null;
   created_at: string;
+  review_status: string;
 };
 
 type SortKey = "featured" | "popular" | "newest" | "expiring" | "discount";
@@ -174,6 +175,7 @@ export default function DealsPage() {
         .from("deals" as any)
         .select("*")
         .eq("is_visible", true)
+        .eq("review_status", "approved")
         .order("is_featured", { ascending: false })
         .order("created_at", { ascending: false });
       return (data ?? []) as unknown as Deal[];
