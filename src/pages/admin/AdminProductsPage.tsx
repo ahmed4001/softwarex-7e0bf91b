@@ -28,8 +28,9 @@ export default function AdminProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFetchingLogos, setIsFetchingLogos] = useState(false);
   const [isFetchingScreenshots, setIsFetchingScreenshots] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
   const [fetchProgress, setFetchProgress] = useState({ processed: 0, succeeded: 0, failed: 0, total: 0 });
-  const [activeFetchMode, setActiveFetchMode] = useState<"logo" | "screenshot" | null>(null);
+  const [activeFetchMode, setActiveFetchMode] = useState<"logo" | "screenshot" | "enrich" | null>(null);
   const abortRef = useRef(false);
   const queryClient = useQueryClient();
 
