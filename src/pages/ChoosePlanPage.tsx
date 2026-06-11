@@ -121,18 +121,18 @@ export default function ChoosePlanPage() {
   return (
     <>
       <SeoHead title="Choose Your Plan — ReviewHunts" description="Pick a plan to launch your product on ReviewHunts. Free, Featured, Promotion or Premium." />
-      <div className="min-h-[80vh] py-12 md:py-16 relative">
+      <div className="py-6 relative">
         <div className="absolute inset-0 mesh-gradient opacity-20" />
         <div className="container max-w-6xl relative">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-5">
             {submitted && (
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-4">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Product submitted successfully
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold mb-2">
+                <CheckCircle2 className="h-3 w-3" /> Product submitted successfully
               </div>
             )}
-            <h1 className="text-3xl md:text-4xl font-display font-bold">Choose your plan</h1>
-            <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-              Start free or unlock more visibility, promotion and priority support. You can upgrade or downgrade anytime.
+            <h1 className="text-2xl md:text-3xl font-display font-bold">Choose your plan</h1>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xl mx-auto">
+              Start free or unlock more visibility. Upgrade anytime.
             </p>
           </motion.div>
 
