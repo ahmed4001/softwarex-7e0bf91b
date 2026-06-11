@@ -42,7 +42,7 @@ async function firecrawlCrawl(apiKey: string, url: string, limit: number) {
     body: JSON.stringify({
       url,
       limit,
-      maxDepth: 2,
+      maxDiscoveryDepth: 2,
       scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
     }),
   });
