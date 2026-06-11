@@ -89,6 +89,13 @@ async function main() {
   push(lists, "/lists", "0.5");
   push(glossary, "/glossary", "0.4");
   push(landing, "", "0.6");
+  push(discussions, "/discussions", "0.5");
+
+  // Build user_id → username lookup for SEO-friendly author/user URLs.
+  const usernameMap = new Map<string, string>();
+  for (const p of profilesData || []) {
+    if (p?.user_id && p?.username) usernameMap.set(String(p.user_id), String(p.username));
+  }
 
   // Blog taxonomy + author pages derived from published posts.
   const tagSet = new Set<string>();
@@ -108,8 +115,10 @@ async function main() {
     entries.push({ loc: `${BASE_URL}/blog/category/${encodeURIComponent(slugify(cat))}`, priority: "0.5" });
   }
   for (const id of authorSet) {
-    entries.push({ loc: `${BASE_URL}/author/${id}`, priority: "0.4" });
+    const handle = usernameMap.get(id) || id;
+    entries.push({ loc: `${BASE_URL}/author/${handle}`, priority: "0.4" });
   }
+
 
 
 
