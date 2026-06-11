@@ -27,6 +27,7 @@ export function PaginationControls({ page, totalPages, onPageChange, scrollToTop
         className="rounded-xl"
         disabled={page === 0}
         onClick={() => handlePageChange(Math.max(0, page - 1))}
+        aria-label="Previous page"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -39,6 +40,8 @@ export function PaginationControls({ page, totalPages, onPageChange, scrollToTop
               size="icon"
               className="rounded-xl h-9 w-9 text-sm"
               onClick={() => handlePageChange(i)}
+              aria-label={`Page ${i + 1}`}
+              aria-current={i === page ? "page" : undefined}
             >
               {i + 1}
             </Button>
@@ -54,6 +57,7 @@ export function PaginationControls({ page, totalPages, onPageChange, scrollToTop
         className="rounded-xl"
         disabled={page >= totalPages - 1}
         onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
+        aria-label="Next page"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
