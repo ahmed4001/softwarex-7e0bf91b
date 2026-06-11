@@ -33,6 +33,19 @@ function isExpiringSoon(endDate: string | null): boolean {
   return diff > 0 && diff <= 48 * 3600000;
 }
 
+function DealCountdown({ endDate }: { endDate: string | null }) {
+  const countdown = useCountdown(endDate);
+  if (!countdown) return null;
+  const isExpired = countdown === "Expired";
+  const soon = isExpiringSoon(endDate);
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-medium ${isExpired ? "text-destructive" : soon ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+      <Timer className="h-3.5 w-3.5" />
+      <span>{isExpired ? "Expired" : `Ends in ${countdown}`}</span>
+    </div>
+  );
+}
+
 export function RecentlyAddedSection() {
   const { data: recentProducts } = useQuery({
     queryKey: ["products-recent"],
