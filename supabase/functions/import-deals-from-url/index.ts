@@ -261,6 +261,7 @@ Deno.serve(async (req) => {
       jobUrls: string[],
       jobMode: "scrape" | "crawl",
       jobCrawlLimit: number,
+      jobResolveLogos = true,
     ): Promise<any[]> => {
       const all: any[] = [];
       const sourcePages: Array<{ markdown: string; url: string }> = [];
