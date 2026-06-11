@@ -70,27 +70,35 @@ export default function DealDetailPage() {
 
   const countdown = useCountdown(deal?.end_date ?? null);
 
-  const trackClick = async () => {
+  const trackDealClick = async (e?: React.MouseEvent) => {
     if (!deal) return;
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       if (deal.product_id) {
         await supabase.from("affiliate_clicks" as any).insert({
           product_id: deal.product_id,
+          deal_id: deal.id,
           destination_url: deal.deal_url,
           referrer_url: window.location.href,
         });
       }
-      await supabase.from("deals" as any).update({ click_count: (deal.click_count ?? 0) + 1 }).eq("id", deal.id);
+      await supabase.rpc("increment_deal_click", { _deal_id: deal.id } as any);
     } catch {}
+    if (e) {
+      window.open(deal.deal_url, "_blank", "noopener,noreferrer");
+    }
   };
 
   const copyCoupon = async () => {
     if (!deal?.coupon_code) return;
-    navigator.clipboard.writeText(deal.coupon_code);
+    await navigator.clipboard.writeText(deal.coupon_code);
     setCopied(true);
     setRevealed(true);
     toast.success("Coupon copied!");
-    trackClick();
+    await trackDealClick();
     setTimeout(() => setCopied(false), 2500);
   };
 
