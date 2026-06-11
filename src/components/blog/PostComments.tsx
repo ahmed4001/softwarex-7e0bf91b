@@ -19,7 +19,7 @@ interface Comment {
   created_at: string;
   user_id: string;
   parent_id: string | null;
-  profile?: { name: string | null; avatar_url: string | null };
+  profile?: { name: string | null; avatar_url: string | null; username?: string | null };
 }
 
 export function PostComments({ postId }: Props) {
