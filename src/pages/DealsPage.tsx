@@ -229,6 +229,7 @@ export default function DealsPage() {
   const filtered = useMemo(() => {
     const now = Date.now();
     let list = deals.filter((d) => {
+      if (!includeExpired && d.end_date && new Date(d.end_date).getTime() <= now) return false;
       if (selectedCats.length && (!d.category || !selectedCats.includes(d.category))) return false;
       if (search) {
         const q = search.toLowerCase();
