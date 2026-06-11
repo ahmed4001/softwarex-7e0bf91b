@@ -189,33 +189,38 @@ export default function AdminHomepageSectionsPage() {
               <Switch checked={s.is_enabled} onCheckedChange={(v) => toggleEnabled(s.key, v)} />
             </CardHeader>
             <CardContent className="space-y-3">
-              {sectionItems.length > 0 && (
-                <div className="flex items-center gap-3 pb-2 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={allSectionSelected}
-                      onCheckedChange={(v) => selectAllInSection(s.key, !!v)}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {sectionSelectedCount > 0 ? `${sectionSelectedCount} selected` : "Select all"}
-                    </span>
-                  </div>
-                  {sectionSelectedCount > 0 && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        const ids = sectionItems.filter((i) => selectedItemIds.has(i.id)).map((i) => i.id);
-                        setConfirmAction({ type: "remove", sectionKey: s.key, ids, count: ids.length });
-                        setConfirmOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1.5" />
-                      Remove selected ({sectionSelectedCount})
-                    </Button>
-                  )}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-2 bg-muted/40 rounded-md border border-border">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={allSectionSelected}
+                    disabled={sectionItems.length === 0}
+                    onCheckedChange={(v) => selectAllInSection(s.key, !!v)}
+                  />
+                  <span className="text-sm font-medium">
+                    Bulk actions
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {sectionSelectedCount > 0
+                      ? `${sectionSelectedCount} of ${sectionItems.length} selected`
+                      : sectionItems.length > 0
+                        ? `Select to remove (${sectionItems.length} curated)`
+                        : "No curated products yet"}
+                  </span>
                 </div>
-              )}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={sectionSelectedCount === 0}
+                  onClick={() => {
+                    const ids = sectionItems.filter((i) => selectedItemIds.has(i.id)).map((i) => i.id);
+                    setConfirmAction({ type: "remove", sectionKey: s.key, ids, count: ids.length });
+                    setConfirmOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  Remove selected{sectionSelectedCount > 0 ? ` (${sectionSelectedCount})` : ""}
+                </Button>
+              </div>
               <div className="space-y-2">
                 {sectionItems.map((item, idx) => (
                   <div key={item.id} className="flex items-center gap-2 p-2 border border-border rounded-lg">
