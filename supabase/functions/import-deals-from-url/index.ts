@@ -402,11 +402,11 @@ Deno.serve(async (req) => {
           }
         }
 
-        const baseSlug = slugify(`${d.product_name}-${d.discount_amount || "deal"}`);
+        const baseSlug = slugify(`${cleanName}-${d.discount_amount || "deal"}`);
         let slug = baseSlug || `deal-${Date.now()}`;
 
         const record: any = {
-          product_name: d.product_name,
+          product_name: cleanName,
           slug,
           logo_url: d.logo_url || d.matched_logo_url || null,
           description: d.description || null,
