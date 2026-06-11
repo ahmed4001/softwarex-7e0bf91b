@@ -3517,6 +3517,42 @@ export type Database = {
           },
         ]
       }
+      route_redirects: {
+        Row: {
+          created_at: string
+          from_path: string
+          hit_count: number
+          id: string
+          last_hit_at: string | null
+          source: string | null
+          status_code: number
+          to_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_path: string
+          hit_count?: number
+          id?: string
+          last_hit_at?: string | null
+          source?: string | null
+          status_code?: number
+          to_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_path?: string
+          hit_count?: number
+          id?: string
+          last_hit_at?: string | null
+          source?: string | null
+          status_code?: number
+          to_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saved_products: {
         Row: {
           created_at: string
@@ -4536,6 +4572,10 @@ export type Database = {
       }
       increment_blog_view: { Args: { post_slug: string }; Returns: undefined }
       increment_deal_click: { Args: { _deal_id: string }; Returns: undefined }
+      increment_redirect_hit: {
+        Args: { _from_path: string }
+        Returns: undefined
+      }
       reset_brevo_daily_credits: { Args: never; Returns: undefined }
       slugify: { Args: { _input: string }; Returns: string }
     }

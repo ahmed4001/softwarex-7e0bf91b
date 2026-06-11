@@ -13,6 +13,7 @@ import { VendorLayout } from "@/components/VendorLayout";
 import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { QuickCompareBar } from "@/components/QuickCompareBar";
+import { RouteRedirector } from "@/components/RouteRedirector";
 import NotFound from "./pages/NotFound";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -136,7 +137,7 @@ function AppContent() {
   return (
     <RouteErrorBoundary>
     <Suspense fallback={<RouteSkeleton />}>
-
+      <RouteRedirector />
 
       <Routes>
         {/* Public routes */}
