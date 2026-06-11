@@ -67,6 +67,8 @@ export function HeroSection() {
         aria-hidden="true"
       />
       {/* Extra desktop-only 3D-style shapes */}
+      {!isMobile && (
+        <>
       <motion.div
         className="hidden lg:block absolute top-[30%] left-[-25px] w-28 h-28 rounded-full"
         style={{ background: "linear-gradient(135deg, hsl(280 70% 55%), hsl(320 70% 50%))" }}
@@ -116,6 +118,8 @@ export function HeroSection() {
         transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
         aria-hidden="true"
       />
+        </>
+      )}
 
       <div className="container relative z-10 py-14 sm:py-20 md:py-32 lg:py-40 text-center">
         <motion.div
