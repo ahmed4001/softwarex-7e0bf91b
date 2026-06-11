@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { useHomepageSection } from "@/hooks/useHomepageSection";
 
 function useCountdown(endDate: string | null) {
   const [now, setNow] = useState(Date.now());

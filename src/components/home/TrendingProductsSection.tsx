@@ -70,6 +70,7 @@ export function TrendingProductsSection() {
     },
   });
 
+  if (!cfg.enabled) return null;
   if (!trending || trending.length === 0) return null;
 
   return (
