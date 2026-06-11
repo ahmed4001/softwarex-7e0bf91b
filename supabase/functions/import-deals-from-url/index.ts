@@ -436,7 +436,7 @@ Deno.serve(async (req) => {
       // @ts-ignore EdgeRuntime is provided at runtime
       EdgeRuntime.waitUntil((async () => {
         try {
-          await runImportPipeline(job.id, urls, mode, crawl_limit);
+          await runImportPipeline(job.id, urls, mode, crawl_limit, resolve_logos);
         } catch (e) {
           console.error("pipeline error", e);
           await updateJob(job.id, { status: "failed", stage: "failed", error: (e as Error).message?.slice(0, 500) });
@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
 
     // ---- Legacy synchronous extract (kept for compatibility) ---------------
     if (action === "extract") {
-      const enriched = await runImportPipeline(null, urls, mode, crawl_limit);
+      const enriched = await runImportPipeline(null, urls, mode, crawl_limit, resolve_logos);
       return new Response(JSON.stringify({ success: true, deals: enriched }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
