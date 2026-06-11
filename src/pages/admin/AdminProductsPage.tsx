@@ -269,6 +269,23 @@ export default function AdminProductsPage() {
                 </>
               )}
             </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={isEnriching ? () => { abortRef.current = true; } : () => bulkEnrich()}
+            >
+              {isEnriching ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {fetchProgress.processed > 0 ? `${fetchProgress.succeeded} enriched...` : "Starting..."}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Enrich Details
+                </>
+              )}
+            </Button>
             <Link to="/admin/products/new"><Button className="gap-1"><Plus className="h-4 w-4" />Add Product</Button></Link>
           </div>
         </div>
