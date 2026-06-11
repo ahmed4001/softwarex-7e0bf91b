@@ -40,6 +40,7 @@ type Deal = {
   is_featured: boolean;
   is_trending: boolean;
   is_visible: boolean;
+  review_status: string;
   click_count: number | null;
   created_at: string;
 };
@@ -78,14 +79,14 @@ const blankDeal: Partial<Deal> = {
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-type BulkAction = "feature" | "unfeature" | "hide" | "show" | "delete" | "extend" | "set_category";
+type BulkAction = "feature" | "unfeature" | "hide" | "show" | "delete" | "extend" | "set_category" | "approve" | "reject";
 
 export default function AdminDealsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Deal> | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "featured" | "trending" | "expired" | "hidden">("all");
+  const [filter, setFilter] = useState<"all" | "featured" | "trending" | "expired" | "hidden" | "pending">("all");
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Pagination & sorting
