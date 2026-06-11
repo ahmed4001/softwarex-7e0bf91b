@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, Pencil, Trash2, Star, TrendingUp, Eye, EyeOff, Copy, MousePointerClick, Link2, Check, ChevronsUpDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Plus, Pencil, Trash2, Star, TrendingUp, Eye, EyeOff, Copy, MousePointerClick, Link2,
+  Check, ChevronsUpDown, Download, Upload, ChevronLeft, ChevronRight, ArrowUpDown,
+} from "lucide-react";
 import { toast } from "sonner";
 
 type Deal = {
@@ -32,6 +41,7 @@ type Deal = {
   is_trending: boolean;
   is_visible: boolean;
   click_count: number | null;
+  created_at: string;
 };
 
 type ProductLite = {
@@ -43,6 +53,10 @@ type ProductLite = {
   website_url: string | null;
   category_id: string | null;
 };
+
+type SortColumn = "created_at" | "product_name" | "click_count" | "end_date";
+
+const PAGE_SIZE = 25;
 
 const blankDeal: Partial<Deal> = {
   product_id: null,
@@ -64,6 +78,8 @@ const blankDeal: Partial<Deal> = {
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+type BulkAction = "feature" | "unfeature" | "hide" | "show" | "delete" | "extend" | "set_category";
+
 export default function AdminDealsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -72,13 +88,44 @@ export default function AdminDealsPage() {
   const [filter, setFilter] = useState<"all" | "featured" | "trending" | "expired" | "hidden">("all");
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const { data: deals = [] } = useQuery({
-    queryKey: ["admin-deals"],
+  // Pagination & sorting
+  const [page, setPage] = useState(0);
+  const [sortCol, setSortCol] = useState<SortColumn>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  // Bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<BulkAction | null>(null);
+  const [extendDays, setExtendDays] = useState(30);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const dealsQuery = useQuery({
+    queryKey: ["admin-deals", { search, filter, sortCol, sortDir, page }],
     queryFn: async () => {
-      const { data } = await supabase.from("deals" as any).select("*").order("created_at", { ascending: false });
-      return (data ?? []) as unknown as Deal[];
+      const now = new Date().toISOString();
+      let q = supabase.from("deals" as any).select("*", { count: "exact" });
+
+      if (search) q = q.or(`product_name.ilike.%${search}%,slug.ilike.%${search}%,coupon_code.ilike.%${search}%`);
+      if (filter === "featured") q = q.eq("is_featured", true);
+      if (filter === "trending") q = q.eq("is_trending", true);
+      if (filter === "hidden") q = q.eq("is_visible", false);
+      if (filter === "expired") q = q.lt("end_date", now).not("end_date", "is", null);
+
+      q = q.order(sortCol, { ascending: sortDir === "asc", nullsFirst: false });
+      q = q.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { rows: (data ?? []) as unknown as Deal[], count: count ?? 0 };
     },
   });
+
+  const deals = dealsQuery.data?.rows ?? [];
+  const totalCount = dealsQuery.data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const { data: products = [] } = useQuery({
     queryKey: ["admin-deals-products"],
@@ -103,17 +150,11 @@ export default function AdminDealsPage() {
 
   const categoryMap = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.name])), [categories]);
 
-  const filtered = useMemo(() => {
-    const now = Date.now();
-    return deals.filter((d) => {
-      if (search && !`${d.product_name} ${d.slug} ${d.coupon_code ?? ""}`.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter === "featured") return d.is_featured;
-      if (filter === "trending") return d.is_trending;
-      if (filter === "hidden") return !d.is_visible;
-      if (filter === "expired") return d.end_date && new Date(d.end_date).getTime() < now;
-      return true;
-    });
-  }, [deals, search, filter]);
+  const toggleSort = (col: SortColumn) => {
+    if (sortCol === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("desc"); }
+    setPage(0);
+  };
 
   const save = useMutation({
     mutationFn: async (deal: Partial<Deal>) => {
@@ -159,6 +200,162 @@ export default function AdminDealsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-deals"] }),
   });
 
+  // ===== Bulk action =====
+  const runBulk = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(selected);
+      if (ids.length === 0) return { ok: 0, failed: 0 };
+      let ok = 0, failed = 0;
+
+      const apply = async (op: () => Promise<{ error: any }>) => {
+        const { error } = await op();
+        if (error) failed++; else ok += ids.length;
+      };
+
+      switch (bulkAction) {
+        case "feature":
+          await apply(() => supabase.from("deals" as any).update({ is_featured: true }).in("id", ids));
+          break;
+        case "unfeature":
+          await apply(() => supabase.from("deals" as any).update({ is_featured: false }).in("id", ids));
+          break;
+        case "hide":
+          await apply(() => supabase.from("deals" as any).update({ is_visible: false }).in("id", ids));
+          break;
+        case "show":
+          await apply(() => supabase.from("deals" as any).update({ is_visible: true }).in("id", ids));
+          break;
+        case "delete":
+          await apply(() => supabase.from("deals" as any).delete().in("id", ids));
+          break;
+        case "set_category":
+          await apply(() => supabase.from("deals" as any).update({ category: bulkCategory || null }).in("id", ids));
+          break;
+        case "extend": {
+          // Per-row: add N days to existing end_date, or set to now+N days if null
+          ok = 0; failed = 0;
+          for (const id of ids) {
+            const row = deals.find((d) => d.id === id);
+            const base = row?.end_date ? new Date(row.end_date) : new Date();
+            base.setDate(base.getDate() + Number(extendDays || 0));
+            const { error } = await supabase.from("deals" as any).update({ end_date: base.toISOString() }).eq("id", id);
+            if (error) failed++; else ok++;
+          }
+          break;
+        }
+      }
+      return { ok, failed };
+    },
+    onSuccess: ({ ok, failed }) => {
+      const label = bulkAction === "delete" ? "deleted" : "updated";
+      if (failed === 0) toast.success(`${ok} deal(s) ${label}`);
+      else toast.warning(`${ok} ${label}, ${failed} failed`);
+      setSelected(new Set());
+      setBulkAction(null);
+      qc.invalidateQueries({ queryKey: ["admin-deals"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // ===== CSV =====
+  const exportCSV = async () => {
+    toast.info("Exporting all deals...");
+    const { data, error } = await supabase.from("deals" as any).select("*").order("created_at", { ascending: false });
+    if (error) { toast.error(error.message); return; }
+    const rows = (data ?? []) as Deal[];
+    const cols: (keyof Deal)[] = [
+      "id", "product_id", "product_name", "slug", "logo_url", "description", "deal_url",
+      "discount_amount", "discount_type", "coupon_code", "category",
+      "start_date", "end_date", "is_featured", "is_trending", "is_visible", "click_count",
+    ];
+    const escape = (v: any) => {
+      if (v == null) return "";
+      const s = String(v).replace(/"/g, '""');
+      return /[",\n]/.test(s) ? `"${s}"` : s;
+    };
+    const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => escape((r as any)[c])).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `deals-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} deals`);
+  };
+
+  const importCSV = async (file: File) => {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) { toast.error("Empty CSV"); return; }
+
+    const parseLine = (line: string) => {
+      const out: string[] = []; let cur = ""; let q = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (q) {
+          if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+          else if (c === '"') q = false;
+          else cur += c;
+        } else {
+          if (c === ",") { out.push(cur); cur = ""; }
+          else if (c === '"') q = true;
+          else cur += c;
+        }
+      }
+      out.push(cur);
+      return out;
+    };
+
+    const headers = parseLine(lines[0]).map((h) => h.trim());
+    const required = ["product_name", "deal_url"];
+    for (const r of required) {
+      if (!headers.includes(r)) { toast.error(`Missing required column: ${r}`); return; }
+    }
+
+    const rows = lines.slice(1).map((l) => {
+      const vals = parseLine(l);
+      const obj: any = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] === "" ? null : vals[i]; });
+      return obj;
+    });
+
+    let inserted = 0, updated = 0, failed = 0;
+    for (const row of rows) {
+      const payload: any = {
+        product_name: row.product_name,
+        deal_url: row.deal_url,
+        slug: row.slug || slugify(row.product_name || ""),
+        logo_url: row.logo_url || null,
+        description: row.description || null,
+        discount_amount: row.discount_amount || null,
+        discount_type: row.discount_type || "percent",
+        coupon_code: row.coupon_code || null,
+        category: row.category || null,
+        start_date: row.start_date || null,
+        end_date: row.end_date || null,
+        is_featured: String(row.is_featured).toLowerCase() === "true",
+        is_trending: String(row.is_trending).toLowerCase() === "true",
+        is_visible: row.is_visible == null ? true : String(row.is_visible).toLowerCase() !== "false",
+        product_id: row.product_id || null,
+      };
+      try {
+        if (row.id) {
+          const { error } = await supabase.from("deals" as any).update(payload).eq("id", row.id);
+          if (error) throw error;
+          updated++;
+        } else {
+          // upsert by slug
+          const { error } = await supabase.from("deals" as any).upsert(payload, { onConflict: "slug" });
+          if (error) throw error;
+          inserted++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+    toast.success(`Imported: ${inserted} added, ${updated} updated${failed ? `, ${failed} failed` : ""}`);
+    qc.invalidateQueries({ queryKey: ["admin-deals"] });
+  };
+
   const openNew = () => { setEditing(blankDeal); setOpen(true); };
   const openEdit = (d: Deal) => {
     setEditing({
@@ -197,6 +394,18 @@ export default function AdminDealsPage() {
 
   const selectedProduct = products.find((p) => p.id === editing?.product_id);
 
+  const toggleRow = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const toggleAll = () => {
+    if (selected.size === deals.length) setSelected(new Set());
+    else setSelected(new Set(deals.map((d) => d.id)));
+  };
+
+  const selectedRows = deals.filter((d) => selected.has(d.id));
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -204,43 +413,100 @@ export default function AdminDealsPage() {
           <h1 className="text-3xl font-bold">Deals</h1>
           <p className="text-muted-foreground">Connect deals to live products and manage offers</p>
         </div>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" /> New Deal</Button>
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importCSV(f);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+          />
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()}><Upload className="h-4 w-4 mr-2" /> Import CSV</Button>
+          <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-2" /> Export CSV</Button>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" /> New Deal</Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <CardTitle>All Deals ({filtered.length})</CardTitle>
+            <CardTitle>All Deals ({totalCount})</CardTitle>
             <div className="flex gap-2 flex-wrap">
               {(["all", "featured", "trending", "expired", "hidden"] as const).map((f) => (
-                <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)} className="capitalize">
+                <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => { setFilter(f); setPage(0); }} className="capitalize">
                   {f}
                 </Button>
               ))}
             </div>
           </div>
-          <Input placeholder="Search by product, slug or coupon..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+          <Input
+            placeholder="Search by product, slug or coupon..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            className="max-w-md"
+          />
         </CardHeader>
         <CardContent>
+          {/* Bulk action bar */}
+          {selected.size > 0 && (
+            <div className="sticky top-2 z-20 mb-3 flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2 flex-wrap">
+              <span className="text-sm font-medium">{selected.size} selected</span>
+              <div className="flex-1" />
+              <Button size="sm" variant="outline" onClick={() => setBulkAction("feature")}><Star className="h-3.5 w-3.5 mr-1" /> Feature</Button>
+              <Button size="sm" variant="outline" onClick={() => setBulkAction("unfeature")}>Unfeature</Button>
+              <Button size="sm" variant="outline" onClick={() => setBulkAction("hide")}><EyeOff className="h-3.5 w-3.5 mr-1" /> Hide</Button>
+              <Button size="sm" variant="outline" onClick={() => setBulkAction("show")}><Eye className="h-3.5 w-3.5 mr-1" /> Show</Button>
+              <Button size="sm" variant="outline" onClick={() => setBulkAction("extend")}>Extend end date</Button>
+              <Button size="sm" variant="outline" onClick={() => setBulkAction("set_category")}>Set category</Button>
+              <Button size="sm" variant="destructive" onClick={() => setBulkAction("delete")}><Trash2 className="h-3.5 w-3.5 mr-1" /> Delete</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-muted-foreground border-b">
                 <tr>
-                  <th className="py-2 px-2">Product</th>
+                  <th className="py-2 px-2 w-8">
+                    <Checkbox checked={deals.length > 0 && selected.size === deals.length} onCheckedChange={toggleAll} />
+                  </th>
+                  <th className="py-2 px-2">
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("product_name")}>
+                      Product <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
                   <th className="py-2 px-2">Linked</th>
                   <th className="py-2 px-2">Discount</th>
                   <th className="py-2 px-2">Coupon</th>
-                  <th className="py-2 px-2">Ends</th>
-                  <th className="py-2 px-2">Clicks</th>
+                  <th className="py-2 px-2">
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("end_date")}>
+                      Ends <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="py-2 px-2">
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort("click_count")}>
+                      Clicks <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
                   <th className="py-2 px-2">Status</th>
                   <th className="py-2 px-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((d) => {
+                {dealsQuery.isLoading && (
+                  <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+                )}
+                {!dealsQuery.isLoading && deals.map((d) => {
                   const expired = d.end_date && new Date(d.end_date).getTime() < Date.now();
                   return (
                     <tr key={d.id} className="border-b hover:bg-muted/40">
+                      <td className="py-3 px-2">
+                        <Checkbox checked={selected.has(d.id)} onCheckedChange={() => toggleRow(d.id)} />
+                      </td>
                       <td className="py-3 px-2">
                         <div className="flex items-center gap-2">
                           {d.logo_url ? <img src={d.logo_url} alt="" className="h-8 w-8 rounded object-contain bg-muted" /> : <div className="h-8 w-8 rounded bg-muted" />}
@@ -282,21 +548,113 @@ export default function AdminDealsPage() {
                           <Button size="icon" variant="ghost" onClick={() => toggle.mutate({ id: d.id, field: "is_visible", value: !d.is_visible })} title="Toggle visibility">{d.is_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</Button>
                           <Button size="icon" variant="ghost" onClick={() => duplicate(d)} title="Duplicate"><Copy className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(d)}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => confirm("Delete?") && del.mutate(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                         </div>
                       </td>
                     </tr>
                   );
                 })}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No deals match</td></tr>
+                {!dealsQuery.isLoading && deals.length === 0 && (
+                  <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">No deals match</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4 text-sm">
+            <span className="text-muted-foreground">
+              Page {page + 1} of {totalPages} · {totalCount} total
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Prev
+              </Button>
+              <Button size="sm" variant="outline" disabled={page + 1 >= totalPages} onClick={() => setPage(page + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
+      {/* Delete single confirm */}
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete deal?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk confirm dialog */}
+      <Dialog open={!!bulkAction} onOpenChange={(o) => !o && setBulkAction(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {bulkAction === "feature" && "Feature deals"}
+              {bulkAction === "unfeature" && "Remove featured flag"}
+              {bulkAction === "hide" && "Hide deals from site"}
+              {bulkAction === "show" && "Make deals visible"}
+              {bulkAction === "delete" && "Delete deals permanently"}
+              {bulkAction === "extend" && "Extend end date"}
+              {bulkAction === "set_category" && "Set category"}
+            </DialogTitle>
+            <DialogDescription>
+              This will affect {selected.size} deal(s).
+              {bulkAction === "delete" && " This cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {bulkAction === "extend" && (
+            <div className="space-y-2">
+              <Label>Add days to end date</Label>
+              <Input type="number" min={1} value={extendDays} onChange={(e) => setExtendDays(Number(e.target.value))} />
+              <p className="text-xs text-muted-foreground">If a deal has no end date, it will be set to today + N days.</p>
+            </div>
+          )}
+
+          {bulkAction === "set_category" && (
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} placeholder="e.g. CRM" />
+              <p className="text-xs text-muted-foreground">Leave blank to clear category.</p>
+            </div>
+          )}
+
+          <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1 text-sm">
+            {selectedRows.map((r) => (
+              <div key={r.id} className="flex items-center gap-2">
+                <span className="font-medium">{r.product_name}</span>
+                <span className="text-xs text-muted-foreground">{r.slug}</span>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBulkAction(null)}>Cancel</Button>
+            <Button
+              variant={bulkAction === "delete" ? "destructive" : "default"}
+              disabled={runBulk.isPending}
+              onClick={() => runBulk.mutate()}
+            >
+              {runBulk.isPending ? "Processing..." : `Confirm ${bulkAction === "delete" ? "delete" : "action"}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editor dialog */}
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing?.id ? "Edit Deal" : "New Deal"}</DialogTitle></DialogHeader>
@@ -375,11 +733,14 @@ export default function AdminDealsPage() {
                 </div>
                 <div>
                   <Label>Discount Type</Label>
-                  <select className="w-full h-10 px-3 rounded-md border border-input bg-background" value={editing.discount_type || "percent"} onChange={(e) => setEditing({ ...editing, discount_type: e.target.value })}>
-                    <option value="percent">Percent (%)</option>
-                    <option value="amount">Amount ($)</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <Select value={editing.discount_type || "percent"} onValueChange={(v) => setEditing({ ...editing, discount_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">Percent (%)</SelectItem>
+                      <SelectItem value="amount">Amount ($)</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Coupon Code</Label>
