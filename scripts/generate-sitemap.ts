@@ -57,7 +57,7 @@ function xmlEscape(s: string): string {
 async function main() {
   const entries: Entry[] = staticEntries.map(e => ({ ...e, loc: `${BASE_URL}${e.loc}` }));
 
-  const [products, categories, posts, comparisons, pages, guides, lists, glossary, landing] =
+  const [products, categories, posts, comparisons, pages, guides, lists, glossary, landing, discussions, profilesData] =
     await Promise.all([
       fetchTable("products", "slug,updated_at", "&is_active=eq.true"),
       fetchTable("categories", "slug,updated_at", "&is_active=eq.true"),
@@ -68,7 +68,11 @@ async function main() {
       fetchTable("lists", "slug,updated_at", "&is_published=eq.true"),
       fetchTable("glossary_terms", "slug,updated_at"),
       fetchTable("keyword_landing_pages", "slug,updated_at", "&is_published=eq.true"),
+      fetchTable("discussions", "slug,updated_at"),
+      // user_id → username map so author/user URLs use SEO-friendly slugs
+      fetchTable("profiles", "user_id,username,updated_at"),
     ]);
+
 
   const push = (rows: any[], prefix: string, priority = "0.7") => {
     for (const r of rows || []) {
