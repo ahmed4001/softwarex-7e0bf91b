@@ -15,7 +15,9 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden" style={{ background: "hsl(15 60% 96%)" }} aria-label={t("hero.searchPlaceholder")}>
-      {/* Geometric shapes - hidden on mobile for performance & cleaner layout */}
+      {/* Geometric shapes - desktop only, not mounted on mobile for performance */}
+      {!isMobile && (
+        <>
       <motion.div
         className="hidden md:block absolute top-[-60px] left-[-40px] w-48 h-48 rounded-2xl"
         style={{ background: "hsl(220 90% 56%)" }}
@@ -51,6 +53,8 @@ export function HeroSection() {
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
         aria-hidden="true"
       />
+        </>
+      )}
       {/* Subtle mobile-only accents */}
       <div
         className="md:hidden absolute -top-16 -right-12 w-44 h-44 rounded-full opacity-60"
