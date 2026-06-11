@@ -155,34 +155,32 @@ export default function SubmitProductPage() {
   return (
     <>
       <SeoHead title="Submit Your Product" description="List your software on ReviewHunts and reach thousands of potential customers." />
-      <div className="min-h-[80vh] py-16 relative">
+      <div className="py-6 relative">
         <div className="absolute inset-0 mesh-gradient opacity-20" />
         <div className="container max-w-2xl relative">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="text-center mb-10">
-              <div className="h-14 w-14 rounded-2xl gradient-hero flex items-center justify-center mx-auto mb-5">
-                <Send className="h-6 w-6 text-primary-foreground" />
+            <div className="text-center mb-4">
+              <div className="h-10 w-10 rounded-xl gradient-hero flex items-center justify-center mx-auto mb-2">
+                <Send className="h-5 w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-3xl font-display font-bold text-foreground">Submit Your Product</h1>
-              <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                Get your software listed on ReviewHunts. Our team will review your submission within 48 hours.
-              </p>
+              <h1 className="text-2xl font-display font-bold text-foreground">Submit Your Product</h1>
+              <p className="text-xs text-muted-foreground mt-1">Reviewed within 48 hours.</p>
             </div>
 
             {/* Step indicators */}
-            <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
               <div className="flex items-center gap-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${step === "product" ? "bg-primary text-primary-foreground" : "bg-primary/20 text-primary"}`}>
-                  {step === "account" ? <CheckCircle2 className="h-4 w-4" /> : "1"}
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${step === "product" ? "bg-primary text-primary-foreground" : "bg-primary/20 text-primary"}`}>
+                  {step === "account" ? <CheckCircle2 className="h-3.5 w-3.5" /> : "1"}
                 </div>
-                <span className="text-sm font-medium text-foreground">Product Info</span>
+                <span className="text-xs font-medium text-foreground">Product Info</span>
               </div>
               <div className="h-px w-8 bg-border" />
               <div className="flex items-center gap-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${step === "account" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                  {user ? <CheckCircle2 className="h-4 w-4" /> : "2"}
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${step === "account" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {user ? <CheckCircle2 className="h-3.5 w-3.5" /> : "2"}
                 </div>
-                <span className={`text-sm font-medium ${step === "account" ? "text-foreground" : "text-muted-foreground"}`}>
+                <span className={`text-xs font-medium ${step === "account" ? "text-foreground" : "text-muted-foreground"}`}>
                   {user ? "Signed In" : "Account"}
                 </span>
               </div>
@@ -197,25 +195,25 @@ export default function SubmitProductPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="glass-card p-8">
-                    <div className="space-y-6">
+                  <div className="glass-card p-5">
+                    <div className="space-y-3">
                       <div>
                         <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" /> Product Name *
                         </Label>
-                        <Input id="name" value={form.name} onChange={(e) => updateField("name", e.target.value)} required maxLength={200} placeholder="e.g. Acme CRM" className="mt-2 h-12 rounded-xl" />
+                        <Input id="name" value={form.name} onChange={(e) => updateField("name", e.target.value)} required maxLength={200} placeholder="e.g. Acme CRM" className="mt-1 h-10 rounded-lg" />
                       </div>
 
                       <div>
                         <Label htmlFor="website" className="text-sm font-semibold flex items-center gap-2">
                           <Globe className="h-4 w-4 text-muted-foreground" /> Website URL
                         </Label>
-                        <Input id="website" type="url" value={form.website_url} onChange={(e) => updateField("website_url", e.target.value)} placeholder="https://yourproduct.com" className="mt-2 h-12 rounded-xl" />
+                        <Input id="website" type="url" value={form.website_url} onChange={(e) => updateField("website_url", e.target.value)} placeholder="https://yourproduct.com" className="mt-1 h-10 rounded-lg" />
                       </div>
 
                       <div>
                         <Label htmlFor="tagline" className="text-sm font-semibold">Tagline</Label>
-                        <Input id="tagline" value={form.tagline} onChange={(e) => updateField("tagline", e.target.value)} maxLength={200} placeholder="A short catchy description" className="mt-2 h-12 rounded-xl" />
+                        <Input id="tagline" value={form.tagline} onChange={(e) => updateField("tagline", e.target.value)} maxLength={200} placeholder="A short catchy description" className="mt-1 h-10 rounded-lg" />
                       </div>
 
                       <div>
@@ -227,7 +225,7 @@ export default function SubmitProductPage() {
                           value={form.description}
                           onChange={(e) => updateField("description", e.target.value)}
                           placeholder="Tell us about your product, key features, and target audience..."
-                          className="mt-2 min-h-[160px] rounded-xl"
+                          className="mt-2 min-h-[80px] rounded-lg"
                           maxLength={5000}
                         />
                       </div>
@@ -236,7 +234,7 @@ export default function SubmitProductPage() {
                         <div>
                           <Label className="text-sm font-semibold">Category</Label>
                           <Select value={form.category_id} onValueChange={(v) => updateField("category_id", v)}>
-                            <SelectTrigger className="mt-2 h-12 rounded-xl"><SelectValue placeholder="Select category" /></SelectTrigger>
+                            <SelectTrigger className="mt-1 h-10 rounded-lg"><SelectValue placeholder="Select category" /></SelectTrigger>
                             <SelectContent>
                               {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                             </SelectContent>
@@ -245,7 +243,7 @@ export default function SubmitProductPage() {
                         <div>
                           <Label className="text-sm font-semibold">Pricing Model</Label>
                           <Select value={form.pricing_model} onValueChange={(v) => updateField("pricing_model", v)}>
-                            <SelectTrigger className="mt-2 h-12 rounded-xl"><SelectValue placeholder="Select pricing" /></SelectTrigger>
+                            <SelectTrigger className="mt-1 h-10 rounded-lg"><SelectValue placeholder="Select pricing" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="free">Free</SelectItem>
                               <SelectItem value="freemium">Freemium</SelectItem>
@@ -262,18 +260,18 @@ export default function SubmitProductPage() {
                           <Label htmlFor="price" className="text-sm font-semibold flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-muted-foreground" /> Starting Price
                           </Label>
-                          <Input id="price" type="number" min="0" step="0.01" value={form.starting_price} onChange={(e) => updateField("starting_price", e.target.value)} placeholder="0.00" className="mt-2 h-12 rounded-xl" />
+                          <Input id="price" type="number" min="0" step="0.01" value={form.starting_price} onChange={(e) => updateField("starting_price", e.target.value)} placeholder="0.00" className="mt-1 h-10 rounded-lg" />
                         </div>
                         <div>
                           <Label htmlFor="hq" className="text-sm font-semibold">Headquarters</Label>
-                          <Input id="hq" value={form.headquarters} onChange={(e) => updateField("headquarters", e.target.value)} maxLength={200} placeholder="e.g. San Francisco, CA" className="mt-2 h-12 rounded-xl" />
+                          <Input id="hq" value={form.headquarters} onChange={(e) => updateField("headquarters", e.target.value)} maxLength={200} placeholder="e.g. San Francisco, CA" className="mt-1 h-10 rounded-lg" />
                         </div>
                       </div>
 
                       <Button
                         type="button"
                         onClick={handleContinue}
-                        className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
+                        className="w-full h-10 btn-premium rounded-lg text-primary-foreground font-semibold gap-2"
                         disabled={loading}
                       >
                         {loading ? (
@@ -301,23 +299,22 @@ export default function SubmitProductPage() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="glass-card p-8">
-                    <div className="mb-6">
+                  <div className="glass-card p-5">
+                    <div className="mb-3">
                       <button
                         onClick={() => setStep("product")}
-                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        <ArrowLeft className="h-3.5 w-3.5" /> Back to product info
+                        <ArrowLeft className="h-3.5 w-3.5" /> Back
                       </button>
                     </div>
 
-                    <div className="rounded-xl bg-muted/50 p-4 mb-6">
-                      <p className="text-xs text-muted-foreground mb-1">Submitting:</p>
+                    <div className="rounded-lg bg-muted/50 p-3 mb-3">
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Submitting:</p>
                       <p className="text-sm font-semibold text-foreground">{form.name}</p>
-                      {form.tagline && <p className="text-xs text-muted-foreground mt-0.5">{form.tagline}</p>}
                     </div>
 
-                    <div className="flex gap-2 mb-6">
+                    <div className="flex gap-2 mb-3">
                       <Button
                         variant={authMode === "signup" ? "default" : "outline"}
                         size="sm"
@@ -336,7 +333,7 @@ export default function SubmitProductPage() {
                       </Button>
                     </div>
 
-                    <form onSubmit={handleAuth} className="space-y-4">
+                    <form onSubmit={handleAuth} className="space-y-3">
                       {authMode === "signup" && (
                         <div>
                           <Label htmlFor="fullName" className="text-sm font-semibold flex items-center gap-2">
@@ -347,7 +344,7 @@ export default function SubmitProductPage() {
                             value={authForm.fullName}
                             onChange={(e) => setAuthForm((p) => ({ ...p, fullName: e.target.value }))}
                             placeholder="Your name"
-                            className="mt-2 h-12 rounded-xl"
+                            className="mt-1 h-10 rounded-lg"
                           />
                         </div>
                       )}
@@ -363,7 +360,7 @@ export default function SubmitProductPage() {
                           value={authForm.email}
                           onChange={(e) => setAuthForm((p) => ({ ...p, email: e.target.value }))}
                           placeholder="you@company.com"
-                          className="mt-2 h-12 rounded-xl"
+                          className="mt-1 h-10 rounded-lg"
                         />
                       </div>
 
@@ -379,13 +376,13 @@ export default function SubmitProductPage() {
                           value={authForm.password}
                           onChange={(e) => setAuthForm((p) => ({ ...p, password: e.target.value }))}
                           placeholder="Min. 6 characters"
-                          className="mt-2 h-12 rounded-xl"
+                          className="mt-1 h-10 rounded-lg"
                         />
                       </div>
 
                       <Button
                         type="submit"
-                        className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
+                        className="w-full h-10 btn-premium rounded-lg text-primary-foreground font-semibold gap-2"
                         disabled={authLoading2 || loading}
                       >
                         {authLoading2 ? (
