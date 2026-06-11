@@ -40,32 +40,38 @@ export default function UserProfilePage() {
   }, [profile, id, navigate]);
 
 
+  // Derived from the resolved profile so queries always key on the real user_id
+  // even when the route param is a username slug.
+  const resolvedUserId = (profile as any)?.user_id as string | undefined;
+
   const { data: badges = [] } = useQuery({
-    queryKey: ["user-badges-profile", id],
+    queryKey: ["user-badges-profile", resolvedUserId],
     queryFn: async () => {
       const { data } = await supabase
         .from("user_badges")
         .select("*, badges(*)")
-        .eq("user_id", id!);
+        .eq("user_id", resolvedUserId!);
       return data || [];
     },
-    enabled: !!id,
+    enabled: !!resolvedUserId,
   });
 
   const { data: reviews = [] } = useQuery({
-    queryKey: ["user-reviews-profile", id],
+    queryKey: ["user-reviews-profile", resolvedUserId],
     queryFn: async () => {
       const { data } = await supabase
         .from("reviews")
         .select("*, products!reviews_product_id_fkey(name, slug, logo_url)")
-        .eq("user_id", id!)
+        .eq("user_id", resolvedUserId!)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(20);
       return data || [];
     },
-    enabled: !!id,
+    enabled: !!resolvedUserId,
   });
+
+  const { followerCount, followingCount } = useFollow(resolvedUserId || "");
 
   if (isLoading) {
     return (
@@ -82,7 +88,6 @@ export default function UserProfilePage() {
     );
   }
 
-  const { followerCount, followingCount } = useFollow(id!);
 
   const stats = [
     { icon: MessageSquare, label: "Reviews", value: profile.review_count || 0 },
