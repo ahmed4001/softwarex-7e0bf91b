@@ -238,7 +238,7 @@ export default function AdminHomepageSectionsPage() {
                   </div>
                 ))}
               </div>
-              <ProductPicker existingIds={sectionItems.map((i) => i.product_id)} onPickMultiple={(ids) => addProducts(s.key, ids)} />
+              <ProductPicker existingIds={sectionItems.map((i) => i.product_id)} onPickMultiple={(ids) => { setConfirmAction({ type: "add", sectionKey: s.key, ids, count: ids.length }); setConfirmOpen(true); }} />
             </CardContent>
           </Card>
         );
