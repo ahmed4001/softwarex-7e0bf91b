@@ -23,6 +23,7 @@ import { ProductFinderQuiz } from "@/components/home/ProductFinderQuiz";
 import { ReadingProgress } from "@/components/home/ReadingProgress";
 import { StickyMobileCTA } from "@/components/home/StickyMobileCTA";
 import { RecentlyAddedSection } from "@/components/home/RecentlyAddedSection";
+import { DealsShowcaseSection } from "@/components/home/DealsShowcaseSection";
 
 const SITE_URL = "https://reviewhunts.com";
 
@@ -222,6 +223,9 @@ export default function HomePage() {
 
         {/* 7. Trending */}
         <TrendingProductsSection />
+
+        {/* 7.5 Deals Showcase */}
+        <DealsShowcaseSection />
 
         {/* 8. Popular Comparisons */}
         <PopularComparisonsSection />
