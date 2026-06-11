@@ -33,8 +33,9 @@ export default function BlogPostPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url, bio")
+        .select("user_id, username, name, avatar_url, bio")
         .eq("user_id", post!.author_id!)
+
         .maybeSingle();
       return data;
     },
