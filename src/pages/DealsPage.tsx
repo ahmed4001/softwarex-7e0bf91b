@@ -55,27 +55,35 @@ function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; ti
   const countdown = useCountdown(deal.end_date, tick);
   const [copied, setCopied] = useState(false);
 
-  const trackClick = async () => {
+  const trackDealClick = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       if (deal.product_id) {
         await supabase.from("affiliate_clicks" as any).insert({
           product_id: deal.product_id,
+          deal_id: deal.id,
           destination_url: deal.deal_url,
           referrer_url: window.location.href,
         });
       }
-      await supabase.from("deals" as any).update({ click_count: (deal.click_count ?? 0) + 1 }).eq("id", deal.id);
+      await supabase.rpc("increment_deal_click", { _deal_id: deal.id } as any);
     } catch {}
+    if (e) {
+      window.open(deal.deal_url, "_blank", "noopener,noreferrer");
+    }
   };
 
-  const copy = (e: React.MouseEvent) => {
+  const copy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!deal.coupon_code) return;
-    navigator.clipboard.writeText(deal.coupon_code);
+    await navigator.clipboard.writeText(deal.coupon_code);
     setCopied(true);
     toast.success("Coupon copied!");
-    trackClick();
+    await trackDealClick();
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -126,10 +134,8 @@ function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; ti
             <Button asChild variant="outline" size="sm" className="flex-1">
               <Link to={`/deals/${deal.slug}`}>Details <ChevronRight className="h-3.5 w-3.5 ml-1" /></Link>
             </Button>
-            <Button asChild size="sm" className="flex-1" onClick={trackClick}>
-              <a href={deal.deal_url} target="_blank" rel="noopener noreferrer sponsored">
-                Get Deal <ExternalLink className="h-3.5 w-3.5 ml-1" />
-              </a>
+            <Button size="sm" className="flex-1" onClick={trackDealClick}>
+              Get Deal <ExternalLink className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
         </CardContent>

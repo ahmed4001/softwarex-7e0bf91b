@@ -101,6 +101,7 @@ export type Database = {
       affiliate_clicks: {
         Row: {
           created_at: string
+          deal_id: string | null
           destination_url: string
           id: string
           ip_hash: string | null
@@ -111,6 +112,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deal_id?: string | null
           destination_url: string
           id?: string
           ip_hash?: string | null
@@ -121,6 +123,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deal_id?: string | null
           destination_url?: string
           id?: string
           ip_hash?: string | null
@@ -130,6 +133,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "affiliate_clicks_product_id_fkey"
             columns: ["product_id"]
@@ -4383,6 +4393,7 @@ export type Database = {
         Returns: boolean
       }
       increment_blog_view: { Args: { post_slug: string }; Returns: undefined }
+      increment_deal_click: { Args: { _deal_id: string }; Returns: undefined }
       reset_brevo_daily_credits: { Args: never; Returns: undefined }
     }
     Enums: {
