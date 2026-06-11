@@ -42,15 +42,47 @@ type Deal = {
 
 type SortKey = "featured" | "popular" | "newest" | "expiring" | "discount";
 
-function useCountdown(endDate: string | null, tick: number) {
+type Urgency = "safe" | "soon" | "urgent" | "expired";
+type CountdownInfo = { label: string; urgency: Urgency; expired: boolean } | null;
+
+function useCountdown(endDate: string | null, tick: number): CountdownInfo {
   if (!endDate) return null;
-  const diff = new Date(endDate).getTime() - tick;
-  if (diff <= 0) return "Expired";
+  const end = new Date(endDate).getTime();
+  const diff = end - tick;
+  if (diff <= 0) {
+    const past = tick - end;
+    const days = Math.floor(past / 86400000);
+    return {
+      label: days > 0 ? `Expired ${days}d ago` : "Expired",
+      urgency: "expired",
+      expired: true,
+    };
+  }
   const d = Math.floor(diff / 86400000);
   const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
-  return `${d}d ${h}h ${m}m`;
+  const s = Math.floor((diff % 60000) / 1000);
+  let label: string;
+  let urgency: Urgency;
+  if (d >= 1) {
+    label = `${d}d ${h}h`;
+    urgency = d > 7 ? "safe" : "soon";
+  } else if (h >= 1) {
+    label = `${h}h ${m}m`;
+    urgency = "urgent";
+  } else {
+    label = `${m}m ${s}s`;
+    urgency = "urgent";
+  }
+  return { label, urgency, expired: false };
 }
+
+const urgencyStyles: Record<Urgency, { wrap: string; dot: string }> = {
+  safe:    { wrap: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30", dot: "bg-emerald-500" },
+  soon:    { wrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",         dot: "bg-amber-500" },
+  urgent:  { wrap: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 animate-pulse",   dot: "bg-red-500" },
+  expired: { wrap: "bg-muted text-muted-foreground border-border",                                    dot: "bg-muted-foreground" },
+};
 
 function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; tick: number }) {
   const countdown = useCountdown(deal.end_date, tick);
