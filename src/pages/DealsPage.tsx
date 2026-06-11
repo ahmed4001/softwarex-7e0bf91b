@@ -157,9 +157,12 @@ function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; ti
           )}
 
           {countdown && (
-            <div className={`flex items-center gap-1.5 text-xs mb-3 ${countdown === "Expired" ? "text-destructive" : "text-amber-600 dark:text-amber-400"}`}>
-              <Clock className="h-3.5 w-3.5" />
-              <span className="font-medium">{countdown === "Expired" ? "Expired" : `Ends in ${countdown}`}</span>
+            <div className={`inline-flex items-center gap-1.5 text-xs mb-3 px-2 py-1 rounded-md border w-fit ${urgencyStyles[countdown.urgency].wrap}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${urgencyStyles[countdown.urgency].dot}`} />
+              <Clock className="h-3 w-3" />
+              <span className="font-medium tabular-nums">
+                {countdown.expired ? countdown.label : `Ends in ${countdown.label}`}
+              </span>
             </div>
           )}
 
