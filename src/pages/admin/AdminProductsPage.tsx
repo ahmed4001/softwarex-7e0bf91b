@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, Eye, CheckSquare, Square, ImageDown, Loader2, Monitor } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Eye, CheckSquare, Square, ImageDown, Loader2, Monitor, Sparkles } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,8 +28,9 @@ export default function AdminProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFetchingLogos, setIsFetchingLogos] = useState(false);
   const [isFetchingScreenshots, setIsFetchingScreenshots] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
   const [fetchProgress, setFetchProgress] = useState({ processed: 0, succeeded: 0, failed: 0, total: 0 });
-  const [activeFetchMode, setActiveFetchMode] = useState<"logo" | "screenshot" | null>(null);
+  const [activeFetchMode, setActiveFetchMode] = useState<"logo" | "screenshot" | "enrich" | null>(null);
   const abortRef = useRef(false);
   const queryClient = useQueryClient();
 
@@ -127,6 +128,46 @@ export default function AdminProductsPage() {
       setActiveFetchMode(null);
     }
   }, [queryClient]);
+
+  const bulkEnrich = useCallback(async () => {
+    setIsEnriching(true);
+    setActiveFetchMode("enrich");
+    abortRef.current = false;
+
+    const { count: totalCount } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true)
+      .not("website_url", "is", null)
+      .neq("website_url", "");
+    const total = totalCount || 0;
+    setFetchProgress({ processed: 0, succeeded: 0, failed: 0, total });
+    let offset = 0;
+    let totalProcessed = 0, totalSucceeded = 0, totalFailed = 0;
+
+    try {
+      while (!abortRef.current) {
+        const { data, error } = await supabase.functions.invoke("enrich-product-details", {
+          body: { batchSize: 5, offset, overwrite: false },
+        });
+        if (error) throw error;
+        totalProcessed += data.processed || 0;
+        totalSucceeded += data.succeeded || 0;
+        totalFailed += data.failed || 0;
+        setFetchProgress({ processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed, total });
+        if (data.done || data.processed === 0) break;
+        offset = data.nextOffset;
+      }
+      toast.success(`Enrichment complete: ${totalSucceeded} updated, ${totalFailed} failed`);
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    } catch (e: any) {
+      toast.error(`Enrichment stopped: ${e.message || "Unknown error"}`);
+    } finally {
+      setIsEnriching(false);
+      setActiveFetchMode(null);
+    }
+  }, [queryClient]);
+
 
   // Reset page when filters change
   const handleSearch = (val: string) => { setSearch(val); setPage(0); };
@@ -228,6 +269,23 @@ export default function AdminProductsPage() {
                 </>
               )}
             </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={isEnriching ? () => { abortRef.current = true; } : () => bulkEnrich()}
+            >
+              {isEnriching ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {fetchProgress.processed > 0 ? `${fetchProgress.succeeded} enriched...` : "Starting..."}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Enrich Details
+                </>
+              )}
+            </Button>
             <Link to="/admin/products/new"><Button className="gap-1"><Plus className="h-4 w-4" />Add Product</Button></Link>
           </div>
         </div>
@@ -236,7 +294,7 @@ export default function AdminProductsPage() {
           <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-foreground">
-                {activeFetchMode === "screenshot" ? "Fetching Screenshots" : "Fetching Logos"}
+                {activeFetchMode === "screenshot" ? "Fetching Screenshots" : activeFetchMode === "enrich" ? "Enriching Product Details" : "Fetching Logos"}
               </span>
               <span className="text-muted-foreground">
                 {fetchProgress.processed} / {fetchProgress.total} processed · {fetchProgress.total - fetchProgress.processed} remaining
