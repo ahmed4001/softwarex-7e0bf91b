@@ -245,7 +245,7 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { action, urls = [], mode = "scrape", crawl_limit = 20 } = body;
+    const { action, urls = [], mode = "scrape", crawl_limit = 20, resolve_logos = true } = body;
 
     // ---- Async helpers (shared by `start` and legacy `extract`) ----------
     type PageProgress = { url: string; stage: "pending" | "crawling" | "extracting" | "done" | "failed"; deals_found?: number; error?: string };
@@ -261,6 +261,7 @@ Deno.serve(async (req) => {
       jobUrls: string[],
       jobMode: "scrape" | "crawl",
       jobCrawlLimit: number,
+      jobResolveLogos = true,
     ): Promise<any[]> => {
       const all: any[] = [];
       const sourcePages: Array<{ markdown: string; url: string }> = [];
@@ -370,7 +371,9 @@ Deno.serve(async (req) => {
       const enriched = await Promise.all(all.map(async (d) => {
         const domain = extractDomain(d.merchant_domain) || extractDomain(d.deal_url) || extractDomain(d.official_website);
         const matched = domain ? productMap.get(domain) : null;
-        const resolvedLogo = matched?.logo_url || await resolveLogoUrl(d.logo_url, domain);
+        const resolvedLogo = jobResolveLogos
+          ? (matched?.logo_url || await resolveLogoUrl(d.logo_url, domain))
+          : (matched?.logo_url || d.logo_url || null);
         const cleaned = cleanProductName(d.product_name);
         const finalName = matched?.name || cleaned || d.product_name;
         return {
@@ -433,7 +436,7 @@ Deno.serve(async (req) => {
       // @ts-ignore EdgeRuntime is provided at runtime
       EdgeRuntime.waitUntil((async () => {
         try {
-          await runImportPipeline(job.id, urls, mode, crawl_limit);
+          await runImportPipeline(job.id, urls, mode, crawl_limit, resolve_logos);
         } catch (e) {
           console.error("pipeline error", e);
           await updateJob(job.id, { status: "failed", stage: "failed", error: (e as Error).message?.slice(0, 500) });
@@ -447,7 +450,7 @@ Deno.serve(async (req) => {
 
     // ---- Legacy synchronous extract (kept for compatibility) ---------------
     if (action === "extract") {
-      const enriched = await runImportPipeline(null, urls, mode, crawl_limit);
+      const enriched = await runImportPipeline(null, urls, mode, crawl_limit, resolve_logos);
       return new Response(JSON.stringify({ success: true, deals: enriched }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

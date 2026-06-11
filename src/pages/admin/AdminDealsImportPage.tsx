@@ -62,6 +62,7 @@ export default function AdminDealsImportPage() {
   const [mode, setMode] = useState<"scrape" | "crawl">("scrape");
   const [urlsText, setUrlsText] = useState("");
   const [crawlLimit, setCrawlLimit] = useState(20);
+  const [resolveLogos, setResolveLogos] = useState(true);
 
   const [starting, setStarting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -106,7 +107,7 @@ export default function AdminDealsImportPage() {
     setJob(null);
     try {
       const { data, error } = await supabase.functions.invoke("import-deals-from-url", {
-        body: { action: "start", urls, mode, crawl_limit: crawlLimit },
+        body: { action: "start", urls, mode, crawl_limit: crawlLimit, resolve_logos: resolveLogos },
       });
       if (error) throw error;
       if (!data?.success || !data?.job_id) throw new Error(data?.error || "Failed to start");
@@ -192,8 +193,16 @@ export default function AdminDealsImportPage() {
               </TabsContent>
             </Tabs>
 
-            <div className="flex items-center gap-2 pt-2">
-              <Badge variant="secondary" className="text-xs">All imported deals enter <strong>Pending Review</strong> status</Badge>
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="flex items-center gap-2">
+                <Checkbox id="resolve-logos" checked={resolveLogos} onCheckedChange={(c) => setResolveLogos(!!c)} />
+                <label htmlFor="resolve-logos" className="text-sm cursor-pointer select-none">
+                  Resolve external logos (Clearbit fallback)
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">All imported deals enter <strong>Pending Review</strong> status</Badge>
+              </div>
             </div>
 
             <Button onClick={start} disabled={starting || !!isRunning} className="gap-2">
