@@ -25,7 +25,7 @@ export function PublicLayout() {
           </motion.div>
         </AnimatePresence>
       </main>
-      {!isLoginPage && <PublicFooter />}
+      {!hideFooter && <PublicFooter />}
       <ScrollToTop />
     </div>
   );
