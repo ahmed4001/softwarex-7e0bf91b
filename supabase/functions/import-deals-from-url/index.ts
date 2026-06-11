@@ -156,15 +156,38 @@ Deno.serve(async (req) => {
       const sourcePages: Array<{ markdown: string; url: string }> = [];
 
       if (mode === "crawl" && urls[0]) {
-        const docs = await firecrawlCrawl(FIRECRAWL_API_KEY, urls[0], crawl_limit);
-        sourcePages.push(...docs);
+        try {
+          const docs = await firecrawlCrawl(FIRECRAWL_API_KEY, urls[0], crawl_limit);
+          sourcePages.push(...docs);
+        } catch (e) {
+          console.warn("Firecrawl crawl failed, falling back to plain fetch", e);
+          try {
+            const seed = await plainFetchScrape(urls[0]);
+            sourcePages.push(seed);
+            // Follow a few same-host links from the seed page
+            const origin = new URL(urls[0]).origin;
+            const sameHost = seed.links
+              .filter((l) => { try { return new URL(l).origin === origin; } catch { return false; } })
+              .slice(0, Math.min(crawl_limit - 1, 9));
+            for (const u of sameHost) {
+              try { sourcePages.push(await plainFetchScrape(u)); } catch (err) { console.warn("Fallback scrape error", u, err); }
+            }
+          } catch (err2) {
+            console.warn("Plain fetch fallback also failed", err2);
+          }
+        }
       } else {
         for (const u of urls.slice(0, 10)) {
           try {
             const doc = await firecrawlScrape(FIRECRAWL_API_KEY, u);
             sourcePages.push(doc);
           } catch (e) {
-            console.warn("Scrape error", u, e);
+            console.warn("Firecrawl scrape error, trying plain fetch", u, e);
+            try {
+              sourcePages.push(await plainFetchScrape(u));
+            } catch (err2) {
+              console.warn("Plain fetch fallback failed", u, err2);
+            }
           }
         }
       }
