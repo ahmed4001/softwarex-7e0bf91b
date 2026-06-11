@@ -1,12 +1,50 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProductLogo } from "@/components/ProductLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { ArrowRight, Clock, Tag, Flame } from "lucide-react";
+import { ArrowRight, Clock, Tag, Flame, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+
+function useCountdown(endDate: string | null) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!endDate) return;
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [endDate]);
+  if (!endDate) return null;
+  const diff = new Date(endDate).getTime() - now;
+  if (diff <= 0) return "Expired";
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  return `${h}h ${m}m ${s}s`;
+}
+
+function isExpiringSoon(endDate: string | null): boolean {
+  if (!endDate) return false;
+  const diff = new Date(endDate).getTime() - Date.now();
+  return diff > 0 && diff <= 48 * 3600000;
+}
+
+function DealCountdown({ endDate }: { endDate: string | null }) {
+  const countdown = useCountdown(endDate);
+  if (!countdown) return null;
+  const isExpired = countdown === "Expired";
+  const soon = isExpiringSoon(endDate);
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-medium ${isExpired ? "text-destructive" : soon ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+      <Timer className="h-3.5 w-3.5" />
+      <span>{isExpired ? "Expired" : `Ends in ${countdown}`}</span>
+    </div>
+  );
+}
 
 export function RecentlyAddedSection() {
   const { data: recentProducts } = useQuery({
@@ -86,14 +124,19 @@ export function RecentlyAddedSection() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link to={`/deals/${deal.slug}`} className="glass-card p-4 group block relative overflow-hidden">
-                    <div className="absolute top-0 right-0">
+                    <div className="absolute top-0 right-0 flex flex-col items-end gap-1">
                       {deal.discount_amount && (
                         <Badge className="rounded-none rounded-bl-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-bold text-[10px]">
                           {deal.discount_type === "amount" ? "$" : ""}{deal.discount_amount}{deal.discount_type === "percent" ? "% OFF" : deal.discount_type === "amount" ? " OFF" : ""}
                         </Badge>
                       )}
+                      {isExpiringSoon(deal.end_date) && (
+                        <Badge variant="destructive" className="rounded-none rounded-bl-lg text-[10px] font-bold animate-pulse">
+                          Expires soon
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                       {deal.logo_url ? (
                         <img src={deal.logo_url} alt={deal.product_name} className="h-10 w-10 rounded-lg object-contain bg-muted p-1" />
                       ) : (
@@ -115,7 +158,8 @@ export function RecentlyAddedSection() {
                         </div>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" className="w-full text-xs">
+                    <DealCountdown endDate={deal.end_date} />
+                    <Button size="sm" variant="outline" className="w-full text-xs mt-2">
                       View Deal <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                   </Link>
