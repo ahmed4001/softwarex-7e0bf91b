@@ -151,6 +151,17 @@ export default function AdminHomepageSectionsPage() {
     });
   };
 
+  const executeConfirm = async () => {
+    if (!confirmAction) return;
+    setConfirmOpen(false);
+    if (confirmAction.type === "remove") {
+      await removeItems(confirmAction.ids);
+    } else {
+      await addProducts(confirmAction.sectionKey, confirmAction.ids);
+    }
+    setConfirmAction(null);
+  };
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
