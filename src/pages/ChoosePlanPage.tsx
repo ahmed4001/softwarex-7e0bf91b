@@ -136,33 +136,33 @@ export default function ChoosePlanPage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">
             {plans.map((plan) => {
               const Icon = plan.icon;
               const isLoading = selecting === plan.id;
               return (
                 <Card key={plan.id} className={`relative flex flex-col ${plan.popular ? "ring-2 ring-primary shadow-lg" : ""}`}>
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground font-semibold">Most Popular</Badge>
+                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground font-semibold text-[10px]">Most Popular</Badge>
                     </div>
                   )}
-                  <CardHeader className="text-center pb-2">
-                    <div className="mx-auto h-10 w-10 rounded-xl bg-muted flex items-center justify-center mb-2">
-                      <Icon className={`h-5 w-5 ${plan.accent}`} />
+                  <CardHeader className="text-center pb-1 pt-4">
+                    <div className="mx-auto h-8 w-8 rounded-lg bg-muted flex items-center justify-center mb-1">
+                      <Icon className={`h-4 w-4 ${plan.accent}`} />
                     </div>
-                    <CardTitle className="text-lg">{plan.name}</CardTitle>
-                    <CardDescription className="text-xs">{plan.description}</CardDescription>
-                    <div className="mt-3">
-                      <span className="text-3xl font-display font-bold">${plan.price}</span>
-                      {plan.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
+                    <CardTitle className="text-base">{plan.name}</CardTitle>
+                    <CardDescription className="text-[11px]">{plan.description}</CardDescription>
+                    <div className="mt-1">
+                      <span className="text-2xl font-display font-bold">${plan.price}</span>
+                      {plan.price > 0 && <span className="text-xs text-muted-foreground">/mo</span>}
                     </div>
                   </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <ul className="space-y-2.5 flex-1 mb-6">
+                  <CardContent className="flex-1 flex flex-col p-4 pt-2">
+                    <ul className="space-y-1.5 flex-1 mb-3">
                       {plan.features.map((f, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
+                        <li key={i} className="flex items-start gap-1.5 text-xs">
+                          <Check className="h-3.5 w-3.5 flex-shrink-0 text-primary mt-0.5" />
                           <span>{f}</span>
                         </li>
                       ))}
@@ -170,10 +170,11 @@ export default function ChoosePlanPage() {
                     <Button
                       onClick={() => handleSelect(plan.id)}
                       disabled={isLoading}
-                      className={`w-full rounded-xl gap-2 ${plan.popular ? "btn-premium text-primary-foreground" : ""}`}
+                      size="sm"
+                      className={`w-full rounded-lg gap-2 ${plan.popular ? "btn-premium text-primary-foreground" : ""}`}
                       variant={plan.popular ? "default" : plan.id === "free" ? "outline" : "secondary"}
                     >
-                      {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</> : plan.price === 0 ? <>Continue with Free <ArrowRight className="h-4 w-4" /></> : <>Get {plan.name} <ArrowRight className="h-4 w-4" /></>}
+                      {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</> : plan.price === 0 ? <>Continue Free <ArrowRight className="h-3.5 w-3.5" /></> : <>Get {plan.name} <ArrowRight className="h-3.5 w-3.5" /></>}
                     </Button>
                   </CardContent>
                 </Card>
@@ -181,10 +182,10 @@ export default function ChoosePlanPage() {
             })}
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-8">
+          <p className="text-center text-[11px] text-muted-foreground mt-4">
             Not sure yet?{" "}
             <Link to="/dashboard" className="text-primary hover:underline font-medium">
-              Skip for now and decide later
+              Skip for now
             </Link>
           </p>
         </div>
