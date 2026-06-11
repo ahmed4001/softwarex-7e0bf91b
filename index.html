@@ -57,19 +57,18 @@
     });
   </script>
 
-  <!-- Paddle.js - preloaded before iubenda autoblocking so checkout always works -->
-  <script defer src="https://cdn.paddle.com/paddle/v2/paddle.js"
-    onerror="console.error('[Paddle.js] Failed to preload Paddle.js from cdn.paddle.com', event); window.__paddleLoadError = 'Script tag failed to load (network/blocker)'"
-    onload="console.log('[Paddle.js] Preload script loaded successfully'); window.__paddleLoaded = true"></script>
-
-  <!-- iubenda Cookie Consent -->
-  <script type="text/javascript">
-    var _iub = _iub || [];
-    _iub.csConfiguration = {"siteId":4551587,"cookiePolicyId":49810184,"lang":"en","storage":{"useSiteId":true},"whitelist":["paddle.com","cdn.paddle.com"]};
+  <!-- Paddle.js + iubenda - loaded after page load to keep mobile LCP fast -->
+  <script>
+    window.addEventListener('load', function() {
+      var _iub = window._iub = window._iub || [];
+      _iub.csConfiguration = {"siteId":4551587,"cookiePolicyId":49810184,"lang":"en","storage":{"useSiteId":true},"whitelist":["paddle.com","cdn.paddle.com"]};
+      function add(src, attrs){var s=document.createElement('script');s.src=src;Object.assign(s,attrs||{});document.head.appendChild(s);}
+      add('https://cdn.paddle.com/paddle/v2/paddle.js', {defer:true, onload:function(){window.__paddleLoaded=true;}, onerror:function(){window.__paddleLoadError='load failed';}});
+      add('https://cs.iubenda.com/autoblocking/4551587.js', {async:true});
+      add('//cdn.iubenda.com/cs/gpp/stub.js', {defer:true});
+      add('//cdn.iubenda.com/cs/iubenda_cs.js', {async:true, charset:'UTF-8'});
+    });
   </script>
-  <script type="text/javascript" src="https://cs.iubenda.com/autoblocking/4551587.js" async></script>
-  <script type="text/javascript" src="//cdn.iubenda.com/cs/gpp/stub.js" defer></script>
-  <script type="text/javascript" src="//cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
 </head>
 
   <body>
