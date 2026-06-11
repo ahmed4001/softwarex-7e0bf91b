@@ -3,16 +3,21 @@ import { Award, TrendingUp, CheckCircle } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import softwareCollage from "@/assets/bestsoftware.webp";
 import softwareCollage800 from "@/assets/bestsoftware-800.webp";
+import softwareCollage480 from "@/assets/bestsoftware-480.webp";
 import softwareCollageJpg from "@/assets/bestsoftware.jpg";
 import { Link } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function HeroSection() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   return (
     <section className="relative overflow-hidden" style={{ background: "hsl(15 60% 96%)" }} aria-label={t("hero.searchPlaceholder")}>
-      {/* Geometric shapes - hidden on mobile for performance & cleaner layout */}
+      {/* Geometric shapes - desktop only, not mounted on mobile for performance */}
+      {!isMobile && (
+        <>
       <motion.div
         className="hidden md:block absolute top-[-60px] left-[-40px] w-48 h-48 rounded-2xl"
         style={{ background: "hsl(220 90% 56%)" }}
@@ -48,6 +53,8 @@ export function HeroSection() {
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
         aria-hidden="true"
       />
+        </>
+      )}
       {/* Subtle mobile-only accents */}
       <div
         className="md:hidden absolute -top-16 -right-12 w-44 h-44 rounded-full opacity-60"
@@ -60,6 +67,8 @@ export function HeroSection() {
         aria-hidden="true"
       />
       {/* Extra desktop-only 3D-style shapes */}
+      {!isMobile && (
+        <>
       <motion.div
         className="hidden lg:block absolute top-[30%] left-[-25px] w-28 h-28 rounded-full"
         style={{ background: "linear-gradient(135deg, hsl(280 70% 55%), hsl(320 70% 50%))" }}
@@ -109,6 +118,8 @@ export function HeroSection() {
         transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
         aria-hidden="true"
       />
+        </>
+      )}
 
       <div className="container relative z-10 py-14 sm:py-20 md:py-32 lg:py-40 text-center">
         <motion.div
@@ -189,8 +200,8 @@ export function HeroSection() {
             <picture>
               <source
                 type="image/webp"
-                srcSet={`${softwareCollage800} 800w, ${softwareCollage} 1024w`}
-                sizes="(max-width: 768px) 100vw, 1024px"
+                srcSet={`${softwareCollage480} 480w, ${softwareCollage800} 800w, ${softwareCollage} 1024w`}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 800px, 1024px"
               />
               <img
                 src={softwareCollageJpg}
