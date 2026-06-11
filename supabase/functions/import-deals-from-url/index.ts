@@ -247,33 +247,61 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, urls = [], mode = "scrape", crawl_limit = 20 } = body;
 
-    if (action === "extract") {
+    // ---- Async helpers (shared by `start` and legacy `extract`) ----------
+    type PageProgress = { url: string; stage: "pending" | "crawling" | "extracting" | "done" | "failed"; deals_found?: number; error?: string };
+
+    const updateJob = async (id: string, patch: Record<string, unknown>) => {
+      try { await supabase.from("deals_import_jobs").update(patch).eq("id", id); } catch (e) { console.warn("updateJob failed", e); }
+    };
+
+    // Run the full crawl + extraction pipeline, updating the job row as we go.
+    // Returns the enriched deals on completion. Errors are written to the job.
+    const runImportPipeline = async (
+      jobId: string | null,
+      jobUrls: string[],
+      jobMode: "scrape" | "crawl",
+      jobCrawlLimit: number,
+    ): Promise<any[]> => {
       const all: any[] = [];
       const sourcePages: Array<{ markdown: string; url: string }> = [];
+      let pageProgress: PageProgress[] = [];
 
-      if (mode === "crawl" && urls[0]) {
+      const pushProgress = async () => {
+        if (!jobId) return;
+        await updateJob(jobId, {
+          page_progress: pageProgress,
+          pages_total: pageProgress.length,
+          pages_done: pageProgress.filter((p) => p.stage === "done" || p.stage === "failed").length,
+          deals_found: all.length,
+        });
+      };
+
+      // Stage 1: discover pages
+      if (jobId) await updateJob(jobId, { status: "running", stage: "crawling" });
+
+      if (jobMode === "crawl" && jobUrls[0]) {
         try {
-          const docs = await firecrawlCrawl(FIRECRAWL_API_KEY, urls[0], crawl_limit);
+          const docs = await firecrawlCrawl(FIRECRAWL_API_KEY, jobUrls[0], jobCrawlLimit);
           sourcePages.push(...docs);
         } catch (e) {
           console.warn("Firecrawl crawl failed, falling back to plain fetch", e);
           try {
-            const seed = await plainFetchScrape(urls[0]);
+            const seed = await plainFetchScrape(jobUrls[0]);
             sourcePages.push(seed);
-            // Follow a few same-host links from the seed page
-            const origin = new URL(urls[0]).origin;
+            const origin = new URL(jobUrls[0]).origin;
             const sameHost = seed.links
               .filter((l) => { try { return new URL(l).origin === origin; } catch { return false; } })
-              .slice(0, Math.min(crawl_limit - 1, 9));
+              .slice(0, Math.min(jobCrawlLimit - 1, 9));
             for (const u of sameHost) {
               try { sourcePages.push(await plainFetchScrape(u)); } catch (err) { console.warn("Fallback scrape error", u, err); }
             }
           } catch (err2) {
             console.warn("Plain fetch fallback also failed", err2);
+            if (jobId) await updateJob(jobId, { error: `Crawl failed: ${(err2 as Error).message}` });
           }
         }
       } else {
-        for (const u of urls.slice(0, 10)) {
+        for (const u of jobUrls.slice(0, 10)) {
           try {
             const doc = await firecrawlScrape(FIRECRAWL_API_KEY, u);
             sourcePages.push(doc);
@@ -288,9 +316,11 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Parallelize AI extraction across pages (with concurrency cap) so we
-      // don't blow the 150s edge-function idle timeout on crawls of many pages.
+      // Stage 2: extract
       const pages = sourcePages.filter((p) => p.markdown).slice(0, 25);
+      pageProgress = pages.map((p) => ({ url: p.url, stage: "pending" as const }));
+      if (jobId) await updateJob(jobId, { stage: "extracting", page_progress: pageProgress, pages_total: pages.length });
+
       const CONCURRENCY = 5;
       let cursor = 0;
       await Promise.all(
@@ -298,18 +328,26 @@ Deno.serve(async (req) => {
           while (cursor < pages.length) {
             const idx = cursor++;
             const page = pages[idx];
+            pageProgress[idx].stage = "extracting";
+            await pushProgress();
             try {
               const deals = await extractDealsWithAI(LOVABLE_API_KEY, page.markdown, page.url);
               for (const d of deals) all.push({ ...d, source_url: page.url });
+              pageProgress[idx].stage = "done";
+              pageProgress[idx].deals_found = deals.length;
             } catch (e) {
               console.warn("AI extract error", page.url, e);
+              pageProgress[idx].stage = "failed";
+              pageProgress[idx].error = (e as Error).message?.slice(0, 200);
             }
+            await pushProgress();
           }
         }),
       );
 
+      // Stage 3: enrich (link to products + dedupe)
+      if (jobId) await updateJob(jobId, { stage: "enriching" });
 
-      // Auto-link to products by domain
       const domains = [...new Set(all.map((d) => extractDomain(d.merchant_domain) || extractDomain(d.deal_url)).filter(Boolean))];
       const productMap = new Map<string, { id: string; name: string; slug: string; logo_url: string | null }>();
       if (domains.length) {
@@ -322,7 +360,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Dedupe vs existing deals by deal_url
       const dealUrls = all.map((d) => d.deal_url).filter(Boolean);
       const existingUrls = new Set<string>();
       if (dealUrls.length) {
@@ -334,8 +371,6 @@ Deno.serve(async (req) => {
         const domain = extractDomain(d.merchant_domain) || extractDomain(d.deal_url) || extractDomain(d.official_website);
         const matched = domain ? productMap.get(domain) : null;
         const resolvedLogo = matched?.logo_url || await resolveLogoUrl(d.logo_url, domain);
-        // Prefer the matched product's canonical name; otherwise sanitize the
-        // AI-extracted name so it's the clean official brand (no "deal/coupon/%").
         const cleaned = cleanProductName(d.product_name);
         const finalName = matched?.name || cleaned || d.product_name;
         return {
@@ -350,10 +385,74 @@ Deno.serve(async (req) => {
         };
       }));
 
-      return new Response(JSON.stringify({ success: true, deals: enriched, pages_scraped: sourcePages.length }), {
+      if (jobId) {
+        await updateJob(jobId, {
+          status: "completed",
+          stage: "done",
+          deals: enriched,
+          deals_found: enriched.length,
+          page_progress: pageProgress,
+          pages_done: pageProgress.length,
+        });
+      }
+
+      return enriched;
+    };
+
+    // ---- Action: start (async, returns job id immediately) -----------------
+    if (action === "start") {
+      let userId: string | null = null;
+      try {
+        const authHeader = req.headers.get("Authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          const { data } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+          userId = data?.user?.id ?? null;
+        }
+      } catch { /* ignore */ }
+
+      const { data: job, error: jobErr } = await supabase
+        .from("deals_import_jobs")
+        .insert({
+          user_id: userId,
+          mode,
+          urls,
+          crawl_limit,
+          status: "queued",
+          stage: "queued",
+        })
+        .select("id")
+        .single();
+
+      if (jobErr || !job) {
+        return new Response(JSON.stringify({ success: false, error: jobErr?.message || "Failed to queue job" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Fire and forget — keep the worker alive until the pipeline finishes.
+      // @ts-ignore EdgeRuntime is provided at runtime
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          await runImportPipeline(job.id, urls, mode, crawl_limit);
+        } catch (e) {
+          console.error("pipeline error", e);
+          await updateJob(job.id, { status: "failed", stage: "failed", error: (e as Error).message?.slice(0, 500) });
+        }
+      })());
+
+      return new Response(JSON.stringify({ success: true, job_id: job.id }), {
+        status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- Legacy synchronous extract (kept for compatibility) ---------------
+    if (action === "extract") {
+      const enriched = await runImportPipeline(null, urls, mode, crawl_limit);
+      return new Response(JSON.stringify({ success: true, deals: enriched }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     if (action === "import") {
       const { deals = [] } = body;
