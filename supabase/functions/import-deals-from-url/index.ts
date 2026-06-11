@@ -137,9 +137,26 @@ async function firecrawlCrawl(apiKey: string, url: string, limit: number) {
 
 async function extractDealsWithAI(apiKey: string, markdown: string, sourceUrl: string) {
   const truncated = markdown.slice(0, 18000);
-  const systemPrompt = `You extract software / SaaS deals from web pages AND write SEO meta + Schema.org JSON-LD for each. Output ONLY JSON.
-Return: { "deals": [ { "product_name", "description" (1-2 sentences plain text), "discount_amount" (e.g. "30%" or "$50"), "discount_type" ("percent" or "fixed"), "coupon_code" (null if none), "deal_url" (absolute URL the user clicks to redeem), "merchant_domain" (e.g. "notion.so"), "end_date" (ISO date or null), "category" (short label), "meta_title" (<=60 chars, includes product + discount), "meta_description" (<=155 chars, compelling, includes discount and CTA), "seo_keywords" (array of 4-7 short lowercase keyword phrases), "structured_data" (a JSON object representing a Schema.org Offer with @context, @type, priceCurrency "USD", availability "https://schema.org/InStock", validThrough if end_date known, and seller as an Organization with the product_name) } ] }
-Only include real deals with a clear discount or promo. Skip generic blog text. If deal_url is relative, prefix with source URL origin.`;
+  const systemPrompt = `You extract software / SaaS deals from web pages AND write rich product info, SEO meta + Schema.org JSON-LD for each. Output ONLY JSON.
+Return: { "deals": [ {
+  "product_name",
+  "tagline" (1 short sentence, <=90 chars),
+  "description" (rich markdown: 2-3 paragraphs about what the product does + the deal terms; include a "**Key features**" bullet list of 4-7 items, a "**Best for**" line naming the target audience, and a "**Pricing**" line summarizing normal vs discounted price if known),
+  "discount_amount" (e.g. "30%" or "$50"),
+  "discount_type" ("percent" or "fixed"),
+  "coupon_code" (null if none),
+  "deal_url" (absolute URL the user clicks to redeem),
+  "merchant_domain" (bare domain like "notion.so" — never include http),
+  "official_website" (homepage URL of the product),
+  "logo_url" (direct URL to product logo if visible in the page, else null),
+  "end_date" (ISO date or null),
+  "category" (short label),
+  "meta_title" (<=60 chars, includes product + discount),
+  "meta_description" (<=155 chars, compelling, includes discount and CTA),
+  "seo_keywords" (array of 4-7 short lowercase keyword phrases),
+  "structured_data" (Schema.org Offer object: @context, @type "Offer", priceCurrency "USD", availability "https://schema.org/InStock", validThrough if end_date known, seller as Organization with product_name, plus an "itemOffered" Product node containing name, description (short) and image (logo_url if set))
+} ] }
+Only include real deals with a clear discount or promo. Skip generic blog text. If deal_url is relative, prefix with source URL origin. Keep descriptions factual based on the page content; do not invent features that are not implied.`;
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -165,6 +182,23 @@ Only include real deals with a clear discount or promo. Skip generic blog text. 
   } catch {
     return [];
   }
+}
+
+async function resolveLogoUrl(candidate: string | null | undefined, domain: string | null): Promise<string | null> {
+  if (candidate && /^https?:\/\//i.test(candidate)) {
+    try {
+      const r = await fetch(candidate, { method: "HEAD" });
+      if (r.ok) return candidate;
+    } catch { /* ignore */ }
+  }
+  if (domain) {
+    const clearbit = `https://logo.clearbit.com/${domain}`;
+    try {
+      const r = await fetch(clearbit, { method: "HEAD" });
+      if (r.ok) return clearbit;
+    } catch { /* ignore */ }
+  }
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -256,18 +290,20 @@ Deno.serve(async (req) => {
         (ex || []).forEach((r: any) => existingUrls.add(r.deal_url));
       }
 
-      const enriched = all.map((d) => {
-        const domain = extractDomain(d.merchant_domain) || extractDomain(d.deal_url);
+      const enriched = await Promise.all(all.map(async (d) => {
+        const domain = extractDomain(d.merchant_domain) || extractDomain(d.deal_url) || extractDomain(d.official_website);
         const matched = domain ? productMap.get(domain) : null;
+        const resolvedLogo = matched?.logo_url || await resolveLogoUrl(d.logo_url, domain);
         return {
           ...d,
           domain,
+          logo_url: resolvedLogo,
           matched_product_id: matched?.id ?? null,
           matched_product_name: matched?.name ?? null,
           matched_logo_url: matched?.logo_url ?? null,
           already_exists: existingUrls.has(d.deal_url),
         };
-      });
+      }));
 
       return new Response(JSON.stringify({ success: true, deals: enriched, pages_scraped: sourcePages.length }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
