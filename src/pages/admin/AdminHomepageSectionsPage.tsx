@@ -6,8 +6,9 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { ArrowUp, ArrowDown, X, Plus, Search } from "lucide-react";
+import { ArrowUp, ArrowDown, X, Plus, Search, Trash2 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Section {
@@ -26,6 +27,7 @@ interface SectionProduct {
 
 export default function AdminHomepageSectionsPage() {
   const qc = useQueryClient();
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
   const { data: sections } = useQuery({
     queryKey: ["admin-homepage-sections"],
@@ -70,9 +72,15 @@ export default function AdminHomepageSectionsPage() {
     qc.invalidateQueries({ queryKey: ["homepage-section"] });
   }
 
-  async function removeItem(id: string) {
-    const { error } = await supabase.from("homepage_section_products" as any).delete().eq("id", id);
+  async function removeItems(ids: string[]) {
+    if (!ids.length) return;
+    const { error } = await supabase.from("homepage_section_products" as any).delete().in("id", ids);
     if (error) return toast({ title: "Failed to remove", description: error.message, variant: "destructive" });
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
     refetchItems();
     qc.invalidateQueries({ queryKey: ["homepage-section"] });
   }
@@ -90,18 +98,41 @@ export default function AdminHomepageSectionsPage() {
     qc.invalidateQueries({ queryKey: ["homepage-section"] });
   }
 
-  async function addProduct(sectionKey: string, productId: string) {
+  async function addProducts(sectionKey: string, productIds: string[]) {
+    if (!productIds.length) return;
     const existing = (items || []).filter((i) => i.section_key === sectionKey);
-    const nextPos = existing.length ? Math.max(...existing.map((i) => i.position)) + 1 : 0;
-    const { error } = await supabase.from("homepage_section_products" as any).insert({
+    let nextPos = existing.length ? Math.max(...existing.map((i) => i.position)) + 1 : 0;
+    const toInsert = productIds.map((pid) => ({
       section_key: sectionKey,
-      product_id: productId,
-      position: nextPos,
-    });
+      product_id: pid,
+      position: nextPos++,
+    }));
+    const { error } = await supabase.from("homepage_section_products" as any).insert(toInsert);
     if (error) return toast({ title: "Failed to add", description: error.message, variant: "destructive" });
     refetchItems();
     qc.invalidateQueries({ queryKey: ["homepage-section"] });
   }
+
+  const toggleSelection = (id: string) => {
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllInSection = (sectionKey: string, checked: boolean) => {
+    const ids = (items || []).filter((i) => i.section_key === sectionKey).map((i) => i.id);
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -111,6 +142,8 @@ export default function AdminHomepageSectionsPage() {
       </div>
       {sections?.map((s) => {
         const sectionItems = (items || []).filter((i) => i.section_key === s.key).sort((a, b) => a.position - b.position);
+        const sectionSelectedCount = sectionItems.filter((i) => selectedItemIds.has(i.id)).length;
+        const allSectionSelected = sectionItems.length > 0 && sectionSelectedCount === sectionItems.length;
         return (
           <Card key={s.key}>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
@@ -128,9 +161,36 @@ export default function AdminHomepageSectionsPage() {
               <Switch checked={s.is_enabled} onCheckedChange={(v) => toggleEnabled(s.key, v)} />
             </CardHeader>
             <CardContent className="space-y-3">
+              {sectionItems.length > 0 && (
+                <div className="flex items-center gap-3 pb-2 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={allSectionSelected}
+                      onCheckedChange={(v) => selectAllInSection(s.key, !!v)}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {sectionSelectedCount > 0 ? `${sectionSelectedCount} selected` : "Select all"}
+                    </span>
+                  </div>
+                  {sectionSelectedCount > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeItems(sectionItems.filter((i) => selectedItemIds.has(i.id)).map((i) => i.id))}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1.5" />
+                      Remove selected ({sectionSelectedCount})
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 {sectionItems.map((item, idx) => (
                   <div key={item.id} className="flex items-center gap-2 p-2 border border-border rounded-lg">
+                    <Checkbox
+                      checked={selectedItemIds.has(item.id)}
+                      onCheckedChange={() => toggleSelection(item.id)}
+                    />
                     {item.product?.logo_url ? (
                       <img src={item.product.logo_url} alt="" className="h-8 w-8 rounded object-contain bg-muted" />
                     ) : (
@@ -142,11 +202,11 @@ export default function AdminHomepageSectionsPage() {
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => move(item, -1)} disabled={idx === 0}><ArrowUp className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => move(item, 1)} disabled={idx === sectionItems.length - 1}><ArrowDown className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}><X className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => removeItems([item.id])}><X className="h-4 w-4" /></Button>
                   </div>
                 ))}
               </div>
-              <ProductPicker existingIds={sectionItems.map((i) => i.product_id)} onPick={(id) => addProduct(s.key, id)} />
+              <ProductPicker existingIds={sectionItems.map((i) => i.product_id)} onPickMultiple={(ids) => addProducts(s.key, ids)} />
             </CardContent>
           </Card>
         );
@@ -155,9 +215,15 @@ export default function AdminHomepageSectionsPage() {
   );
 }
 
-function ProductPicker({ existingIds, onPick }: { existingIds: string[]; onPick: (id: string) => void }) {
+function ProductPicker({ existingIds, onPickMultiple }: { existingIds: string[]; onPickMultiple: (ids: string[]) => void }) {
   const [search, setSearch] = useState("");
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const debounced = useDebounce(search, 250);
+
+  useEffect(() => {
+    setSelectedProductIds(new Set());
+  }, [debounced]);
+
   const { data: results } = useQuery({
     queryKey: ["product-picker", debounced],
     enabled: debounced.length >= 2,
@@ -171,7 +237,26 @@ function ProductPicker({ existingIds, onPick }: { existingIds: string[]; onPick:
       return data || [];
     },
   });
+
   const filtered = useMemo(() => (results || []).filter((p: any) => !existingIds.includes(p.id)), [results, existingIds]);
+
+  const toggleProduct = (id: string) => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const addSelected = () => {
+    const ids = Array.from(selectedProductIds);
+    if (!ids.length) return;
+    onPickMultiple(ids);
+    setSelectedProductIds(new Set());
+    setSearch("");
+  };
+
   return (
     <div className="border-t border-border pt-3">
       <div className="relative">
@@ -186,16 +271,24 @@ function ProductPicker({ existingIds, onPick }: { existingIds: string[]; onPick:
       {filtered.length > 0 && (
         <div className="mt-2 space-y-1">
           {filtered.map((p: any) => (
-            <button
+            <div
               key={p.id}
-              onClick={() => { onPick(p.id); setSearch(""); }}
               className="flex items-center gap-2 w-full p-2 text-left hover:bg-muted rounded-md text-sm"
             >
+              <Checkbox
+                checked={selectedProductIds.has(p.id)}
+                onCheckedChange={() => toggleProduct(p.id)}
+              />
               {p.logo_url ? <img src={p.logo_url} alt="" className="h-6 w-6 rounded object-contain bg-muted" /> : <div className="h-6 w-6 rounded bg-muted" />}
               <span className="flex-1 truncate">{p.name}</span>
-              <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
+            </div>
           ))}
+          {selectedProductIds.size > 0 && (
+            <Button size="sm" className="mt-2 w-full" onClick={addSelected}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add {selectedProductIds.size} selected
+            </Button>
+          )}
         </div>
       )}
     </div>
