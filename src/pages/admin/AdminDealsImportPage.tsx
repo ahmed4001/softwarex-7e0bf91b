@@ -34,7 +34,7 @@ export default function AdminDealsImportPage() {
   const [mode, setMode] = useState<"scrape" | "crawl">("scrape");
   const [urlsText, setUrlsText] = useState("");
   const [crawlLimit, setCrawlLimit] = useState(20);
-  const [defaultActive, setDefaultActive] = useState(true);
+  
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [deals, setDeals] = useState<ExtractedDeal[]>([]);
