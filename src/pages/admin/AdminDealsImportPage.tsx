@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Globe, Link2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, Download, Globe, Link2, CheckCircle2, AlertCircle, Sparkles, Clock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 type ExtractedDeal = {
@@ -30,37 +31,95 @@ type ExtractedDeal = {
   _selected?: boolean;
 };
 
+type PageProgress = {
+  url: string;
+  stage: "pending" | "crawling" | "extracting" | "done" | "failed";
+  deals_found?: number;
+  error?: string;
+};
+
+type Job = {
+  id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  stage: string | null;
+  pages_total: number;
+  pages_done: number;
+  deals_found: number;
+  page_progress: PageProgress[];
+  deals: ExtractedDeal[];
+  error: string | null;
+};
+
+const stageVariant: Record<PageProgress["stage"], { label: string; className: string; Icon: typeof Clock }> = {
+  pending: { label: "Pending", className: "bg-muted text-muted-foreground", Icon: Clock },
+  crawling: { label: "Crawling", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30", Icon: Loader2 },
+  extracting: { label: "Extracting", className: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30", Icon: Loader2 },
+  done: { label: "Done", className: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30", Icon: CheckCircle2 },
+  failed: { label: "Failed", className: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30", Icon: XCircle },
+};
+
 export default function AdminDealsImportPage() {
   const [mode, setMode] = useState<"scrape" | "crawl">("scrape");
   const [urlsText, setUrlsText] = useState("");
   const [crawlLimit, setCrawlLimit] = useState(20);
-  
-  const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [deals, setDeals] = useState<ExtractedDeal[]>([]);
-  const [pagesScraped, setPagesScraped] = useState(0);
 
-  const extract = async () => {
+  const [starting, setStarting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [job, setJob] = useState<Job | null>(null);
+  const [deals, setDeals] = useState<ExtractedDeal[]>([]);
+  const pollRef = useRef<number | null>(null);
+
+  // Poll the current job until it finishes
+  useEffect(() => {
+    if (!job?.id || job.status === "completed" || job.status === "failed") {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      return;
+    }
+    pollRef.current = window.setInterval(async () => {
+      const { data, error } = await (supabase as any)
+        .from("deals_import_jobs")
+        .select("id, status, stage, pages_total, pages_done, deals_found, page_progress, deals, error")
+        .eq("id", job.id)
+        .maybeSingle();
+      if (error) { console.warn(error); return; }
+      if (data) {
+        setJob(data as Job);
+        if (data.status === "completed") {
+          const enriched = (data.deals as ExtractedDeal[]).map((d) => ({ ...d, _selected: !d.already_exists }));
+          setDeals(enriched);
+          toast.success(`Extracted ${enriched.length} deals`);
+        } else if (data.status === "failed") {
+          toast.error(data.error || "Import job failed");
+        }
+      }
+    }, 2000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [job?.id, job?.status]);
+
+  const start = async () => {
     const urls = urlsText.split("\n").map((s) => s.trim()).filter((s) => /^https?:\/\//.test(s));
     if (!urls.length) { toast.error("Enter at least one valid URL"); return; }
     if (mode === "crawl" && urls.length > 1) toast.message("Crawl mode uses only the first URL");
 
-    setLoading(true);
+    setStarting(true);
     setDeals([]);
+    setJob(null);
     try {
       const { data, error } = await supabase.functions.invoke("import-deals-from-url", {
-        body: { action: "extract", urls, mode, crawl_limit: crawlLimit },
+        body: { action: "start", urls, mode, crawl_limit: crawlLimit },
       });
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Extraction failed");
-      const enriched = (data.deals as ExtractedDeal[]).map((d) => ({ ...d, _selected: !d.already_exists }));
-      setDeals(enriched);
-      setPagesScraped(data.pages_scraped || 0);
-      toast.success(`Extracted ${enriched.length} deals from ${data.pages_scraped} page(s)`);
+      if (!data?.success || !data?.job_id) throw new Error(data?.error || "Failed to start");
+      setJob({
+        id: data.job_id, status: "queued", stage: "queued",
+        pages_total: 0, pages_done: 0, deals_found: 0,
+        page_progress: [], deals: [], error: null,
+      });
+      toast.success("Import started — tracking progress");
     } catch (e: any) {
       toast.error(e.message || "Failed");
     } finally {
-      setLoading(false);
+      setStarting(false);
     }
   };
 
@@ -93,6 +152,11 @@ export default function AdminDealsImportPage() {
 
   const selectedCount = deals.filter((d) => d._selected).length;
   const matchedCount = deals.filter((d) => d.matched_product_id).length;
+
+  const isRunning = job && (job.status === "queued" || job.status === "running");
+  const progressPct = job && job.pages_total > 0
+    ? Math.round((job.pages_done / job.pages_total) * 100)
+    : (job?.stage === "crawling" ? 5 : 0);
 
   return (
     <>
@@ -132,12 +196,63 @@ export default function AdminDealsImportPage() {
               <Badge variant="secondary" className="text-xs">All imported deals enter <strong>Pending Review</strong> status</Badge>
             </div>
 
-            <Button onClick={extract} disabled={loading} className="gap-2">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {loading ? "Extracting..." : "Extract Deals"}
+            <Button onClick={start} disabled={starting || !!isRunning} className="gap-2">
+              {starting || isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {isRunning ? "Running..." : starting ? "Starting..." : "Extract Deals"}
             </Button>
           </CardContent>
         </Card>
+
+        {job && (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    Job progress
+                    <Badge variant="outline" className="capitalize">{job.stage || job.status}</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    {job.pages_done} / {job.pages_total || "?"} pages · {job.deals_found} deals found
+                    {job.error && <span className="text-destructive ml-2">· {job.error}</span>}
+                  </CardDescription>
+                </div>
+                {isRunning && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                {job.status === "completed" && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                {job.status === "failed" && <XCircle className="h-5 w-5 text-destructive" />}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Progress value={progressPct} />
+              {job.page_progress.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Discovering pages…</p>
+              ) : (
+                <ul className="space-y-1 max-h-72 overflow-auto rounded-md border divide-y">
+                  {job.page_progress.map((p, idx) => {
+                    const v = stageVariant[p.stage];
+                    const Icon = v.Icon;
+                    const spin = p.stage === "extracting" || p.stage === "crawling";
+                    return (
+                      <li key={`${p.url}-${idx}`} className="flex items-center gap-3 px-3 py-2 text-xs">
+                        <Badge variant="outline" className={`${v.className} gap-1 shrink-0`}>
+                          <Icon className={`h-3 w-3 ${spin ? "animate-spin" : ""}`} />
+                          {v.label}
+                        </Badge>
+                        <span className="truncate flex-1" title={p.url}>{p.url}</span>
+                        {typeof p.deals_found === "number" && (
+                          <span className="text-muted-foreground shrink-0">{p.deals_found} deal{p.deals_found === 1 ? "" : "s"}</span>
+                        )}
+                        {p.error && (
+                          <span className="text-destructive truncate max-w-[40%]" title={p.error}>{p.error}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {deals.length > 0 && (
           <Card>
@@ -146,7 +261,7 @@ export default function AdminDealsImportPage() {
                 <div>
                   <CardTitle>Review & Import ({deals.length} found)</CardTitle>
                   <CardDescription>
-                    {pagesScraped} page(s) scraped · {matchedCount} auto-linked to products · {deals.filter(d=>d.already_exists).length} duplicates
+                    {matchedCount} auto-linked to products · {deals.filter(d=>d.already_exists).length} duplicates
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
