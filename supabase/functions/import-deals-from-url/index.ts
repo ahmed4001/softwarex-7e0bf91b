@@ -22,6 +22,36 @@ function extractDomain(url: string | null | undefined): string | null {
   }
 }
 
+async function plainFetchScrape(url: string): Promise<{ markdown: string; links: string[]; url: string }> {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; DealImporter/1.0; +https://softwarex.lovable.app)",
+      "Accept": "text/html,application/xhtml+xml",
+    },
+  });
+  if (!res.ok) throw new Error(`Plain fetch failed (${res.status})`);
+  const html = await res.text();
+  // Collect links
+  const linkSet = new Set<string>();
+  const linkRe = /<a[^>]+href=["']([^"']+)["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(html)) !== null) {
+    try { linkSet.add(new URL(m[1], url).toString()); } catch { /* ignore */ }
+  }
+  // Strip to text
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+  return { markdown: text.slice(0, 20000), links: [...linkSet], url };
+
 async function firecrawlScrape(apiKey: string, url: string) {
   const res = await fetch(`${FIRECRAWL_V2}/scrape`, {
     method: "POST",
@@ -126,15 +156,38 @@ Deno.serve(async (req) => {
       const sourcePages: Array<{ markdown: string; url: string }> = [];
 
       if (mode === "crawl" && urls[0]) {
-        const docs = await firecrawlCrawl(FIRECRAWL_API_KEY, urls[0], crawl_limit);
-        sourcePages.push(...docs);
+        try {
+          const docs = await firecrawlCrawl(FIRECRAWL_API_KEY, urls[0], crawl_limit);
+          sourcePages.push(...docs);
+        } catch (e) {
+          console.warn("Firecrawl crawl failed, falling back to plain fetch", e);
+          try {
+            const seed = await plainFetchScrape(urls[0]);
+            sourcePages.push(seed);
+            // Follow a few same-host links from the seed page
+            const origin = new URL(urls[0]).origin;
+            const sameHost = seed.links
+              .filter((l) => { try { return new URL(l).origin === origin; } catch { return false; } })
+              .slice(0, Math.min(crawl_limit - 1, 9));
+            for (const u of sameHost) {
+              try { sourcePages.push(await plainFetchScrape(u)); } catch (err) { console.warn("Fallback scrape error", u, err); }
+            }
+          } catch (err2) {
+            console.warn("Plain fetch fallback also failed", err2);
+          }
+        }
       } else {
         for (const u of urls.slice(0, 10)) {
           try {
             const doc = await firecrawlScrape(FIRECRAWL_API_KEY, u);
             sourcePages.push(doc);
           } catch (e) {
-            console.warn("Scrape error", u, e);
+            console.warn("Firecrawl scrape error, trying plain fetch", u, e);
+            try {
+              sourcePages.push(await plainFetchScrape(u));
+            } catch (err2) {
+              console.warn("Plain fetch fallback failed", u, err2);
+            }
           }
         }
       }
