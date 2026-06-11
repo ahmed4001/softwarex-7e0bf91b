@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "import") {
-      const { deals = [], is_visible = true } = body;
+      const { deals = [] } = body;
       let inserted = 0;
       let skipped = 0;
       const errors: string[] = [];
@@ -214,8 +214,9 @@ Deno.serve(async (req) => {
           category: d.category || null,
           end_date: d.end_date || null,
           product_id: d.matched_product_id || d.product_id || null,
-          is_visible,
+          is_visible: false,
           is_featured: !!d.is_featured,
+          review_status: "pending_review",
         };
 
         let { error } = await supabase.from("deals").insert(record);
