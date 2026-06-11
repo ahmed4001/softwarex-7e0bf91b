@@ -201,19 +201,19 @@ export default function SubmitProductPage() {
                         <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" /> Product Name *
                         </Label>
-                        <Input id="name" value={form.name} onChange={(e) => updateField("name", e.target.value)} required maxLength={200} placeholder="e.g. Acme CRM" className="mt-2 h-12 rounded-xl" />
+                        <Input id="name" value={form.name} onChange={(e) => updateField("name", e.target.value)} required maxLength={200} placeholder="e.g. Acme CRM" className="mt-1 h-10 rounded-lg" />
                       </div>
 
                       <div>
                         <Label htmlFor="website" className="text-sm font-semibold flex items-center gap-2">
                           <Globe className="h-4 w-4 text-muted-foreground" /> Website URL
                         </Label>
-                        <Input id="website" type="url" value={form.website_url} onChange={(e) => updateField("website_url", e.target.value)} placeholder="https://yourproduct.com" className="mt-2 h-12 rounded-xl" />
+                        <Input id="website" type="url" value={form.website_url} onChange={(e) => updateField("website_url", e.target.value)} placeholder="https://yourproduct.com" className="mt-1 h-10 rounded-lg" />
                       </div>
 
                       <div>
                         <Label htmlFor="tagline" className="text-sm font-semibold">Tagline</Label>
-                        <Input id="tagline" value={form.tagline} onChange={(e) => updateField("tagline", e.target.value)} maxLength={200} placeholder="A short catchy description" className="mt-2 h-12 rounded-xl" />
+                        <Input id="tagline" value={form.tagline} onChange={(e) => updateField("tagline", e.target.value)} maxLength={200} placeholder="A short catchy description" className="mt-1 h-10 rounded-lg" />
                       </div>
 
                       <div>
@@ -225,7 +225,7 @@ export default function SubmitProductPage() {
                           value={form.description}
                           onChange={(e) => updateField("description", e.target.value)}
                           placeholder="Tell us about your product, key features, and target audience..."
-                          className="mt-2 min-h-[160px] rounded-xl"
+                          className="mt-2 min-h-[80px] rounded-lg"
                           maxLength={5000}
                         />
                       </div>
@@ -234,7 +234,7 @@ export default function SubmitProductPage() {
                         <div>
                           <Label className="text-sm font-semibold">Category</Label>
                           <Select value={form.category_id} onValueChange={(v) => updateField("category_id", v)}>
-                            <SelectTrigger className="mt-2 h-12 rounded-xl"><SelectValue placeholder="Select category" /></SelectTrigger>
+                            <SelectTrigger className="mt-1 h-10 rounded-lg"><SelectValue placeholder="Select category" /></SelectTrigger>
                             <SelectContent>
                               {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                             </SelectContent>
@@ -243,7 +243,7 @@ export default function SubmitProductPage() {
                         <div>
                           <Label className="text-sm font-semibold">Pricing Model</Label>
                           <Select value={form.pricing_model} onValueChange={(v) => updateField("pricing_model", v)}>
-                            <SelectTrigger className="mt-2 h-12 rounded-xl"><SelectValue placeholder="Select pricing" /></SelectTrigger>
+                            <SelectTrigger className="mt-1 h-10 rounded-lg"><SelectValue placeholder="Select pricing" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="free">Free</SelectItem>
                               <SelectItem value="freemium">Freemium</SelectItem>
@@ -260,18 +260,18 @@ export default function SubmitProductPage() {
                           <Label htmlFor="price" className="text-sm font-semibold flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-muted-foreground" /> Starting Price
                           </Label>
-                          <Input id="price" type="number" min="0" step="0.01" value={form.starting_price} onChange={(e) => updateField("starting_price", e.target.value)} placeholder="0.00" className="mt-2 h-12 rounded-xl" />
+                          <Input id="price" type="number" min="0" step="0.01" value={form.starting_price} onChange={(e) => updateField("starting_price", e.target.value)} placeholder="0.00" className="mt-1 h-10 rounded-lg" />
                         </div>
                         <div>
                           <Label htmlFor="hq" className="text-sm font-semibold">Headquarters</Label>
-                          <Input id="hq" value={form.headquarters} onChange={(e) => updateField("headquarters", e.target.value)} maxLength={200} placeholder="e.g. San Francisco, CA" className="mt-2 h-12 rounded-xl" />
+                          <Input id="hq" value={form.headquarters} onChange={(e) => updateField("headquarters", e.target.value)} maxLength={200} placeholder="e.g. San Francisco, CA" className="mt-1 h-10 rounded-lg" />
                         </div>
                       </div>
 
                       <Button
                         type="button"
                         onClick={handleContinue}
-                        className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
+                        className="w-full h-10 btn-premium rounded-lg text-primary-foreground font-semibold gap-2"
                         disabled={loading}
                       >
                         {loading ? (
@@ -345,7 +345,7 @@ export default function SubmitProductPage() {
                             value={authForm.fullName}
                             onChange={(e) => setAuthForm((p) => ({ ...p, fullName: e.target.value }))}
                             placeholder="Your name"
-                            className="mt-2 h-12 rounded-xl"
+                            className="mt-1 h-10 rounded-lg"
                           />
                         </div>
                       )}
@@ -361,7 +361,7 @@ export default function SubmitProductPage() {
                           value={authForm.email}
                           onChange={(e) => setAuthForm((p) => ({ ...p, email: e.target.value }))}
                           placeholder="you@company.com"
-                          className="mt-2 h-12 rounded-xl"
+                          className="mt-1 h-10 rounded-lg"
                         />
                       </div>
 
@@ -377,13 +377,13 @@ export default function SubmitProductPage() {
                           value={authForm.password}
                           onChange={(e) => setAuthForm((p) => ({ ...p, password: e.target.value }))}
                           placeholder="Min. 6 characters"
-                          className="mt-2 h-12 rounded-xl"
+                          className="mt-1 h-10 rounded-lg"
                         />
                       </div>
 
                       <Button
                         type="submit"
-                        className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
+                        className="w-full h-10 btn-premium rounded-lg text-primary-foreground font-semibold gap-2"
                         disabled={authLoading2 || loading}
                       >
                         {authLoading2 ? (
