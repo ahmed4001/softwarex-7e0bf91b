@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SeoHead } from "@/components/SeoHead";
@@ -9,23 +10,35 @@ import { motion } from "framer-motion";
 import { User, MessageSquare, ThumbsUp, Calendar, Award, Users } from "lucide-react";
 import { FollowButton } from "@/components/FollowButton";
 import { useFollow } from "@/hooks/useFollow";
+import { isUuid } from "@/lib/identifier";
 
 export default function UserProfilePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["public-profile", id],
     queryFn: async () => {
+      // Slug-first lookup with UUID fallback so old /user/<uuid> links keep working.
+      const column = isUuid(id) ? "user_id" : "username";
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, user_id, name, avatar_url, bio, job_title, company, industry, is_verified_reviewer, review_count, helpful_votes_received, created_at, total_points, display_title, verification_type, verified_domain, verified_at, linkedin_verified")
-        .eq("user_id", id!)
-        .single();
+        .select("id, user_id, username, name, avatar_url, bio, job_title, company, industry, is_verified_reviewer, review_count, helpful_votes_received, created_at, total_points, display_title, verification_type, verified_domain, verified_at, linkedin_verified")
+        .eq(column, id!)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!id,
   });
+
+  // Redirect UUID URL to canonical /user/{username} for SEO.
+  useEffect(() => {
+    if (profile && isUuid(id) && (profile as any).username) {
+      navigate(`/user/${(profile as any).username}`, { replace: true });
+    }
+  }, [profile, id, navigate]);
+
 
   const { data: badges = [] } = useQuery({
     queryKey: ["user-badges-profile", id],
