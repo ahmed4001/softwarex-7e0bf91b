@@ -224,6 +224,9 @@ export default function HomePage() {
         {/* 7. Trending */}
         <TrendingProductsSection />
 
+        {/* 7.5 Deals Showcase */}
+        <DealsShowcaseSection />
+
         {/* 8. Popular Comparisons */}
         <PopularComparisonsSection />
 
