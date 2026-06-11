@@ -111,14 +111,19 @@ export function RecentlyAddedSection() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link to={`/deals/${deal.slug}`} className="glass-card p-4 group block relative overflow-hidden">
-                    <div className="absolute top-0 right-0">
+                    <div className="absolute top-0 right-0 flex flex-col items-end gap-1">
                       {deal.discount_amount && (
                         <Badge className="rounded-none rounded-bl-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-bold text-[10px]">
                           {deal.discount_type === "amount" ? "$" : ""}{deal.discount_amount}{deal.discount_type === "percent" ? "% OFF" : deal.discount_type === "amount" ? " OFF" : ""}
                         </Badge>
                       )}
+                      {isExpiringSoon(deal.end_date) && (
+                        <Badge variant="destructive" className="rounded-none rounded-bl-lg text-[10px] font-bold animate-pulse">
+                          Expires soon
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                       {deal.logo_url ? (
                         <img src={deal.logo_url} alt={deal.product_name} className="h-10 w-10 rounded-lg object-contain bg-muted p-1" />
                       ) : (
@@ -140,7 +145,8 @@ export function RecentlyAddedSection() {
                         </div>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" className="w-full text-xs">
+                    <DealCountdown endDate={deal.end_date} />
+                    <Button size="sm" variant="outline" className="w-full text-xs mt-2">
                       View Deal <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                   </Link>
