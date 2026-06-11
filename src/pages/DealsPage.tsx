@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Helmet } from "react-helmet-async";
@@ -6,12 +7,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tag, Flame, Clock, Search, Mail, ExternalLink, Copy, Check, TrendingUp } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tag, Flame, Clock, Search, Mail, ExternalLink, Copy, Check, TrendingUp,
+  X, SlidersHorizontal, ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 type Deal = {
   id: string;
+  product_id: string | null;
   product_name: string;
   slug: string;
   logo_url: string | null;
@@ -25,34 +35,47 @@ type Deal = {
   end_date: string | null;
   is_featured: boolean;
   is_trending: boolean;
+  click_count: number | null;
+  created_at: string;
 };
 
-function useCountdown(endDate: string | null) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!endDate) return;
-    const i = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(i);
-  }, [endDate]);
+type SortKey = "featured" | "popular" | "newest" | "expiring" | "discount";
+
+function useCountdown(endDate: string | null, tick: number) {
   if (!endDate) return null;
-  const diff = new Date(endDate).getTime() - now;
+  const diff = new Date(endDate).getTime() - tick;
   if (diff <= 0) return "Expired";
   const d = Math.floor(diff / 86400000);
   const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  return `${d}d ${h}h ${m}m ${s}s`;
+  return `${d}d ${h}h ${m}m`;
 }
 
-function DealCard({ deal, featured }: { deal: Deal; featured?: boolean }) {
-  const countdown = useCountdown(deal.end_date);
+function DealCard({ deal, featured, tick }: { deal: Deal; featured?: boolean; tick: number }) {
+  const countdown = useCountdown(deal.end_date, tick);
   const [copied, setCopied] = useState(false);
 
-  const copy = () => {
+  const trackClick = async () => {
+    try {
+      if (deal.product_id) {
+        await supabase.from("affiliate_clicks" as any).insert({
+          product_id: deal.product_id,
+          destination_url: deal.deal_url,
+          referrer_url: window.location.href,
+        });
+      }
+      await supabase.from("deals" as any).update({ click_count: (deal.click_count ?? 0) + 1 }).eq("id", deal.id);
+    } catch {}
+  };
+
+  const copy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!deal.coupon_code) return;
     navigator.clipboard.writeText(deal.coupon_code);
     setCopied(true);
     toast.success("Coupon copied!");
+    trackClick();
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -60,7 +83,7 @@ function DealCard({ deal, featured }: { deal: Deal; featured?: boolean }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
       <Card className={`group h-full overflow-hidden border-border/60 hover:border-primary/40 hover:shadow-xl transition-all ${featured ? "ring-1 ring-primary/30 bg-gradient-to-br from-card to-primary/5" : ""}`}>
         <CardContent className="p-5 flex flex-col h-full">
-          <div className="flex items-start justify-between gap-3 mb-3">
+          <Link to={`/deals/${deal.slug}`} className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-3 min-w-0">
               {deal.logo_url ? (
                 <img src={deal.logo_url} alt={deal.product_name} className="h-12 w-12 rounded-lg object-contain bg-muted p-1" />
@@ -70,7 +93,7 @@ function DealCard({ deal, featured }: { deal: Deal; featured?: boolean }) {
                 </div>
               )}
               <div className="min-w-0">
-                <h3 className="font-semibold text-base truncate">{deal.product_name}</h3>
+                <h3 className="font-semibold text-base truncate group-hover:text-primary transition">{deal.product_name}</h3>
                 {deal.category && <p className="text-xs text-muted-foreground truncate">{deal.category}</p>}
               </div>
             </div>
@@ -79,7 +102,7 @@ function DealCard({ deal, featured }: { deal: Deal; featured?: boolean }) {
                 {deal.discount_type === "amount" ? "$" : ""}{deal.discount_amount}{deal.discount_type === "percent" ? "% OFF" : deal.discount_type === "amount" ? " OFF" : ""}
               </Badge>
             )}
-          </div>
+          </Link>
 
           {deal.description && (
             <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">{deal.description}</p>
@@ -99,11 +122,16 @@ function DealCard({ deal, featured }: { deal: Deal; featured?: boolean }) {
             </div>
           )}
 
-          <Button asChild className="w-full mt-auto">
-            <a href={deal.deal_url} target="_blank" rel="noopener noreferrer sponsored">
-              Get Deal <ExternalLink className="h-3.5 w-3.5 ml-1" />
-            </a>
-          </Button>
+          <div className="flex gap-2 mt-auto">
+            <Button asChild variant="outline" size="sm" className="flex-1">
+              <Link to={`/deals/${deal.slug}`}>Details <ChevronRight className="h-3.5 w-3.5 ml-1" /></Link>
+            </Button>
+            <Button asChild size="sm" className="flex-1" onClick={trackClick}>
+              <a href={deal.deal_url} target="_blank" rel="noopener noreferrer sponsored">
+                Get Deal <ExternalLink className="h-3.5 w-3.5 ml-1" />
+              </a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -111,9 +139,27 @@ function DealCard({ deal, featured }: { deal: Deal; featured?: boolean }) {
 }
 
 export default function DealsPage() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("all");
+  const [params, setParams] = useSearchParams();
+  const search = params.get("q") || "";
+  const sort = (params.get("sort") || "featured") as SortKey;
+  const selectedCats = useMemo(() => {
+    const c = params.get("category");
+    return c ? c.split(",").filter(Boolean) : [];
+  }, [params]);
+
+  const setParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(params);
+    if (!value) next.delete(key);
+    else next.set(key, value);
+    setParams(next, { replace: true });
+  };
+
   const [email, setEmail] = useState("");
+  const [tick, setTick] = useState(Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setTick(Date.now()), 60_000);
+    return () => clearInterval(i);
+  }, []);
 
   const { data: deals = [], isLoading } = useQuery({
     queryKey: ["deals-public"],
@@ -128,37 +174,74 @@ export default function DealsPage() {
     },
   });
 
-  const categories = useMemo(() => {
-    const s = new Set<string>();
-    deals.forEach((d) => d.category && s.add(d.category));
-    return Array.from(s);
+  const allCategories = useMemo(() => {
+    const map = new Map<string, number>();
+    deals.forEach((d) => { if (d.category) map.set(d.category, (map.get(d.category) || 0) + 1); });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [deals]);
 
   const filtered = useMemo(() => {
-    return deals.filter((d) => {
-      if (category !== "all" && d.category !== category) return false;
-      if (search && !d.product_name.toLowerCase().includes(search.toLowerCase()) && !d.description?.toLowerCase().includes(search.toLowerCase())) return false;
+    const now = Date.now();
+    let list = deals.filter((d) => {
+      if (selectedCats.length && (!d.category || !selectedCats.includes(d.category))) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        if (!d.product_name.toLowerCase().includes(q) && !d.description?.toLowerCase().includes(q)) return false;
+      }
       return true;
     });
-  }, [deals, search, category]);
 
-  const featured = filtered.filter((d) => d.is_featured).slice(0, 6);
-  const trending = filtered.filter((d) => d.is_trending).slice(0, 8);
-  const endingSoon = [...filtered]
-    .filter((d) => d.end_date && new Date(d.end_date).getTime() > Date.now())
-    .sort((a, b) => new Date(a.end_date!).getTime() - new Date(b.end_date!).getTime())
-    .slice(0, 8);
-  const latest = filtered.slice(0, 12);
+    switch (sort) {
+      case "popular":
+        list = [...list].sort((a, b) => (b.click_count ?? 0) - (a.click_count ?? 0));
+        break;
+      case "newest":
+        list = [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case "expiring":
+        list = list
+          .filter((d) => d.end_date && new Date(d.end_date).getTime() > now)
+          .sort((a, b) => new Date(a.end_date!).getTime() - new Date(b.end_date!).getTime());
+        break;
+      case "discount":
+        list = [...list].sort((a, b) => {
+          const va = a.discount_type === "percent" ? parseFloat(a.discount_amount || "0") : 0;
+          const vb = b.discount_type === "percent" ? parseFloat(b.discount_amount || "0") : 0;
+          return vb - va;
+        });
+        break;
+      case "featured":
+      default:
+        list = [...list].sort((a, b) => {
+          if (a.is_featured !== b.is_featured) return a.is_featured ? -1 : 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+    }
+    return list;
+  }, [deals, search, selectedCats, sort]);
 
-  const byCategory = useMemo(() => {
-    const m: Record<string, Deal[]> = {};
-    filtered.forEach((d) => {
-      const c = d.category || "Other";
-      if (!m[c]) m[c] = [];
-      m[c].push(d);
-    });
-    return m;
-  }, [filtered]);
+  const counts = useMemo(() => {
+    const now = Date.now();
+    return {
+      all: deals.length,
+      featured: deals.filter((d) => d.is_featured).length,
+      trending: deals.filter((d) => d.is_trending).length,
+      expiring: deals.filter((d) => d.end_date && new Date(d.end_date).getTime() > now).length,
+    };
+  }, [deals]);
+
+  const hasFilters = !!search || selectedCats.length > 0 || sort !== "featured";
+
+  const toggleCategory = (cat: string) => {
+    const set = new Set(selectedCats);
+    if (set.has(cat)) set.delete(cat);
+    else set.add(cat);
+    setParam("category", set.size ? Array.from(set).join(",") : null);
+  };
+
+  const clearAll = () => {
+    setParams({}, { replace: true });
+  };
 
   const subscribe = useMutation({
     mutationFn: async (e: string) => {
@@ -176,13 +259,10 @@ export default function DealsPage() {
     "@context": "https://schema.org",
     "@type": "ItemList",
     itemListElement: filtered.slice(0, 20).map((d, i) => ({
-      "@type": "Offer",
+      "@type": "ListItem",
       position: i + 1,
+      url: `${typeof window !== "undefined" ? window.location.origin : ""}/deals/${d.slug}`,
       name: `${d.product_name} Deal`,
-      description: d.description,
-      url: d.deal_url,
-      priceCurrency: "USD",
-      ...(d.end_date && { validThrough: d.end_date }),
     })),
   };
 
@@ -214,93 +294,150 @@ export default function DealsPage() {
             <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search deals..." className="pl-10 h-11" />
+                <Input
+                  value={search}
+                  onChange={(e) => setParam("q", e.target.value || null)}
+                  placeholder="Search deals..."
+                  className="pl-10 h-11"
+                />
               </div>
             </div>
-
-            {categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-center mt-6">
-                <button onClick={() => setCategory("all")} className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${category === "all" ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"}`}>All</button>
-                {categories.map((c) => (
-                  <button key={c} onClick={() => setCategory(c)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${category === c ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"}`}>{c}</button>
-                ))}
-              </div>
-            )}
           </motion.div>
         </div>
       </section>
 
-      <div className="container py-10 space-y-14">
-        {isLoading && <p className="text-center text-muted-foreground">Loading deals...</p>}
+      {/* Toolbar */}
+      <div className="border-b border-border bg-background/80 backdrop-blur sticky top-0 z-30">
+        <div className="container py-3 flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-semibold">{filtered.length}</span>
+            <span className="text-muted-foreground">of {counts.all} deals</span>
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Category multi-select */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Categories
+                {selectedCats.length > 0 && (
+                  <Badge className="ml-1 h-5 px-1.5">{selectedCats.length}</Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="end">
+              <div className="p-2 border-b flex items-center justify-between">
+                <span className="text-sm font-medium">Filter by category</span>
+                {selectedCats.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setParam("category", null)}>Reset</Button>
+                )}
+              </div>
+              <div className="max-h-72 overflow-y-auto p-1">
+                {allCategories.length === 0 && <p className="p-3 text-sm text-muted-foreground">No categories</p>}
+                {allCategories.map(([cat, count]) => (
+                  <label key={cat} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 rounded cursor-pointer">
+                    <Checkbox checked={selectedCats.includes(cat)} onCheckedChange={() => toggleCategory(cat)} />
+                    <span className="text-sm flex-1 truncate">{cat}</span>
+                    <span className="text-xs text-muted-foreground">{count}</span>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Sort */}
+          <Select value={sort} onValueChange={(v) => setParam("sort", v === "featured" ? null : v)}>
+            <SelectTrigger className="w-[170px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="featured">Featured ({counts.featured})</SelectItem>
+              <SelectItem value="popular">Most popular</SelectItem>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="expiring">Ending soon ({counts.expiring})</SelectItem>
+              <SelectItem value="discount">Biggest discount</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasFilters && (
+            <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={clearAll}>
+              <X className="h-3.5 w-3.5" /> Clear filters
+            </Button>
+          )}
+        </div>
+
+        {/* Active filter chips */}
+        {(selectedCats.length > 0 || search) && (
+          <div className="container pb-3 flex items-center gap-2 flex-wrap">
+            {search && (
+              <Badge variant="secondary" className="gap-1">
+                "{search}"
+                <button onClick={() => setParam("q", null)}><X className="h-3 w-3" /></button>
+              </Badge>
+            )}
+            {selectedCats.map((c) => (
+              <Badge key={c} variant="secondary" className="gap-1">
+                {c}
+                <button onClick={() => toggleCategory(c)}><X className="h-3 w-3" /></button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="container py-10">
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="h-48 animate-pulse bg-muted/30" />
+            ))}
+          </div>
+        )}
 
         {!isLoading && filtered.length === 0 && (
           <Card><CardContent className="py-16 text-center">
             <Tag className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">No deals found. Check back soon!</p>
+            <p className="text-muted-foreground mb-4">No deals match your filters.</p>
+            {hasFilters && <Button variant="outline" onClick={clearAll}>Clear filters</Button>}
           </CardContent></Card>
         )}
 
-        {featured.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-5">
-              <Flame className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-bold">Featured Deals</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {featured.map((d) => <DealCard key={d.id} deal={d} featured />)}
-            </div>
-          </section>
-        )}
-
-        {trending.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-5">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-bold">Trending Now</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {trending.map((d) => <DealCard key={d.id} deal={d} />)}
-            </div>
-          </section>
-        )}
-
-        {endingSoon.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-5">
-              <Clock className="h-5 w-5 text-amber-500" />
-              <h2 className="text-2xl font-bold">Ending Soon</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {endingSoon.map((d) => <DealCard key={d.id} deal={d} />)}
-            </div>
-          </section>
-        )}
-
-        {latest.length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold mb-5">Latest Deals</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {latest.map((d) => <DealCard key={d.id} deal={d} />)}
-            </div>
-          </section>
-        )}
-
-        {Object.keys(byCategory).length > 1 && (
-          <section className="space-y-10">
-            <h2 className="text-2xl font-bold">Browse by Category</h2>
-            {Object.entries(byCategory).map(([cat, ds]) => (
-              <div key={cat}>
-                <h3 className="text-lg font-semibold mb-4 text-muted-foreground">{cat}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {ds.slice(0, 8).map((d) => <DealCard key={d.id} deal={d} />)}
+        {!isLoading && filtered.length > 0 && (
+          <>
+            {sort === "featured" && filtered.some((d) => d.is_featured) && (
+              <section className="mb-12">
+                <div className="flex items-center gap-2 mb-5">
+                  <Flame className="h-5 w-5 text-primary" />
+                  <h2 className="text-2xl font-bold">Featured Deals</h2>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filtered.filter((d) => d.is_featured).slice(0, 6).map((d) => <DealCard key={d.id} deal={d} featured tick={tick} />)}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <div className="flex items-center gap-2 mb-5">
+                {sort === "popular" && <TrendingUp className="h-5 w-5 text-primary" />}
+                {sort === "expiring" && <Clock className="h-5 w-5 text-amber-500" />}
+                <h2 className="text-2xl font-bold">
+                  {sort === "featured" ? "All Deals" :
+                    sort === "popular" ? "Most Popular" :
+                    sort === "newest" ? "Newest" :
+                    sort === "expiring" ? "Ending Soon" : "Biggest Discounts"}
+                </h2>
               </div>
-            ))}
-          </section>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {(sort === "featured" ? filtered.filter((d) => !d.is_featured) : filtered).map((d) => (
+                  <DealCard key={d.id} deal={d} tick={tick} />
+                ))}
+              </div>
+            </section>
+          </>
         )}
 
         {/* Email signup */}
-        <section>
+        <section className="mt-14">
           <Card className="bg-gradient-to-br from-primary/10 via-card to-card border-primary/20">
             <CardContent className="p-8 md:p-12 text-center">
               <Mail className="h-10 w-10 mx-auto text-primary mb-4" />
