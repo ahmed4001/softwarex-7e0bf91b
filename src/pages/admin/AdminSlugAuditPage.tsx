@@ -250,7 +250,7 @@ export default function AdminSlugAuditPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <SourceIcon source={source} />
-              {SourceLabel(source)}
+              <SourceLabel source={source} />
               <Badge variant="outline" className="text-[10px]">{items.length}</Badge>
             </CardTitle>
           </CardHeader>
