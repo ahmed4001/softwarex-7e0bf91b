@@ -113,6 +113,7 @@ export default function AdminDealsPage() {
       if (filter === "featured") q = q.eq("is_featured", true);
       if (filter === "trending") q = q.eq("is_trending", true);
       if (filter === "hidden") q = q.eq("is_visible", false);
+      if (filter === "pending") q = q.eq("review_status", "pending_review");
       if (filter === "expired") q = q.lt("end_date", now).not("end_date", "is", null);
 
       q = q.order(sortCol, { ascending: sortDir === "asc", nullsFirst: false });
@@ -225,6 +226,12 @@ export default function AdminDealsPage() {
           break;
         case "show":
           await apply((supabase.from("deals" as any) as any).update({ is_visible: true }).in("id", ids));
+          break;
+        case "approve":
+          await apply((supabase.from("deals" as any) as any).update({ review_status: "approved", is_visible: true }).in("id", ids));
+          break;
+        case "reject":
+          await apply((supabase.from("deals" as any) as any).update({ review_status: "rejected", is_visible: false }).in("id", ids));
           break;
         case "delete":
           await apply((supabase.from("deals" as any) as any).delete().in("id", ids));
