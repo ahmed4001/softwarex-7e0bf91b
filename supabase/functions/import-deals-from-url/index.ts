@@ -12,6 +12,27 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
+// Strip deal-marketing noise from an extracted product name so it becomes the
+// clean official brand name (used for both display and slug).
+function cleanProductName(raw: string | null | undefined): string {
+  if (!raw) return "";
+  let name = String(raw).trim();
+  // Cut at common separators that usually precede marketing copy
+  name = name.split(/\s+[\-|–—:•]\s+/)[0];
+  // Remove parenthetical extras: "Notion (50% off)" -> "Notion"
+  name = name.replace(/\s*[\(\[\{][^\)\]\}]*[\)\]\}]\s*/g, " ");
+  // Remove discount tokens like "30%", "$50", "USD 20"
+  name = name.replace(/\b(?:\$|usd\s*|€|£)?\d+(?:\.\d+)?\s*%?(?:\s*off)?\b/gi, " ");
+  // Remove deal-y stop words
+  name = name.replace(/\b(deal|deals|coupon|coupons|promo|promotion|discount|offer|offers|sale|savings?|black\s*friday|cyber\s*monday|lifetime|ltd|exclusive|review|reviews|pricing|price)\b/gi, " ");
+  // Collapse whitespace and trim residual punctuation
+  name = name.replace(/[\-|–—:•]+/g, " ").replace(/\s+/g, " ").trim();
+  name = name.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "");
+  return name;
+}
+
+
+
 function extractDomain(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
@@ -139,7 +160,7 @@ async function extractDealsWithAI(apiKey: string, markdown: string, sourceUrl: s
   const truncated = markdown.slice(0, 18000);
   const systemPrompt = `You extract software / SaaS deals from web pages AND write rich product info, SEO meta + Schema.org JSON-LD for each. Output ONLY JSON.
 Return: { "deals": [ {
-  "product_name",
+  "product_name" (EXACT official brand name of the product as it appears on its own website — e.g. "Notion", "Adobe Photoshop", "ClickUp". DO NOT include marketing words like "Deal", "Coupon", "Promo", "Discount", "Black Friday", percentages, prices, taglines, or vendor names. Just the product name. If a tool has a clear sub-product name like "Adobe Photoshop" keep the full official name; otherwise prefer the shortest canonical brand name),
   "tagline" (1 short sentence, <=90 chars),
   "description" (rich markdown: 2-3 paragraphs about what the product does + the deal terms; include a "**Key features**" bullet list of 4-7 items, a "**Best for**" line naming the target audience, and a "**Pricing**" line summarizing normal vs discounted price if known),
   "discount_amount" (e.g. "30%" or "$50"),
@@ -294,8 +315,13 @@ Deno.serve(async (req) => {
         const domain = extractDomain(d.merchant_domain) || extractDomain(d.deal_url) || extractDomain(d.official_website);
         const matched = domain ? productMap.get(domain) : null;
         const resolvedLogo = matched?.logo_url || await resolveLogoUrl(d.logo_url, domain);
+        // Prefer the matched product's canonical name; otherwise sanitize the
+        // AI-extracted name so it's the clean official brand (no "deal/coupon/%").
+        const cleaned = cleanProductName(d.product_name);
+        const finalName = matched?.name || cleaned || d.product_name;
         return {
           ...d,
+          product_name: finalName,
           domain,
           logo_url: resolvedLogo,
           matched_product_id: matched?.id ?? null,
@@ -341,17 +367,20 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Always store the clean official brand name (used for display + slug)
+        const cleanName = cleanProductName(d.product_name) || d.product_name;
+
         // Auto-create the product when the deal isn't linked to one — slug is
-        // derived from the product name so URLs look like /product/<product-name>
+        // derived from the clean product name so URLs look like /product/<product-name>
         let productId: string | null = d.matched_product_id || d.product_id || null;
         if (!productId) {
           try {
-            const productSlug = await ensureUniqueProductSlug(d.product_name);
+            const productSlug = await ensureUniqueProductSlug(cleanName);
             const websiteUrl = d.official_website || (d.domain ? `https://${d.domain}` : null);
             const { data: created, error: pErr } = await supabase
               .from("products")
               .insert({
-                name: d.product_name,
+                name: cleanName,
                 slug: productSlug,
                 tagline: d.description ? String(d.description).slice(0, 160) : null,
                 description: d.description || null,
@@ -373,11 +402,11 @@ Deno.serve(async (req) => {
           }
         }
 
-        const baseSlug = slugify(`${d.product_name}-${d.discount_amount || "deal"}`);
+        const baseSlug = slugify(`${cleanName}-${d.discount_amount || "deal"}`);
         let slug = baseSlug || `deal-${Date.now()}`;
 
         const record: any = {
-          product_name: d.product_name,
+          product_name: cleanName,
           slug,
           logo_url: d.logo_url || d.matched_logo_url || null,
           description: d.description || null,
