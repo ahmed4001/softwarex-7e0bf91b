@@ -163,7 +163,7 @@ function CommentRow({
       </Link>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-1 text-sm">
-          <Link to={`/author/${c.user_id}`} className="font-semibold text-foreground hover:text-primary">{name}</Link>
+          <Link to={`/author/${c.profile?.username || c.user_id}`} className="font-semibold text-foreground hover:text-primary">{name}</Link>
           <time className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</time>
         </div>
         <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{c.body}</p>
