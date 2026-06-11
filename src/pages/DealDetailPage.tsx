@@ -17,6 +17,7 @@ type Deal = {
   start_date: string | null; end_date: string | null; is_featured: boolean;
   is_trending: boolean; is_visible: boolean; click_count: number | null;
   product_id: string | null; created_at: string; review_status: string;
+  structured_data: Record<string, unknown> | null;
 };
 
 function useCountdown(endDate: string | null) {
