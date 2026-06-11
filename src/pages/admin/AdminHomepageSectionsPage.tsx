@@ -234,7 +234,7 @@ export default function AdminHomepageSectionsPage() {
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => move(item, -1)} disabled={idx === 0}><ArrowUp className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => move(item, 1)} disabled={idx === sectionItems.length - 1}><ArrowDown className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeItems([item.id])}><X className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => { setConfirmAction({ type: "remove", sectionKey: s.key, ids: [item.id], count: 1 }); setConfirmOpen(true); }}><X className="h-4 w-4" /></Button>
                   </div>
                 ))}
               </div>
