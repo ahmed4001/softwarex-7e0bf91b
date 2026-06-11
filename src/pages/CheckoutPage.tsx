@@ -413,39 +413,39 @@ window.__paddleLoadError: ${(window as any).__paddleLoadError ?? "undefined"}`}
             )}
 
             <Card className="glass-card">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex items-center justify-between pb-5 border-b border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between pb-3 border-b border-border">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Selected Plan</p>
-                    <p className="text-lg font-bold mt-0.5">{plan.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Selected Plan</p>
+                    <p className="text-base font-bold mt-0.5">{plan.name}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-display font-bold">${plan.price}</p>
-                    <p className="text-xs text-muted-foreground">per month</p>
+                    <p className="text-2xl font-display font-bold">${plan.price}</p>
+                    <p className="text-[10px] text-muted-foreground">per month</p>
                   </div>
                 </div>
 
-                <div className="py-5 space-y-3">
-                  <div className="flex justify-between text-sm">
+                <div className="py-3 space-y-1.5">
+                  <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-medium">${plan.price}.00</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Tax</span>
                     <span className="font-medium">Calculated at checkout</span>
                   </div>
-                  <div className="flex justify-between text-base font-bold pt-3 border-t border-border">
+                  <div className="flex justify-between text-sm font-bold pt-2 border-t border-border">
                     <span>Total due today</span>
                     <span>${plan.price}.00</span>
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 mb-5 flex gap-3">
-                  <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
+                <div className="rounded-lg bg-primary/5 border border-primary/15 p-2.5 mb-3 flex gap-2">
+                  <Sparkles className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="text-xs">
                     <p className="font-semibold text-foreground">Secure checkout via Paddle</p>
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      A secure Paddle overlay will open to complete your subscription. Cancel anytime.
+                    <p className="text-muted-foreground mt-0.5 text-[11px]">
+                      Cancel anytime.
                     </p>
                   </div>
                 </div>
@@ -453,7 +453,7 @@ window.__paddleLoadError: ${(window as any).__paddleLoadError ?? "undefined"}`}
                 <Button
                   onClick={paddleError ? handleRetry : handlePay}
                   disabled={loading}
-                  className="w-full h-12 btn-premium rounded-xl text-primary-foreground font-semibold gap-2"
+                  className="w-full h-10 btn-premium rounded-lg text-primary-foreground font-semibold gap-2"
                 >
                   {loading ? (
                     <>
@@ -470,13 +470,13 @@ window.__paddleLoadError: ${(window as any).__paddleLoadError ?? "undefined"}`}
                   )}
                 </Button>
 
-                <p className="text-center text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
-                  <Lock className="h-3 w-3" /> Encrypted & secure — no charge until confirmed
+                <p className="text-center text-[11px] text-muted-foreground mt-2 flex items-center justify-center gap-1.5">
+                  <Lock className="h-3 w-3" /> Encrypted & secure
                 </p>
               </CardContent>
             </Card>
 
-            <p className="text-center text-xs text-muted-foreground mt-6">
+            <p className="text-center text-[11px] text-muted-foreground mt-3">
               Need help?{" "}
               <Link to="/page/contact" className="text-primary hover:underline font-medium">
                 Contact support
