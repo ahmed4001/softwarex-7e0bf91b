@@ -115,6 +115,7 @@ const AdminKeywordLandingPage = lazy(() => import("./pages/admin/AdminKeywordLan
 const DealsPage = lazy(() => import("./pages/DealsPage"));
 const DealDetailPage = lazy(() => import("./pages/DealDetailPage"));
 const AdminDealsPage = lazy(() => import("./pages/admin/AdminDealsPage"));
+const AdminDealsImportPage = lazy(() => import("./pages/admin/AdminDealsImportPage"));
 const ChoosePlanPage = lazy(() => import("./pages/ChoosePlanPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 
@@ -248,6 +249,7 @@ function AppContent() {
           <Route path="affiliate-analytics" element={<ErrorBoundary><AdminAffiliateAnalyticsPage /></ErrorBoundary>} />
           <Route path="keyword-pages" element={<ErrorBoundary><AdminKeywordLandingPage /></ErrorBoundary>} />
           <Route path="deals" element={<ErrorBoundary><AdminDealsPage /></ErrorBoundary>} />
+          <Route path="deals/import" element={<ErrorBoundary><AdminDealsImportPage /></ErrorBoundary>} />
           <Route path="subscriptions" element={<ErrorBoundary><AdminSubscriptionsPage /></ErrorBoundary>} />
           <Route path="paddle-events" element={<ErrorBoundary><AdminPaddleEventsPage /></ErrorBoundary>} />
         </Route>
