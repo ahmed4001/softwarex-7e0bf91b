@@ -139,7 +139,7 @@ async function extractDealsWithAI(apiKey: string, markdown: string, sourceUrl: s
   const truncated = markdown.slice(0, 18000);
   const systemPrompt = `You extract software / SaaS deals from web pages AND write rich product info, SEO meta + Schema.org JSON-LD for each. Output ONLY JSON.
 Return: { "deals": [ {
-  "product_name",
+  "product_name" (EXACT official brand name of the product as it appears on its own website — e.g. "Notion", "Adobe Photoshop", "ClickUp". DO NOT include marketing words like "Deal", "Coupon", "Promo", "Discount", "Black Friday", percentages, prices, taglines, or vendor names. Just the product name. If a tool has a clear sub-product name like "Adobe Photoshop" keep the full official name; otherwise prefer the shortest canonical brand name),
   "tagline" (1 short sentence, <=90 chars),
   "description" (rich markdown: 2-3 paragraphs about what the product does + the deal terms; include a "**Key features**" bullet list of 4-7 items, a "**Best for**" line naming the target audience, and a "**Pricing**" line summarizing normal vs discounted price if known),
   "discount_amount" (e.g. "30%" or "$50"),
