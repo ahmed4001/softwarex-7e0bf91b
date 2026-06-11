@@ -95,7 +95,7 @@ export default function DiscussionDetailPage() {
   const replyMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("discussion_replies").insert({
-        discussion_id: id!,
+        discussion_id: discussionId!,
         user_id: user!.id,
         body: replyBody,
       });
@@ -104,11 +104,12 @@ export default function DiscussionDetailPage() {
     onSuccess: () => {
       toast.success("Reply posted!");
       setReplyBody("");
-      queryClient.invalidateQueries({ queryKey: ["discussion-replies", id] });
+      queryClient.invalidateQueries({ queryKey: ["discussion-replies", discussionId] });
       queryClient.invalidateQueries({ queryKey: ["discussion", id] });
     },
     onError: (err: any) => toast.error(err.message),
   });
+
 
   if (isLoading) return <div className="container py-20 text-center text-muted-foreground">Loading...</div>;
   if (!discussion) return <div className="container py-20 text-center text-muted-foreground">Discussion not found.</div>;
