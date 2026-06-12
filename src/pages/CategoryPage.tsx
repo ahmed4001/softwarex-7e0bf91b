@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAbVariant } from "@/hooks/useAbVariant";
 import { useDebounce } from "@/hooks/useDebounce";
 import { trackEvent } from "@/lib/analytics";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 
 const PAGE_SIZE = 20;
 const STALE_5_MIN = 5 * 60 * 1000;
