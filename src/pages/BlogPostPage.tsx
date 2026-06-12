@@ -198,7 +198,13 @@ export default function BlogPostPage() {
             )}
 
             <RelatedPosts currentId={post.id} category={post.category} tags={tags} />
+            <RelatedInternalLinks
+              categoryName={post.category}
+              excludeBlogId={post.id}
+              title="Related products & resources"
+            />
             <PostComments postId={post.id} />
+
           </article>
 
           {/* Sticky TOC */}
