@@ -378,9 +378,17 @@ export default function CategoryPage() {
             </div>
 
             <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} className="mt-8 sm:mt-10" />
+
+            <RelatedInternalLinks
+              categoryId={(category as any)?.id}
+              categorySlug={slug}
+              categoryName={category?.name}
+              title={`Explore ${category?.name || "more"}`}
+            />
           </div>
         </div>
       </div>
+
     </>
   );
 }
