@@ -9,6 +9,7 @@ import { Compass, ChevronRight, CheckCircle2, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductLogo } from "@/components/ProductLogo";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 
 export default function BuyerGuidePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -21,11 +22,12 @@ export default function BuyerGuidePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("buyer_guides")
-        .select("*")
+        .select("*, categories:category_id(id, name, slug)")
         .eq("slug", slug!)
         .eq("is_published", true)
         .single();
       return data;
+
     },
     enabled: !!slug,
   });
@@ -146,8 +148,17 @@ export default function BuyerGuidePage() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <RelatedInternalLinks
+            categoryId={(guide as any)?.categories?.id || (guide as any)?.category_id}
+            categorySlug={(guide as any)?.categories?.slug}
+            categoryName={(guide as any)?.categories?.name}
+            excludeGuideSlug={slug}
+            title="More guides and resources"
+          />
         </motion.div>
       </main>
     </>
   );
 }
+

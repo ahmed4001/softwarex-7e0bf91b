@@ -12,6 +12,7 @@ import { ShareButtons } from "@/components/blog/ShareButtons";
 import { Breadcrumbs } from "@/components/blog/Breadcrumbs";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { PostComments } from "@/components/blog/PostComments";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 
 export default function BlogPostPage() {
   const { slug } = useParams();
@@ -197,7 +198,13 @@ export default function BlogPostPage() {
             )}
 
             <RelatedPosts currentId={post.id} category={post.category} tags={tags} />
+            <RelatedInternalLinks
+              categoryName={post.category}
+              excludeBlogId={post.id}
+              title="Related products & resources"
+            />
             <PostComments postId={post.id} />
+
           </article>
 
           {/* Sticky TOC */}

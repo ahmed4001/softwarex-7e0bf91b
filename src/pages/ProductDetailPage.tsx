@@ -24,6 +24,7 @@ import { ProductQASection } from "@/components/ProductQASection";
 import { useProductQA } from "@/hooks/useProductQA";
 import { PricingComparisonWidget } from "@/components/PricingComparisonWidget";
 import { AlsoViewedSection } from "@/components/AlsoViewedSection";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 import { ReviewDigestCard } from "@/components/ReviewDigestCard";
 import { RatingTrendChart } from "@/components/RatingTrendChart";
 import { ProductWatchButton } from "@/components/ProductWatchButton";
@@ -696,7 +697,15 @@ export default function ProductDetailPage() {
 
         <RatingTrendChart productId={product.id} />
         <AlsoViewedSection productId={product.id} categoryId={product.category_id} />
+        <RelatedInternalLinks
+          categoryId={product.category_id}
+          categorySlug={(product as any).categories?.slug}
+          categoryName={(product as any).categories?.name}
+          excludeProductId={product.id}
+          title={`More ${(product as any).categories?.name || "software"} resources`}
+        />
       </div>
+
 
       {/* Sticky mobile CTA bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border pb-safe">
