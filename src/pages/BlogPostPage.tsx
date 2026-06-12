@@ -12,6 +12,7 @@ import { ShareButtons } from "@/components/blog/ShareButtons";
 import { Breadcrumbs } from "@/components/blog/Breadcrumbs";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { PostComments } from "@/components/blog/PostComments";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 
 export default function BlogPostPage() {
   const { slug } = useParams();
