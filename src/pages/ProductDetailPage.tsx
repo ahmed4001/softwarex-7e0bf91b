@@ -24,6 +24,7 @@ import { ProductQASection } from "@/components/ProductQASection";
 import { useProductQA } from "@/hooks/useProductQA";
 import { PricingComparisonWidget } from "@/components/PricingComparisonWidget";
 import { AlsoViewedSection } from "@/components/AlsoViewedSection";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 import { ReviewDigestCard } from "@/components/ReviewDigestCard";
 import { RatingTrendChart } from "@/components/RatingTrendChart";
 import { ProductWatchButton } from "@/components/ProductWatchButton";
