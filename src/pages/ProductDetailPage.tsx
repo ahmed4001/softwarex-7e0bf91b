@@ -697,7 +697,15 @@ export default function ProductDetailPage() {
 
         <RatingTrendChart productId={product.id} />
         <AlsoViewedSection productId={product.id} categoryId={product.category_id} />
+        <RelatedInternalLinks
+          categoryId={product.category_id}
+          categorySlug={(product as any).categories?.slug}
+          categoryName={(product as any).categories?.name}
+          excludeProductId={product.id}
+          title={`More ${(product as any).categories?.name || "software"} resources`}
+        />
       </div>
+
 
       {/* Sticky mobile CTA bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border pb-safe">
