@@ -9,6 +9,7 @@ import { Compass, ChevronRight, CheckCircle2, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductLogo } from "@/components/ProductLogo";
+import { RelatedInternalLinks } from "@/components/RelatedInternalLinks";
 
 export default function BuyerGuidePage() {
   const { slug } = useParams<{ slug: string }>();
