@@ -162,13 +162,38 @@ export function PublicFooter() {
           <span>{t("footer.copyright", { year: new Date().getFullYear() })}</span>
         </div>
 
-        <div className="flex justify-center pt-6">
+        <div className="flex flex-wrap justify-center items-center gap-4 pt-6">
           <a href="https://startupfa.me/s/reviewhunts?utm_source=reviewhunts.com" target="_blank" rel="noopener noreferrer">
             <img
               src="https://startupfa.me/badges/featured-badge.webp"
               alt="ReviewHunts - Featured on Startup Fame"
               width={171}
               height={54}
+              loading="lazy"
+            />
+          </a>
+          <a href="https://startupspotlight.co/startup/reviewhunts" target="_blank" rel="dofollow">
+            <img
+              src="https://startupspotlight.co/api/badge/cmqdfgeox000j15mgvctsu0ab?variant=dark&v=2"
+              alt="Featured on StartupSpotlight"
+              width={248}
+              height={48}
+              loading="lazy"
+            />
+          </a>
+          <a href="https://sellwithboost.com" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://sellwithboost.com/badge/listing-dark.svg"
+              alt="Listed on Sell With boost"
+              height={40}
+              style={{ width: "auto" }}
+              loading="lazy"
+            />
+          </a>
+          <a href="https://startupdirectory.net" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://startupdirectory.net/badge/featured-dark.svg"
+              alt="Featured"
               loading="lazy"
             />
           </a>
