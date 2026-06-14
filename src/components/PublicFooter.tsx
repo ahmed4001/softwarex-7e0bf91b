@@ -197,6 +197,20 @@ export function PublicFooter() {
               loading="lazy"
             />
           </a>
+          <a href="https://www.aidirectori.es" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://cdn.aidirectori.es/ai-tools/badges/dark-mode.png"
+              alt="AI Directories Badge"
+              loading="lazy"
+            />
+          </a>
+          <a href="https://startupdirectory.net" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://startupdirectory.net/badge/featured-light.svg"
+              alt="Featured"
+              loading="lazy"
+            />
+          </a>
         </div>
       </div>
     </footer>
