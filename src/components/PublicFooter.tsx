@@ -161,6 +161,18 @@ export function PublicFooter() {
           </Link>
           <span>{t("footer.copyright", { year: new Date().getFullYear() })}</span>
         </div>
+
+        <div className="flex justify-center pt-6">
+          <a href="https://startupfa.me/s/reviewhunts?utm_source=reviewhunts.com" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://startupfa.me/badges/featured-badge.webp"
+              alt="ReviewHunts - Featured on Startup Fame"
+              width={171}
+              height={54}
+              loading="lazy"
+            />
+          </a>
+        </div>
       </div>
     </footer>
   );
