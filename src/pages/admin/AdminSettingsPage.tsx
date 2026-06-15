@@ -10,10 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered, Paintbrush, RotateCcw, Image as ImageIcon, Upload } from "lucide-react";
+import { Settings, Save, Loader2, Globe, Palette, Shield, Mail, Search, Eye, ListOrdered, Paintbrush, RotateCcw, Image as ImageIcon, Upload, Award, Plus, Trash2 } from "lucide-react";
 const logoAsset = { url: "/reviewhunts-logo.png" };
 import { toast } from "sonner";
 import { applyTheme, normalizeColor } from "@/lib/theme-config";
+import { DEFAULT_FOOTER_BADGES, type FooterBadgeItem, FooterBadge } from "@/components/FooterBadge";
 
 type SettingRow = {
   id: string;
@@ -57,6 +58,7 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; gro
   logo_max_width_desktop: { label: "Logo Max Width — Desktop (px)", description: "Caps logo width on large screens.", group: "branding", defaultValue: "320" },
   upload_max_size_mb: { label: "Max Upload Size (MB)", description: "Maximum allowed size per uploaded file.", group: "uploads", defaultValue: "10" },
   upload_image_quality: { label: "Image Compression Quality (1–100)", description: "JPEG/WebP quality used when compressing uploads. Lower = smaller files.", group: "uploads", defaultValue: "82" },
+  footer_badges: { label: "Footer Badges", description: "Directory/award badges shown in the public footer.", group: "badges", defaultValue: DEFAULT_FOOTER_BADGES },
 };
 
 export default function AdminSettingsPage() {
