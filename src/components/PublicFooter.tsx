@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { FooterBadge, DEFAULT_FOOTER_BADGES, type FooterBadgeItem } from "@/components/FooterBadge";
 const logoAsset = { url: "/reviewhunts-logo.png" };
+
 
 
 export function PublicFooter() {
@@ -35,6 +37,23 @@ export function PublicFooter() {
     },
     staleTime: 1000 * 60 * 10,
   });
+
+  const { data: badgeSetting } = useQuery({
+    queryKey: ["footer-badges-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "footer_badges")
+        .maybeSingle();
+      return data?.value ?? null;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const badges: FooterBadgeItem[] = Array.isArray(badgeSetting) && badgeSetting.length
+    ? (badgeSetting as FooterBadgeItem[])
+    : DEFAULT_FOOTER_BADGES;
 
   // Split dynamic pages into company vs policies by known slugs
   const policySlugs = ["terms", "privacy", "community-guidelines", "trust", "refund-policy"];
@@ -162,106 +181,11 @@ export function PublicFooter() {
           <span>{t("footer.copyright", { year: new Date().getFullYear() })}</span>
         </div>
 
-        <div className="flex flex-wrap justify-center items-center gap-4 pt-6">
-          <a href="https://startupfa.me/s/reviewhunts?utm_source=reviewhunts.com" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://startupfa.me/badges/featured-badge.webp"
-              alt="ReviewHunts - Featured on Startup Fame"
-              width={171}
-              height={54}
-              loading="lazy"
-            />
-          </a>
-          <a href="https://startupspotlight.co/startup/reviewhunts" target="_blank" rel="dofollow">
-            <img
-              src="https://startupspotlight.co/api/badge/cmqdfgeox000j15mgvctsu0ab?variant=dark&v=2"
-              alt="Featured on StartupSpotlight"
-              width={248}
-              height={48}
-              loading="lazy"
-            />
-          </a>
-          <a href="https://sellwithboost.com" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://sellwithboost.com/badge/listing-dark.svg"
-              alt="Listed on Sell With boost"
-              height={40}
-              style={{ width: "auto" }}
-              loading="lazy"
-            />
-          </a>
-          <a href="https://startupdirectory.net" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://startupdirectory.net/badge/featured-dark.svg"
-              alt="Featured"
-              loading="lazy"
-            />
-          </a>
-          <a href="https://www.aidirectori.es" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://cdn.aidirectori.es/ai-tools/badges/dark-mode.png"
-              alt="AI Directories Badge"
-              loading="lazy"
-            />
-          </a>
-          <a href="https://startupdirectory.net" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://startupdirectory.net/badge/featured-light.svg"
-              alt="Featured"
-              loading="lazy"
-            />
-          </a>
-          <a href="https://launchpadly.co/startup/reviewhunts" target="_blank" rel="noopener noreferrer" data-launchpadly-badge="reviewhunts" data-launchpadly-badge-variant="listed-on">
-            <img
-              src="https://launchpadly.co/embed/badges/startup/reviewhunts.svg?variant=listed-on"
-              alt="Launchpadly Startup Directory"
-              width={260}
-              height={48}
-              style={{ display: "block", border: 0 }}
-              loading="lazy"
-            />
-          </a>
-          <a href="https://indieshowcase.io" target="_blank" rel="noopener noreferrer">
-            <img
-              src="https://indieshowcase.io/badge/featured-dark.svg"
-              alt="Featured"
-              loading="lazy"
-            />
-          </a>
-          <a
-            href="https://launchpadly.co/startup/reviewhunts"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="https://launchpadly.co/embed/badges/startup/reviewhunts.svg?variant=light"
-              alt="Launchpadly Startup Directory"
-              loading="lazy"
-            />
-          </a>
-          <a
-            href="https://launchpadly.co/startup/reviewhunts"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-launchpadly-badge="reviewhunts"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Proudly listed on Launchpadly Startup Directory
-          </a>
-          <a
-            href="https://www.producthunt.com/products/reviewhunts?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-reviewhunts"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1171004&theme=light&t=1781529682739"
-              alt="ReviewHunts - Find the best tools with honest reviews & smart comparisons | Product Hunt"
-              width={250}
-              height={54}
-              loading="lazy"
-            />
-          </a>
-        </div>
+        <nav aria-label="Featured on / listed on directories" className="flex flex-wrap justify-center items-center gap-4 pt-6">
+          {badges.map((b, i) => (
+            <FooterBadge key={`${b.name}-${i}`} badge={b} />
+          ))}
+        </nav>
       </div>
     </footer>
   );
