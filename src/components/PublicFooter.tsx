@@ -237,6 +237,19 @@ export function PublicFooter() {
           >
             Proudly listed on Launchpadly Startup Directory
           </a>
+          <a
+            href="https://www.producthunt.com/products/reviewhunts?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-reviewhunts"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1171004&theme=light&t=1781529682739"
+              alt="ReviewHunts - Find the best tools with honest reviews & smart comparisons | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+            />
+          </a>
         </div>
       </div>
     </footer>
