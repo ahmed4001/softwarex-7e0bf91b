@@ -148,6 +148,9 @@ export default function AdminSettingsPage() {
   const renderField = (key: string) => {
     const def = DEFAULT_SETTINGS[key];
     const val = form[key];
+    if (key === "footer_badges") {
+      return renderBadgesField();
+    }
     if (typeof def.defaultValue === "boolean") {
       return (
         <div key={key} className="flex items-center justify-between py-3">
@@ -243,9 +246,86 @@ export default function AdminSettingsPage() {
     THEME_KEYS.forEach((k) => updateField(k, DEFAULT_SETTINGS[k].defaultValue));
   };
 
+  const renderBadgesField = () => {
+    const badges: FooterBadgeItem[] = Array.isArray(form.footer_badges) ? form.footer_badges : DEFAULT_FOOTER_BADGES;
+    const updateBadge = (idx: number, patch: Partial<FooterBadgeItem>) => {
+      const next = badges.map((b, i) => (i === idx ? { ...b, ...patch } : b));
+      updateField("footer_badges", next);
+    };
+    const removeBadge = (idx: number) => updateField("footer_badges", badges.filter((_, i) => i !== idx));
+    const addBadge = () =>
+      updateField("footer_badges", [...badges, { name: "New Badge", href: "https://", src: "" }]);
+    const resetBadges = () => updateField("footer_badges", DEFAULT_FOOTER_BADGES);
+    return (
+      <div key="footer_badges" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-foreground">Footer Badges</p>
+            <p className="text-xs text-muted-foreground">Add, edit, remove, or reorder the directory badges shown in the footer. Provide a dark-mode source for theme-aware swapping.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={resetBadges} className="gap-1.5">
+              <RotateCcw className="h-3.5 w-3.5" /> Reset
+            </Button>
+            <Button size="sm" onClick={addBadge} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Add badge
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {badges.map((b, idx) => (
+            <div key={idx} className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <div className="flex items-start gap-4">
+                <div className="shrink-0 rounded-md bg-foreground/95 p-3 flex items-center justify-center min-w-[180px] min-h-[64px]">
+                  <FooterBadge badge={b} />
+                </div>
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Name (alt text)</Label>
+                    <Input value={b.name} onChange={(e) => updateBadge(idx, { name: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Link URL</Label>
+                    <Input value={b.href} onChange={(e) => updateBadge(idx, { href: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Image URL (light)</Label>
+                    <Input value={b.src} onChange={(e) => updateBadge(idx, { src: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Image URL (dark, optional)</Label>
+                    <Input value={b.srcDark || ""} onChange={(e) => updateBadge(idx, { srcDark: e.target.value || undefined })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Width</Label>
+                      <Input type="number" value={b.width ?? ""} onChange={(e) => updateBadge(idx, { width: e.target.value ? Number(e.target.value) : undefined })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Height</Label>
+                      <Input type="number" value={b.height ?? ""} onChange={(e) => updateBadge(idx, { height: e.target.value ? Number(e.target.value) : undefined })} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">rel attribute (optional)</Label>
+                    <Input value={b.rel || ""} placeholder="noopener noreferrer" onChange={(e) => updateBadge(idx, { rel: e.target.value || undefined })} />
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => removeBadge(idx)} aria-label={`Remove ${b.name}`}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const groups = [
     { id: "general", label: "General", icon: Globe, keys: ["site_name", "site_tagline", "contact_email"] },
     { id: "branding", label: "Branding", icon: ImageIcon, keys: ["logo_height_mobile", "logo_height_desktop", "logo_max_width_mobile", "logo_max_width_desktop"] },
+    { id: "badges", label: "Badges", icon: Award, keys: ["footer_badges"] },
     { id: "uploads", label: "Uploads", icon: Upload, keys: ["upload_max_size_mb", "upload_image_quality"] },
     { id: "theme", label: "Theme", icon: Paintbrush, keys: ["primary_color", "secondary_color", "button_color", "background_color"] },
     { id: "listings", label: "Listings", icon: ListOrdered, keys: ["real_first_enabled", "real_first_min_score"] },
