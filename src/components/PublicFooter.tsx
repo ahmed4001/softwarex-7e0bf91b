@@ -181,11 +181,9 @@ export function PublicFooter() {
           <span>{t("footer.copyright", { year: new Date().getFullYear() })}</span>
         </div>
 
-        <nav aria-label="Featured on / listed on directories" className="flex flex-wrap justify-center items-center gap-4 pt-6">
-          {badges.map((b, i) => (
-            <FooterBadge key={`${b.name}-${i}`} badge={b} />
-          ))}
-        </nav>
+        <div className="pt-6">
+          <BadgeMarquee badges={badges} speedSeconds={45} />
+        </div>
       </div>
     </footer>
   );

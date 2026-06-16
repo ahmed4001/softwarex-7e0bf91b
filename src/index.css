@@ -615,3 +615,20 @@
   /* Smoother momentum scrolling in horizontal rails */
   .overflow-x-auto { -webkit-overflow-scrolling: touch; }
 }
+
+/* Infinite badge marquee */
+@keyframes badge-marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+.badge-marquee-track {
+  animation: badge-marquee-scroll linear infinite;
+  will-change: transform;
+}
+.badge-marquee:hover .badge-marquee-track,
+.badge-marquee:focus-within .badge-marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-marquee-track { animation: none; }
+}
