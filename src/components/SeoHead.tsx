@@ -75,12 +75,20 @@ export function SeoHead({
     }
   }
 
-  // Always emit a self-referencing canonical for indexable pages.
-  const resolvedCanonical =
-    canonicalUrl ||
-    (typeof window !== "undefined"
-      ? `${window.location.origin}${window.location.pathname}`
-      : undefined);
+  // Always emit a self-referencing canonical for indexable pages, locked
+  // to the production domain so crawlers consolidate to reviewhunts.com.
+  const SITE_URL = "https://reviewhunts.com";
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "/";
+  const resolvedCanonical = canonicalUrl
+    ? canonicalUrl.startsWith("http")
+      ? canonicalUrl
+      : `${SITE_URL}${canonicalUrl.startsWith("/") ? "" : "/"}${canonicalUrl}`
+    : `${SITE_URL}${pathname}`;
+  const resolvedOgImage =
+    effectiveOgImage && !effectiveOgImage.startsWith("http")
+      ? `${SITE_URL}${effectiveOgImage.startsWith("/") ? "" : "/"}${effectiveOgImage}`
+      : effectiveOgImage;
 
   return (
     <Helmet>
@@ -99,7 +107,7 @@ export function SeoHead({
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
       {effectiveDescription && <meta property="og:description" content={effectiveDescription} />}
-      {effectiveOgImage && <meta property="og:image" content={effectiveOgImage} />}
+      {resolvedOgImage && <meta property="og:image" content={resolvedOgImage} />}
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content={lang === "en" ? "en_US" : lang} />
@@ -110,7 +118,7 @@ export function SeoHead({
       <meta name="twitter:site" content="@reviewhunts" />
       <meta name="twitter:title" content={fullTitle} />
       {effectiveDescription && <meta name="twitter:description" content={effectiveDescription} />}
-      {effectiveOgImage && <meta name="twitter:image" content={effectiveOgImage} />}
+      {resolvedOgImage && <meta name="twitter:image" content={resolvedOgImage} />}
 
       {/* Canonical (self-referencing by default) */}
       {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}

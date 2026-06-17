@@ -46,7 +46,7 @@ function extractDomain(url: string | null | undefined): string | null {
 async function plainFetchScrape(url: string): Promise<{ markdown: string; links: string[]; url: string }> {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; DealImporter/1.0; +https://softwarex.lovable.app)",
+      "User-Agent": "Mozilla/5.0 (compatible; DealImporter/1.0; +https://reviewhunts.com)",
       "Accept": "text/html,application/xhtml+xml",
     },
   });

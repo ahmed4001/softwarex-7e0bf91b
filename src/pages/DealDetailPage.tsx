@@ -37,7 +37,7 @@ function useCountdown(endDate: string | null) {
   return `${d}d ${h}h ${m}m ${s}s`;
 }
 
-const SITE_URL = (typeof window !== "undefined" && window.location.origin) || "https://softwarex.lovable.app";
+const SITE_URL = (typeof window !== "undefined" && window.location.origin) || "https://reviewhunts.com";
 
 export default function DealDetailPage() {
   const { slug } = useParams<{ slug: string }>();
