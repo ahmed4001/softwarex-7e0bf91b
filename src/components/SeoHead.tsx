@@ -107,7 +107,7 @@ export function SeoHead({
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
       {effectiveDescription && <meta property="og:description" content={effectiveDescription} />}
-      {effectiveOgImage && <meta property="og:image" content={effectiveOgImage} />}
+      {resolvedOgImage && <meta property="og:image" content={resolvedOgImage} />}
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content={lang === "en" ? "en_US" : lang} />
@@ -118,7 +118,7 @@ export function SeoHead({
       <meta name="twitter:site" content="@reviewhunts" />
       <meta name="twitter:title" content={fullTitle} />
       {effectiveDescription && <meta name="twitter:description" content={effectiveDescription} />}
-      {effectiveOgImage && <meta name="twitter:image" content={effectiveOgImage} />}
+      {resolvedOgImage && <meta name="twitter:image" content={resolvedOgImage} />}
 
       {/* Canonical (self-referencing by default) */}
       {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}
