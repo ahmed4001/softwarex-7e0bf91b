@@ -75,12 +75,20 @@ export function SeoHead({
     }
   }
 
-  // Always emit a self-referencing canonical for indexable pages.
-  const resolvedCanonical =
-    canonicalUrl ||
-    (typeof window !== "undefined"
-      ? `${window.location.origin}${window.location.pathname}`
-      : undefined);
+  // Always emit a self-referencing canonical for indexable pages, locked
+  // to the production domain so crawlers consolidate to reviewhunts.com.
+  const SITE_URL = "https://reviewhunts.com";
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "/";
+  const resolvedCanonical = canonicalUrl
+    ? canonicalUrl.startsWith("http")
+      ? canonicalUrl
+      : `${SITE_URL}${canonicalUrl.startsWith("/") ? "" : "/"}${canonicalUrl}`
+    : `${SITE_URL}${pathname}`;
+  const resolvedOgImage =
+    effectiveOgImage && !effectiveOgImage.startsWith("http")
+      ? `${SITE_URL}${effectiveOgImage.startsWith("/") ? "" : "/"}${effectiveOgImage}`
+      : effectiveOgImage;
 
   return (
     <Helmet>
