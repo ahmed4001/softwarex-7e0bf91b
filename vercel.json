@@ -1,4 +1,10 @@
 {
+  "redirects": [
+    { "source": "/avatar-the-way-of-water-release-date-story-trailer", "destination": "/", "statusCode": 301 },
+    { "source": "/jack-ryan-season-3-trailer-release-date-cast", "destination": "/", "statusCode": 301 },
+    { "source": "/the-lord-of-the-rings-the-rings-of-power", "destination": "/", "statusCode": 301 },
+    { "source": "/creed-3-casting-date-of-release-and-more", "destination": "/", "statusCode": 301 }
+  ],
   "rewrites": [
     { "source": "/((?!assets/|.*\\..*).*)", "destination": "/index.html" }
   ],
