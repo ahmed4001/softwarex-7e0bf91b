@@ -162,8 +162,8 @@ export default function ComparisonDetailPage() {
   return (
     <>
       <SeoHead
-        title={comparison.seo_title || comparison.title || `${productA?.name || 'Product'} vs ${productB?.name || 'Product'} — Comparison`}
-        description={comparison.seo_description || comparison.summary?.substring(0, 155) || `Compare ${productA?.name} and ${productB?.name} features, pricing, and ratings`}
+        title={comparison.seo_title || comparison.title || `${productA?.name || 'Product'} vs ${productB?.name || 'Product'} 2026: Which is Better?`}
+        description={comparison.seo_description || comparison.summary?.substring(0, 154) || `${productA?.name} vs ${productB?.name} in 2026: side-by-side pricing, features, pros & cons, and verified user ratings to help you pick the right tool.`.slice(0, 154)}
         canonicalUrl={`${window.location.origin}/compare/${slug}`}
         jsonLd={comparisonJsonLd}
       />
