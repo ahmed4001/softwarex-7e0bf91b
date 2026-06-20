@@ -305,12 +305,15 @@ export default function ProductDetailPage() {
   return (
     <>
       <SeoHead
-        title={product.seo_title || product.name}
-        description={product.seo_description || product.tagline || ""}
-        keywords={product.seo_keywords || `${product.name}, ${product.name} reviews, ${product.name} pricing, ${(product.categories as any)?.name || "software"}`}
+        title={product.seo_title || `${product.name} Review 2026: Pricing, Pros & Cons`}
+        description={product.seo_description || (product.tagline
+          ? `${product.name} review (2026): ${product.tagline}. Pricing, pros & cons, features, and verified user ratings.`.slice(0, 154)
+          : `${product.name} review for 2026 — pricing, pros & cons, features, and verified user ratings on ReviewHunts.`.slice(0, 154))}
+        keywords={product.seo_keywords || `${product.name}, ${product.name} review, ${product.name} pricing, ${product.name} pros and cons, ${(product.categories as any)?.name || "software"} 2026`}
         canonicalUrl={`${window.location.origin}/product/${product.slug}`}
         ogImage={product.logo_url || undefined}
         type="product"
+        author="ReviewHunts Editorial Team"
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -319,14 +322,21 @@ export default function ProductDetailPage() {
             "description": product.tagline || product.description?.substring(0, 160),
             "url": `${window.location.origin}/product/${product.slug}`,
             "applicationCategory": (product.categories as any)?.name || "BusinessApplication",
+            "operatingSystem": "Web",
             ...(product.logo_url && { "image": product.logo_url }),
             ...(product.website_url && { "installUrl": product.website_url }),
+            ...((product as any).created_at && { "datePublished": new Date((product as any).created_at).toISOString().split("T")[0] }),
+            ...((product as any).updated_at && { "dateModified": new Date((product as any).updated_at).toISOString().split("T")[0] }),
+            "author": { "@type": "Organization", "name": "ReviewHunts" },
+            "publisher": { "@type": "Organization", "name": "ReviewHunts", "url": "https://reviewhunts.com" },
             ...(product.avg_rating && product.total_reviews > 0 && {
               "aggregateRating": {
                 "@type": "AggregateRating",
                 "ratingValue": Number(product.avg_rating).toFixed(1),
                 "bestRating": "5",
-                "ratingCount": product.total_reviews
+                "worstRating": "1",
+                "ratingCount": product.total_reviews,
+                "reviewCount": product.total_reviews
               }
             }),
             ...(product.starting_price !== null && product.starting_price !== undefined && {
@@ -335,6 +345,16 @@ export default function ProductDetailPage() {
                 "price": product.starting_price || 0,
                 "priceCurrency": "USD"
               }
+            }),
+            ...((reviews && reviews.length > 0) && {
+              "review": reviews.slice(0, 5).map((r: any) => ({
+                "@type": "Review",
+                "reviewRating": { "@type": "Rating", "ratingValue": r.overall_rating || 5, "bestRating": 5, "worstRating": 1 },
+                "author": { "@type": "Person", "name": r.profiles?.name || r.author_name || "Verified User" },
+                "datePublished": r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : undefined,
+                "name": r.title || `Review of ${product.name}`,
+                "reviewBody": (r.body || "").slice(0, 500)
+              }))
             })
           },
           {
