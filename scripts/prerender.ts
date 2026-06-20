@@ -11,15 +11,15 @@
  *      so crawlers + first-paint get fully-rendered HTML.
  *
  * Env knobs (all optional):
- *   PRERENDER_LIMIT_PRODUCTS      default 500
- *   PRERENDER_LIMIT_CATEGORIES    default 200
- *   PRERENDER_LIMIT_BLOG          default 500
- *   PRERENDER_LIMIT_GLOSSARY      default 500
- *   PRERENDER_LIMIT_COMPARISONS   default 500
- *   PRERENDER_LIMIT_ALTERNATIVES  default 500
- *   PRERENDER_LIMIT_GUIDES        default 500
- *   PRERENDER_CONCURRENCY         default 6
- *   PRERENDER_ALL=1               ignore all caps
+ *   PRERENDER_LIMIT_PRODUCTS      default ALL
+ *   PRERENDER_LIMIT_CATEGORIES    default ALL
+ *   PRERENDER_LIMIT_BLOG          default ALL
+ *   PRERENDER_LIMIT_GLOSSARY      default ALL
+ *   PRERENDER_LIMIT_COMPARISONS   default ALL
+ *   PRERENDER_LIMIT_ALTERNATIVES  default ALL
+ *   PRERENDER_LIMIT_GUIDES        default ALL
+ *   PRERENDER_LIMIT_DEALS         default ALL
+ *   PRERENDER_CONCURRENCY         default 3
  *   PRERENDER_STRICT=1            non-zero exit on any failure
  *
  * Run with: `npm run build:prerender`
@@ -64,13 +64,12 @@ const STATIC_ROUTES: string[] = [
   "/activity",
 ];
 
-const ALL = process.env.PRERENDER_ALL === "1";
-const CONCURRENCY = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 6);
+const CONCURRENCY = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 3);
+const PAGE_SIZE = 1000; // Supabase REST default max
 
-function cap(envKey: string, fallback: number): number {
-  if (ALL) return 5000; // Supabase REST hard cap per request
+function cap(envKey: string): number {
   const v = Number(process.env[envKey]);
-  return Number.isFinite(v) && v > 0 ? v : fallback;
+  return Number.isFinite(v) && v > 0 ? v : Infinity;
 }
 
 async function fetchRows(
@@ -78,104 +77,74 @@ async function fetchRows(
   select: string,
   filter = "",
   order = "",
-  limit = 5000,
+  limit = Infinity,
 ): Promise<any[]> {
-  const url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}${filter}${order}&limit=${limit}`;
-  try {
-    const res = await fetch(url, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-    });
-    if (!res.ok) {
-      console.warn(`[prerender] ${table} -> ${res.status}`);
-      return [];
+  const all: any[] = [];
+  let from = 0;
+  while (all.length < limit) {
+    const take = Math.min(PAGE_SIZE, limit - all.length);
+    const to = from + take - 1;
+    const url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}${filter}${order}`;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Range: `${from}-${to}`,
+          "Range-Unit": "items",
+        },
+      });
+      if (!res.ok) {
+        console.warn(`[prerender] ${table} -> ${res.status}`);
+        break;
+      }
+      const batch = await res.json();
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      all.push(...batch);
+      if (batch.length < take) break;
+      from += batch.length;
+    } catch (e) {
+      console.warn(`[prerender] ${table} failed`, (e as Error).message);
+      break;
     }
-    return await res.json();
-  } catch (e) {
-    console.warn(`[prerender] ${table} failed`, (e as Error).message);
-    return [];
   }
+  return all;
 }
 
-const toRoutes = (
-  rows: any[],
-  prefix: string,
-  qualityKey?: string,
-): string[] =>
-  (rows || [])
-    .filter(
-      (r) =>
-        r?.slug &&
-        (!qualityKey ||
-          (r[qualityKey] && String(r[qualityKey]).length > 40)),
-    )
-    .map((r) => `${prefix}/${r.slug}`);
+const toRoutes = (rows: any[], prefix: string): string[] =>
+  (rows || []).filter((r) => r?.slug).map((r) => `${prefix}/${r.slug}`);
 
 async function collectRoutes(): Promise<string[]> {
-  const [products, categories, posts, comparisons, alternatives, guides, glossary] =
+  const [products, categories, posts, comparisons, guides, glossary, deals] =
     await Promise.all([
-      fetchRows(
-        "products",
-        "slug,description",
-        "&is_active=eq.true",
-        "&order=avg_rating.desc.nullslast",
-        cap("PRERENDER_LIMIT_PRODUCTS", 500),
-      ),
-      fetchRows(
-        "categories",
-        "slug,description",
-        "&is_active=eq.true",
-        "",
-        cap("PRERENDER_LIMIT_CATEGORIES", 200),
-      ),
-      fetchRows(
-        "blog_posts",
-        "slug",
-        "&status=eq.published",
-        "&order=updated_at.desc",
-        cap("PRERENDER_LIMIT_BLOG", 500),
-      ),
-      fetchRows(
-        "comparisons",
-        "slug",
-        "&is_published=eq.true",
-        "",
-        cap("PRERENDER_LIMIT_COMPARISONS", 500),
-      ),
-      fetchRows(
-        "alternative_pages",
-        "slug",
-        "",
-        "",
-        cap("PRERENDER_LIMIT_ALTERNATIVES", 500),
-      ),
-      fetchRows(
-        "buyer_guides",
-        "slug",
-        "",
-        "",
-        cap("PRERENDER_LIMIT_GUIDES", 500),
-      ),
-      fetchRows(
-        "glossary_terms",
-        "slug,definition",
-        "",
-        "&order=updated_at.desc",
-        cap("PRERENDER_LIMIT_GLOSSARY", 500),
-      ),
+      fetchRows("products", "slug", "&is_active=eq.true", "&order=avg_rating.desc.nullslast", cap("PRERENDER_LIMIT_PRODUCTS")),
+      fetchRows("categories", "slug", "&is_active=eq.true", "", cap("PRERENDER_LIMIT_CATEGORIES")),
+      fetchRows("blog_posts", "slug", "&status=eq.published", "&order=updated_at.desc", cap("PRERENDER_LIMIT_BLOG")),
+      fetchRows("comparisons", "slug", "&is_published=eq.true", "", cap("PRERENDER_LIMIT_COMPARISONS")),
+      fetchRows("buyer_guides", "slug", "", "", cap("PRERENDER_LIMIT_GUIDES")),
+      fetchRows("glossary_terms", "slug", "", "&order=updated_at.desc", cap("PRERENDER_LIMIT_GLOSSARY")),
+      fetchRows("deals", "slug", "", "", cap("PRERENDER_LIMIT_DEALS")),
     ]);
 
+  // Alternatives are generated from product slugs per app routing (/alternatives/:slug)
+  const altLimit = cap("PRERENDER_LIMIT_ALTERNATIVES");
+  const alternatives = Number.isFinite(altLimit)
+    ? products.slice(0, altLimit)
+    : products;
+
   const dynamic = [
-    ...toRoutes(products, "/product", "description"),
-    ...toRoutes(categories, "/category", "description"),
+    ...toRoutes(products, "/product"),
+    ...toRoutes(categories, "/category"),
     ...toRoutes(posts, "/blog"),
     ...toRoutes(comparisons, "/compare"),
-    ...toRoutes(alternatives, "/alternatives"),
     ...toRoutes(guides, "/guides"),
-    ...toRoutes(glossary, "/glossary", "definition"),
+    ...toRoutes(glossary, "/glossary"),
+    ...toRoutes(deals, "/deals"),
+    ...toRoutes(alternatives, "/alternatives"),
   ];
 
   console.log(
-    `[prerender] slugs: products=${products.length} categories=${categories.length} blog=${posts.length} compare=${comparisons.length} alt=${alternatives.length} guides=${guides.length} glossary=${glossary.length}`,
+    `[prerender] slugs: products=${products.length} categories=${categories.length} blog=${posts.length} compare=${comparisons.length} guides=${guides.length} glossary=${glossary.length} deals=${deals.length} alternatives=${alternatives.length}`,
   );
 
   return Array.from(new Set([...STATIC_ROUTES, ...dynamic]));
@@ -251,7 +220,7 @@ async function main() {
 
   const routes = await collectRoutes();
   console.log(
-    `[prerender] ${routes.length} routes total (concurrency=${CONCURRENCY}${ALL ? ", ALL=1" : ""})`,
+    `[prerender] ${routes.length} routes total (concurrency=${CONCURRENCY})`,
   );
 
   let server: PreviewServer | undefined;
