@@ -422,6 +422,11 @@ export default function ProductDetailPage() {
                 )}
               </div>
               {product.tagline && <p className="text-base sm:text-lg text-muted-foreground mb-3 sm:mb-4">{product.tagline}</p>}
+              <p className="text-xs text-muted-foreground mb-3 sm:mb-4" itemProp="author">
+                By <span className="font-medium text-foreground">ReviewHunts Editorial Team</span>
+                {" · "}
+                <span>Last updated: {new Date((product as any).updated_at || (product as any).created_at || Date.now()).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+              </p>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="flex items-center gap-2">
                   <StarRating rating={Number(product.avg_rating)} size="md" />
