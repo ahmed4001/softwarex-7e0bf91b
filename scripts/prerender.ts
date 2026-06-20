@@ -11,15 +11,15 @@
  *      so crawlers + first-paint get fully-rendered HTML.
  *
  * Env knobs (all optional):
- *   PRERENDER_LIMIT_PRODUCTS      default 500
- *   PRERENDER_LIMIT_CATEGORIES    default 200
- *   PRERENDER_LIMIT_BLOG          default 500
- *   PRERENDER_LIMIT_GLOSSARY      default 500
- *   PRERENDER_LIMIT_COMPARISONS   default 500
- *   PRERENDER_LIMIT_ALTERNATIVES  default 500
- *   PRERENDER_LIMIT_GUIDES        default 500
- *   PRERENDER_CONCURRENCY         default 6
- *   PRERENDER_ALL=1               ignore all caps
+ *   PRERENDER_LIMIT_PRODUCTS      default ALL
+ *   PRERENDER_LIMIT_CATEGORIES    default ALL
+ *   PRERENDER_LIMIT_BLOG          default ALL
+ *   PRERENDER_LIMIT_GLOSSARY      default ALL
+ *   PRERENDER_LIMIT_COMPARISONS   default ALL
+ *   PRERENDER_LIMIT_ALTERNATIVES  default ALL
+ *   PRERENDER_LIMIT_GUIDES        default ALL
+ *   PRERENDER_LIMIT_DEALS         default ALL
+ *   PRERENDER_CONCURRENCY         default 3
  *   PRERENDER_STRICT=1            non-zero exit on any failure
  *
  * Run with: `npm run build:prerender`
