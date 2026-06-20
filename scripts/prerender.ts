@@ -220,7 +220,7 @@ async function main() {
 
   const routes = await collectRoutes();
   console.log(
-    `[prerender] ${routes.length} routes total (concurrency=${CONCURRENCY}${ALL ? ", ALL=1" : ""})`,
+    `[prerender] ${routes.length} routes total (concurrency=${CONCURRENCY})`,
   );
 
   let server: PreviewServer | undefined;
