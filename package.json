@@ -7,7 +7,7 @@
     "dev": "vite",
     "predev": "tsx scripts/generate-sitemap.ts || true",
     "prebuild": "tsx scripts/generate-sitemap.ts || true",
-    "build": "vite build",
+    "build": "vite build && tsx scripts/prerender.ts",
     "build:dev": "vite build --mode development",
     "prerender": "tsx scripts/prerender.ts",
     "build:prerender": "vite build && tsx scripts/prerender.ts",

@@ -19,6 +19,12 @@
  *   PRERENDER_LIMIT_ALTERNATIVES  default ALL
  *   PRERENDER_LIMIT_GUIDES        default ALL
  *   PRERENDER_LIMIT_DEALS         default ALL
+ *   PRERENDER_LIMIT_PAGES         default ALL
+ *   PRERENDER_LIMIT_LISTS         default ALL
+ *   PRERENDER_LIMIT_STACKS        default ALL
+ *   PRERENDER_LIMIT_DISCUSSIONS   default ALL
+ *   PRERENDER_LIMIT_LANDING       default ALL
+ *   PRERENDER_LIMIT_PROFILES      default ALL
  *   PRERENDER_CONCURRENCY         default 3
  *   PRERENDER_STRICT=1            non-zero exit on any failure
  *
@@ -46,22 +52,25 @@ const SUPABASE_KEY =
 
 const STATIC_ROUTES: string[] = [
   "/",
-  "/pricing",
-  "/compare",
-  "/deals",
+  "/activity",
+  "/alternatives",
+  "/awards",
   "/blog",
   "/categories",
-  "/glossary",
-  "/buyer-guides",
-  "/alternatives",
-  "/lists",
-  "/tech-stacks",
+  "/choose-plan",
+  "/pricing",
+  "/compare-pricing",
+  "/compare",
+  "/deals",
   "/discussions",
+  "/guides",
+  "/glossary",
   "/leaderboard",
-  "/awards",
+  "/lists",
   "/partners",
-  "/submit",
-  "/activity",
+  "/search",
+  "/stacks",
+  "/submit-product",
 ];
 
 const CONCURRENCY = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 3);
