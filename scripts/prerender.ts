@@ -66,11 +66,17 @@ const STATIC_ROUTES: string[] = [
   "/guides",
   "/glossary",
   "/leaderboard",
+  "/login",
   "/lists",
+  "/lists/new",
   "/partners",
   "/search",
   "/stacks",
   "/submit-product",
+  // Legacy/static aliases kept for already-linked URLs.
+  "/buyer-guides",
+  "/submit",
+  "/tech-stacks",
 ];
 
 const CONCURRENCY = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 3);
