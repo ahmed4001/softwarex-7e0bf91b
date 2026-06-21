@@ -164,7 +164,7 @@ async function collectRoutes(): Promise<string[]> {
       fetchRows("discussions", "slug", "&slug=not.is.null", "&order=updated_at.desc", cap("PRERENDER_LIMIT_DISCUSSIONS")),
       fetchRows("keyword_landing_pages", "slug,page_type", "&is_published=eq.true&status=eq.published", "&order=updated_at.desc", cap("PRERENDER_LIMIT_LANDING")),
       fetchRows("seo_landing_pages", "slug", "&is_published=eq.true", "&order=updated_at.desc", cap("PRERENDER_LIMIT_BEST")),
-      fetchRows("profiles", "username", "&username=not.is.null&is_banned=is.false", "&order=review_count.desc.nullslast", cap("PRERENDER_LIMIT_PROFILES")),
+      fetchRows("profiles", "username", "&username=not.is.null", "&order=review_count.desc.nullslast", cap("PRERENDER_LIMIT_PROFILES")),
     ]);
 
   // Alternatives are generated from product slugs per app routing (/alternatives/:slug)
