@@ -123,16 +123,40 @@ async function fetchRows(
 const toRoutes = (rows: any[], prefix: string): string[] =>
   (rows || []).filter((r) => r?.slug).map((r) => `${prefix}/${r.slug}`);
 
+const landingRoutes = (rows: any[]): string[] =>
+  (rows || [])
+    .filter((r) => r?.slug)
+    .map((r) => {
+      switch (r.page_type) {
+        case "feature":
+          return `/features/${r.slug}`;
+        case "use_case":
+          return `/use-cases/${r.slug}`;
+        case "industry":
+          return `/industry/${r.slug}`;
+        case "template":
+          return `/templates/${r.slug}`;
+        default:
+          return `/${r.slug}`;
+      }
+    });
+
 async function collectRoutes(): Promise<string[]> {
-  const [products, categories, posts, comparisons, guides, glossary, deals] =
+  const [products, categories, posts, comparisons, guides, glossary, deals, pages, lists, stacks, discussions, landing, profiles] =
     await Promise.all([
-      fetchRows("products", "slug", "&is_active=eq.true", "&order=avg_rating.desc.nullslast", cap("PRERENDER_LIMIT_PRODUCTS")),
-      fetchRows("categories", "slug", "&is_active=eq.true", "", cap("PRERENDER_LIMIT_CATEGORIES")),
-      fetchRows("blog_posts", "slug", "&status=eq.published", "&order=updated_at.desc", cap("PRERENDER_LIMIT_BLOG")),
-      fetchRows("comparisons", "slug", "&is_published=eq.true", "", cap("PRERENDER_LIMIT_COMPARISONS")),
-      fetchRows("buyer_guides", "slug", "", "", cap("PRERENDER_LIMIT_GUIDES")),
+      fetchRows("products", "slug", "&is_active=eq.true", "&order=info_score.desc.nullslast,avg_rating.desc.nullslast", cap("PRERENDER_LIMIT_PRODUCTS")),
+      fetchRows("categories", "slug", "&is_active=eq.true", "&order=product_count.desc.nullslast", cap("PRERENDER_LIMIT_CATEGORIES")),
+      fetchRows("blog_posts", "slug", "&status=eq.published", "&order=updated_at.desc.nullslast", cap("PRERENDER_LIMIT_BLOG")),
+      fetchRows("comparisons", "slug", "&is_published=eq.true&slug=not.is.null", "&order=view_count.desc.nullslast", cap("PRERENDER_LIMIT_COMPARISONS")),
+      fetchRows("buyer_guides", "slug", "&is_published=eq.true", "&order=updated_at.desc", cap("PRERENDER_LIMIT_GUIDES")),
       fetchRows("glossary_terms", "slug", "", "&order=updated_at.desc", cap("PRERENDER_LIMIT_GLOSSARY")),
-      fetchRows("deals", "slug", "", "", cap("PRERENDER_LIMIT_DEALS")),
+      fetchRows("deals", "slug", "&is_visible=eq.true&review_status=eq.approved", "&order=updated_at.desc", cap("PRERENDER_LIMIT_DEALS")),
+      fetchRows("pages", "slug", "&is_active=eq.true", "&order=updated_at.desc.nullslast", cap("PRERENDER_LIMIT_PAGES")),
+      fetchRows("lists", "slug", "&is_published=eq.true", "&order=updated_at.desc", cap("PRERENDER_LIMIT_LISTS")),
+      fetchRows("tech_stacks", "slug", "&is_published=eq.true", "&order=updated_at.desc", cap("PRERENDER_LIMIT_STACKS")),
+      fetchRows("discussions", "slug", "&slug=not.is.null", "&order=updated_at.desc", cap("PRERENDER_LIMIT_DISCUSSIONS")),
+      fetchRows("keyword_landing_pages", "slug,page_type", "&is_published=eq.true&status=eq.published", "&order=updated_at.desc", cap("PRERENDER_LIMIT_LANDING")),
+      fetchRows("profiles", "username", "&username=not.is.null&is_banned=is.false", "&order=review_count.desc.nullslast", cap("PRERENDER_LIMIT_PROFILES")),
     ]);
 
   // Alternatives are generated from product slugs per app routing (/alternatives/:slug)
@@ -150,10 +174,16 @@ async function collectRoutes(): Promise<string[]> {
     ...toRoutes(glossary, "/glossary"),
     ...toRoutes(deals, "/deals"),
     ...toRoutes(alternatives, "/alternatives"),
+    ...toRoutes(pages, "/page"),
+    ...toRoutes(lists, "/lists"),
+    ...toRoutes(stacks, "/stacks"),
+    ...toRoutes(discussions, "/discussions"),
+    ...landingRoutes(landing),
+    ...profiles.filter((p) => p?.username).flatMap((p) => [`/author/${p.username}`, `/user/${p.username}`]),
   ];
 
   console.log(
-    `[prerender] slugs: products=${products.length} categories=${categories.length} blog=${posts.length} compare=${comparisons.length} guides=${guides.length} glossary=${glossary.length} deals=${deals.length} alternatives=${alternatives.length}`,
+    `[prerender] slugs: products=${products.length} categories=${categories.length} blog=${posts.length} compare=${comparisons.length} guides=${guides.length} glossary=${glossary.length} deals=${deals.length} alternatives=${alternatives.length} pages=${pages.length} lists=${lists.length} stacks=${stacks.length} discussions=${discussions.length} landing=${landing.length} profiles=${profiles.length}`,
   );
 
   return Array.from(new Set([...STATIC_ROUTES, ...dynamic]));
