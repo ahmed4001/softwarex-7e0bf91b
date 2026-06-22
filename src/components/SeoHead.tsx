@@ -43,10 +43,10 @@ export function SeoHead({
   const settings = useSeoSettings();
 
   const siteName = settings.siteName || "ReviewHunts";
-  // Keep combined title under 60 chars for SERP display: trim page title
+  // Keep combined title under 70 chars for SERP display: trim page title
   // when concatenation with " | siteName" would overflow.
   const suffix = ` | ${siteName}`;
-  const MAX = 60;
+  const MAX = 70;
   const trimmedTitle =
     title.length + suffix.length > MAX
       ? title.slice(0, Math.max(0, MAX - suffix.length - 1)).trimEnd() + "…"

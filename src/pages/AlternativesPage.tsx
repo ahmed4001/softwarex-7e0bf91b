@@ -69,7 +69,7 @@ export default function AlternativesPage() {
       <SeoHead
         title={page.title}
         description={page.meta_description || `Top alternatives to ${product?.name}`}
-        canonicalUrl={`${window.location.origin}/alternatives/${slug}`}
+        canonicalUrl={`https://reviewhunts.com/alternatives/${slug}`}
         keywords={`${product?.name} alternatives, software like ${product?.name}, ${product?.name} competitors`}
         jsonLd={[
           {
@@ -77,7 +77,7 @@ export default function AlternativesPage() {
             "@type": "CollectionPage",
             "name": page.title,
             "description": page.meta_description || `Top alternatives to ${product?.name}`,
-            "url": `${window.location.origin}/alternatives/${slug}`,
+            "url": `https://reviewhunts.com/alternatives/${slug}`,
             "numberOfItems": alternatives.length
           },
           ...(faqSchema.length > 0 ? [{
@@ -88,7 +88,16 @@ export default function AlternativesPage() {
               "name": faq.question,
               "acceptedAnswer": { "@type": "Answer", "text": faq.answer },
             })),
-          }] : [])
+          }] : []),
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reviewhunts.com" },
+              { "@type": "ListItem", "position": 2, "name": "Alternatives", "item": "https://reviewhunts.com/alternatives" },
+              { "@type": "ListItem", "position": 3, "name": page.title, "item": `https://reviewhunts.com/alternatives/${slug}` }
+            ]
+          }
         ]}
       />
       <main className="container py-10 max-w-5xl">

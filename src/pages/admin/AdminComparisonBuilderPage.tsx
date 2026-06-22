@@ -130,7 +130,7 @@ export default function AdminComparisonBuilderPage() {
 
   return (
     <>
-      <SeoHead title="Comparison Builder - Admin" />
+      <SeoHead title="Comparison Builder - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

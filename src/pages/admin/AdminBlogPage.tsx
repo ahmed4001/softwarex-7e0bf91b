@@ -121,7 +121,7 @@ export default function AdminBlogPage() {
 
   return (
     <>
-      <SeoHead title="Posts - Admin" />
+      <SeoHead title="Posts - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         {/* Ghost-style clean header */}
         <div className="flex items-center justify-between">

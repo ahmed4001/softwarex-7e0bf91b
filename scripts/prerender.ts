@@ -198,18 +198,57 @@ async function collectRoutes(): Promise<string[]> {
   return Array.from(new Set([...STATIC_ROUTES, ...dynamic]));
 }
 
+interface RouteReport {
+  route: string;
+  ok: boolean;
+  status?: number;
+  title?: string;
+  titleLen?: number;
+  descLen?: number;
+  canonical?: string;
+  jsonLdCount?: number;
+  corrections?: string[];
+  error?: string;
+}
+
 async function snapshot(
   browser: Browser,
   distDir: string,
   route: string,
-): Promise<boolean> {
+): Promise<RouteReport> {
   const page = await browser.newPage();
+  const report: RouteReport = { route, ok: false, corrections: [] };
   try {
-    await page.goto(`${BASE}${route}`, {
+    const resp = await page.goto(`${BASE}${route}`, {
       waitUntil: "networkidle",
       timeout: NAV_TIMEOUT,
     });
+    report.status = resp?.status();
     await page.waitForTimeout(SETTLE_MS);
+
+    const meta = await page.evaluate(() => {
+      const t = document.title || "";
+      const d = document.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+      const c = document.querySelector('link[rel="canonical"]')?.getAttribute("href") || "";
+      const j = document.querySelectorAll('script[type="application/ld+json"]').length;
+      return { t, d, c, j };
+    });
+    report.title = meta.t;
+    report.titleLen = meta.t.length;
+    report.descLen = meta.d.length;
+    report.canonical = meta.c;
+    report.jsonLdCount = meta.j;
+
+    // SEO field corrections (warn-level signals)
+    if (!meta.t) report.corrections!.push("missing-title");
+    if (meta.t.length > 70) report.corrections!.push(`title-too-long(${meta.t.length})`);
+    if (!meta.d) report.corrections!.push("missing-description");
+    if (meta.d.length > 160) report.corrections!.push(`desc-too-long(${meta.d.length})`);
+    if (!meta.c) report.corrections!.push("missing-canonical");
+    else if (!meta.c.startsWith("https://reviewhunts.com")) {
+      report.corrections!.push(`canonical-host(${meta.c})`);
+    }
+    if (meta.j === 0) report.corrections!.push("no-json-ld");
 
     const html = await page.evaluate(() => {
       document.documentElement.setAttribute("data-prerendered", "true");
@@ -222,10 +261,12 @@ async function snapshot(
         : path.join(distDir, route.replace(/^\//, ""), "index.html");
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
-    return true;
+    report.ok = true;
+    return report;
   } catch (err) {
-    console.warn(`[prerender] ✗ ${route}: ${(err as Error).message}`);
-    return false;
+    report.error = (err as Error).message;
+    console.warn(`[prerender] ✗ ${route}: ${report.error}`);
+    return report;
   } finally {
     await page.close().catch(() => {});
   }
@@ -235,10 +276,11 @@ async function runPool(
   browser: Browser,
   distDir: string,
   routes: string[],
-): Promise<{ ok: number; fail: number }> {
+): Promise<{ ok: number; fail: number; reports: RouteReport[] }> {
   let i = 0;
   let ok = 0;
   let fail = 0;
+  const reports: RouteReport[] = [];
   const total = routes.length;
 
   const worker = async () => {
@@ -246,8 +288,15 @@ async function runPool(
       const idx = i++;
       if (idx >= total) return;
       const route = routes[idx];
-      const success = await snapshot(browser, distDir, route);
-      success ? ok++ : fail++;
+      const r = await snapshot(browser, distDir, route);
+      reports.push(r);
+      if (r.ok) {
+        ok++;
+        const flag = r.corrections && r.corrections.length ? ` ⚠ ${r.corrections.join(",")}` : "";
+        console.log(`[prerender] ✓ ${route} [${r.status}] title=${r.titleLen} desc=${r.descLen} ld=${r.jsonLdCount}${flag}`);
+      } else {
+        fail++;
+      }
       const done = ok + fail;
       if (done % 25 === 0 || done === total) {
         console.log(`[prerender] ${done}/${total} done, ${fail} failed`);
@@ -256,7 +305,7 @@ async function runPool(
   };
 
   await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
-  return { ok, fail };
+  return { ok, fail, reports };
 }
 
 async function main() {
@@ -280,10 +329,37 @@ async function main() {
     console.log(`[prerender] preview server ready at ${BASE}`);
 
     browser = await chromium.launch();
-    const { ok, fail } = await runPool(browser, distDir, routes);
-    console.log(
-      `[prerender] done: ${ok} ok, ${fail} failed (of ${routes.length})`,
+    const { ok, fail, reports } = await runPool(browser, distDir, routes);
+
+    // Persist a build-time manifest of prerendered routes + SEO field signals.
+    const manifestPath = path.join(distDir, "prerender-manifest.json");
+    await writeFile(
+      manifestPath,
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          total: routes.length,
+          ok,
+          fail,
+          reports: reports.sort((a, b) => a.route.localeCompare(b.route)),
+        },
+        null,
+        2,
+      ),
+      "utf8",
     );
+
+    const flagged = reports.filter((r) => r.ok && r.corrections && r.corrections.length);
+    console.log(
+      `[prerender] done: ${ok} ok, ${fail} failed (of ${routes.length}); ${flagged.length} routes with SEO warnings`,
+    );
+    if (flagged.length > 0) {
+      console.log(`[prerender] SEO warnings sample:`);
+      for (const r of flagged.slice(0, 20)) {
+        console.log(`  - ${r.route}: ${r.corrections!.join(", ")}`);
+      }
+    }
+    console.log(`[prerender] manifest: ${manifestPath}`);
     if (fail > 0 && process.env.PRERENDER_STRICT === "1") {
       process.exit(1);
     }

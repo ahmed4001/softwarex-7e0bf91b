@@ -96,7 +96,7 @@ export default function AdminTranslationsPage() {
 
   return (
     <>
-      <SeoHead title="Translations - Admin" />
+      <SeoHead title="Translations - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

@@ -167,7 +167,7 @@ export default function AdminAdsPage() {
 
   return (
     <>
-      <SeoHead title="Advertisements - Admin" />
+      <SeoHead title="Advertisements - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

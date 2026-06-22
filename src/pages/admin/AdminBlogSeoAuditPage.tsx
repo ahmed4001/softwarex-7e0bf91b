@@ -233,7 +233,7 @@ export default function AdminBlogSeoAuditPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead title="Bulk SEO Audit" />
+      <SeoHead title="Bulk SEO Audit" robots="noindex, nofollow" />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

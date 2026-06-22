@@ -203,7 +203,7 @@ export default function AdminProductEditorPage() {
 
   return (
     <>
-      <SeoHead title={isNew ? "New Product - Admin" : `Edit ${form.name} - Admin`} />
+      <SeoHead title={isNew ? "New Product - Admin" : `Edit ${form.name} - Admin`} robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

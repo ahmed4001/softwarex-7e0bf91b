@@ -58,7 +58,7 @@ export default function AdminCohortPage() {
 
   return (
     <>
-      <SeoHead title="User Cohort Analysis — Admin" />
+      <SeoHead title="User Cohort Analysis — Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Users className="h-6 w-6" /> User Cohort Analysis</h1>

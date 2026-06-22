@@ -72,7 +72,7 @@ export default function ComparisonDetailPage() {
       "@type": "WebPage",
       "name": comparison.seo_title || comparison.title || `${productA.name} vs ${productB.name}`,
       "description": comparison.seo_description || comparison.summary?.substring(0, 160) || `Compare ${productA.name} and ${productB.name}`,
-      "url": `${window.location.origin}/compare/${slug}`,
+      "url": `https://reviewhunts.com/compare/${slug}`,
       "mainEntity": {
         "@type": "ItemList",
         "numberOfItems": 2,
@@ -84,7 +84,7 @@ export default function ComparisonDetailPage() {
               "@type": "SoftwareApplication",
               "name": productA.name,
               "description": productA.tagline || productA.description?.substring(0, 160),
-              "url": `${window.location.origin}/product/${productA.slug}`,
+              "url": `https://reviewhunts.com/product/${productA.slug}`,
               ...(productA.logo_url && { "image": productA.logo_url }),
               ...(productA.avg_rating && {
                 "aggregateRating": {
@@ -110,7 +110,7 @@ export default function ComparisonDetailPage() {
               "@type": "SoftwareApplication",
               "name": productB.name,
               "description": productB.tagline || productB.description?.substring(0, 160),
-              "url": `${window.location.origin}/product/${productB.slug}`,
+              "url": `https://reviewhunts.com/product/${productB.slug}`,
               ...(productB.logo_url && { "image": productB.logo_url }),
               ...(productB.avg_rating && {
                 "aggregateRating": {
@@ -156,7 +156,16 @@ export default function ComparisonDetailPage() {
           "acceptedAnswer": { "@type": "Answer", "text": comparison.best_for_b }
         }] : [])
       ]
-    }] : [])
+    }] : []),
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reviewhunts.com" },
+        { "@type": "ListItem", "position": 2, "name": "Compare", "item": "https://reviewhunts.com/compare" },
+        { "@type": "ListItem", "position": 3, "name": `${productA.name} vs ${productB.name}`, "item": `https://reviewhunts.com/compare/${slug}` }
+      ]
+    }
   ] : undefined;
 
   return (
@@ -164,7 +173,7 @@ export default function ComparisonDetailPage() {
       <SeoHead
         title={comparison.seo_title || comparison.title || `${productA?.name || 'Product'} vs ${productB?.name || 'Product'} 2026: Which is Better?`}
         description={comparison.seo_description || comparison.summary?.substring(0, 154) || `${productA?.name} vs ${productB?.name} in 2026: side-by-side pricing, features, pros & cons, and verified user ratings to help you pick the right tool.`.slice(0, 154)}
-        canonicalUrl={`${window.location.origin}/compare/${slug}`}
+        canonicalUrl={`https://reviewhunts.com/compare/${slug}`}
         jsonLd={comparisonJsonLd}
       />
 

@@ -101,7 +101,7 @@ export default function AdminBackfillLogPage() {
 
   return (
     <>
-      <SeoHead title="Backfill Audit Log - Admin" />
+      <SeoHead title="Backfill Audit Log - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-extrabold text-foreground">Backfill Audit Log</h1>

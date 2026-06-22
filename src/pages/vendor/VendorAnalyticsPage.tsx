@@ -208,7 +208,7 @@ export default function VendorAnalyticsPage() {
   if (productIds.length === 0) {
     return (
       <>
-        <SeoHead title="Analytics — Vendor" />
+        <SeoHead title="Analytics — Vendor" robots="noindex, nofollow" />
         <div className="glass-card p-12 text-center">
           <Package className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-foreground mb-2">No claimed products</h2>
@@ -221,7 +221,7 @@ export default function VendorAnalyticsPage() {
 
   return (
     <>
-      <SeoHead title="Product Analytics — Vendor" description="View analytics for your claimed products." />
+      <SeoHead title="Product Analytics — Vendor" description="View analytics for your claimed products." robots="noindex, nofollow" />
       <div className="space-y-6">
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">

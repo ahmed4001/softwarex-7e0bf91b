@@ -247,7 +247,7 @@ export default function AdminWebsiteReviewQueuePage() {
 
   return (
     <>
-      <SeoHead title="Website Review Queue - Admin" />
+      <SeoHead title="Website Review Queue - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-extrabold text-foreground">Website Review Queue</h1>

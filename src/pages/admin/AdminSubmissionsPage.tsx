@@ -97,7 +97,7 @@ export default function AdminSubmissionsPage() {
 
   return (
     <>
-      <SeoHead title="Submissions - Admin" />
+      <SeoHead title="Submissions - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Product Submissions</h1>

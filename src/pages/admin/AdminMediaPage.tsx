@@ -119,7 +119,7 @@ export default function AdminMediaPage() {
 
   return (
     <>
-      <SeoHead title="Media Library - Admin" />
+      <SeoHead title="Media Library - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

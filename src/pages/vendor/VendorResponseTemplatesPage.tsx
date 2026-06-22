@@ -83,7 +83,7 @@ export default function VendorResponseTemplatesPage() {
 
   return (
     <>
-      <SeoHead title="Response Templates — Vendor" />
+      <SeoHead title="Response Templates — Vendor" robots="noindex, nofollow" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-8">
           <div>

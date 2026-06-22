@@ -49,7 +49,7 @@ export default function AdminActivityPage() {
 
   return (
     <>
-      <SeoHead title="Activity Log - Admin" />
+      <SeoHead title="Activity Log - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Activity Log</h1>

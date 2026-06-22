@@ -26,7 +26,7 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <SeoHead title="Users - Admin" />
+      <SeoHead title="Users - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Users</h1>

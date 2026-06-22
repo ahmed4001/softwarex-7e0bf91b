@@ -120,7 +120,7 @@ export default function AdminProductImportExportPage() {
 
   return (
     <>
-      <SeoHead title="Import/Export - Admin" />
+      <SeoHead title="Import/Export - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

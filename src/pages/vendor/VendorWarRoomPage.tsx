@@ -95,7 +95,7 @@ export default function VendorWarRoomPage() {
 
   return (
     <>
-      <SeoHead title="War Room — Vendor Dashboard" description="Competitive intelligence and deal tracking." />
+      <SeoHead title="War Room — Vendor Dashboard" description="Competitive intelligence and deal tracking." robots="noindex, nofollow" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-6">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">

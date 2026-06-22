@@ -184,7 +184,7 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <SeoHead title="Admin Dashboard" />
+      <SeoHead title="Admin Dashboard" robots="noindex, nofollow" />
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
