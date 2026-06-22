@@ -70,7 +70,7 @@ export default function BlogPostPage() {
           "@type": "Article",
           headline: post.title,
           description: post.seo_description || post.excerpt,
-          ...(post.featured_image && { image: post.featured_image }),
+          image: post.featured_image || "https://reviewhunts.com/og-image.png",
           url,
           datePublished: post.published_at,
           dateModified: post.updated_at || post.published_at,
