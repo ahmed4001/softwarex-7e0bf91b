@@ -156,7 +156,16 @@ export default function ComparisonDetailPage() {
           "acceptedAnswer": { "@type": "Answer", "text": comparison.best_for_b }
         }] : [])
       ]
-    }] : [])
+    }] : []),
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reviewhunts.com" },
+        { "@type": "ListItem", "position": 2, "name": "Compare", "item": "https://reviewhunts.com/compare" },
+        { "@type": "ListItem", "position": 3, "name": `${productA.name} vs ${productB.name}`, "item": `https://reviewhunts.com/compare/${slug}` }
+      ]
+    }
   ] : undefined;
 
   return (
