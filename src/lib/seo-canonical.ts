@@ -22,11 +22,7 @@ export const SITE_URL = "https://reviewhunts.com";
 
 export function canonicalFor(path: string, override?: string | null) {
   if (override) return override;
-  // Prefer prod origin so prerendered HTML doesn't bake in 127.0.0.1 / preview hosts.
-  const runtimeOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  const isProdOrigin = runtimeOrigin && !/127\.0\.0\.1|localhost|lovable\.app|lovableproject\.com/.test(runtimeOrigin);
-  const origin = isProdOrigin ? runtimeOrigin : SITE_URL;
-  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export const KEYWORD_ROOT_SLUGS = [
