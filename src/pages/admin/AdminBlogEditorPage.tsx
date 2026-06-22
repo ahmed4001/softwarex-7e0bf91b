@@ -413,7 +413,7 @@ export default function AdminBlogEditorPage() {
 
   return (
     <>
-      <SeoHead title={`${isEdit ? "Edit" : "New"} Post - Admin`} />
+      <SeoHead title={`${isEdit ? "Edit" : "New"} Post - Admin`} robots="noindex, nofollow" />
 
       {/* Sticky top bar */}
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">

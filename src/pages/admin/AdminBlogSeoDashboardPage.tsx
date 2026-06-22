@@ -150,7 +150,7 @@ export default function AdminBlogSeoDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <SeoHead title="Blog SEO Dashboard" />
+      <SeoHead title="Blog SEO Dashboard" robots="noindex, nofollow" />
 
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>

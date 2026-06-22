@@ -4,7 +4,7 @@ import { ProductAnalyticsDashboard } from "@/components/analytics/ProductAnalyti
 export default function AdminAnalyticsPage() {
   return (
     <>
-      <SeoHead title="Product Analytics — Admin" description="View product views, clicks, and review trends." />
+      <SeoHead title="Product Analytics — Admin" description="View product views, clicks, and review trends." robots="noindex, nofollow" />
       <ProductAnalyticsDashboard title="Product Analytics" />
     </>
   );

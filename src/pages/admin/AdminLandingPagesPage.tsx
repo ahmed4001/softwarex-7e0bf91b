@@ -61,7 +61,7 @@ export default function AdminLandingPagesPage() {
 
   return (
     <>
-      <SeoHead title="Landing Pages - Admin" />
+      <SeoHead title="Landing Pages - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

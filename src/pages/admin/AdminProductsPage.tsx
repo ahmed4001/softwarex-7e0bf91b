@@ -227,7 +227,7 @@ export default function AdminProductsPage() {
 
   return (
     <>
-      <SeoHead title="Products - Admin" />
+      <SeoHead title="Products - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

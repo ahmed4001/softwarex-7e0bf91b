@@ -85,7 +85,7 @@ export default function VendorReviewsPage() {
   if (productIds.length === 0) {
     return (
       <>
-        <SeoHead title="Reviews — Vendor Portal" description="Respond to customer reviews." />
+        <SeoHead title="Reviews — Vendor Portal" description="Respond to customer reviews." robots="noindex, nofollow" />
         <div className="glass-card p-12 text-center">
           <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-foreground mb-2">No claimed products</h2>
@@ -97,7 +97,7 @@ export default function VendorReviewsPage() {
 
   return (
     <>
-      <SeoHead title="Reviews — Vendor Portal" description="Respond to customer reviews." />
+      <SeoHead title="Reviews — Vendor Portal" description="Respond to customer reviews." robots="noindex, nofollow" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-6">
           <h1 className="text-2xl font-display font-bold text-foreground">Customer Reviews</h1>

@@ -68,7 +68,7 @@ export default function VendorCompetitorsPage() {
   if (claimedProducts.length === 0) {
     return (
       <>
-        <SeoHead title="Competitor Insights — Vendor" />
+        <SeoHead title="Competitor Insights — Vendor" robots="noindex, nofollow" />
         <div className="glass-card p-12 text-center">
           <Package className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-foreground mb-2">No claimed products</h2>
@@ -81,7 +81,7 @@ export default function VendorCompetitorsPage() {
 
   return (
     <>
-      <SeoHead title="Competitor Insights — Vendor" description="See how your products compare to competitors." />
+      <SeoHead title="Competitor Insights — Vendor" description="See how your products compare to competitors." robots="noindex, nofollow" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Competitor Insights</h1>

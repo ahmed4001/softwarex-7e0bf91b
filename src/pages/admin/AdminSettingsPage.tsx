@@ -337,7 +337,7 @@ export default function AdminSettingsPage() {
 
   return (
     <>
-      <SeoHead title="Settings - Admin" />
+      <SeoHead title="Settings - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

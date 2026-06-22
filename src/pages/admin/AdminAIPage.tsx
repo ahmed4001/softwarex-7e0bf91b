@@ -54,7 +54,7 @@ const CONTENT_TEMPLATES = [
 export default function AdminAIPage() {
   return (
     <>
-      <SeoHead title="AI Integration - Admin" />
+      <SeoHead title="AI Integration - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

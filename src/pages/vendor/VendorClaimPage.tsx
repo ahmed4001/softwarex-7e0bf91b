@@ -69,7 +69,7 @@ export default function VendorClaimPage() {
 
   return (
     <>
-      <SeoHead title="Claim Product — Vendor Portal" description="Claim your product listing on ReviewHunts." />
+      <SeoHead title="Claim Product — Vendor Portal" description="Claim your product listing on ReviewHunts." robots="noindex, nofollow" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
         <div className="mb-8 text-center">
           <ShieldCheck className="h-10 w-10 text-primary mx-auto mb-3" />

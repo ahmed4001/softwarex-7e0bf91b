@@ -20,7 +20,7 @@ export default function AdminTrendReportsPage() {
 
   return (
     <>
-      <SeoHead title="Trend Reports — Admin" />
+      <SeoHead title="Trend Reports — Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><BarChart3 className="h-6 w-6" /> Category Trend Reports</h1>

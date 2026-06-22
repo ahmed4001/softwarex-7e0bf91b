@@ -141,7 +141,7 @@ export default function AdminPagesPage() {
 
   return (
     <>
-      <SeoHead title="Pages - Admin" />
+      <SeoHead title="Pages - Admin" robots="noindex, nofollow" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

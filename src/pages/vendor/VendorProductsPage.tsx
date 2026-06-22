@@ -26,7 +26,7 @@ export default function VendorProductsPage() {
 
   return (
     <>
-      <SeoHead title="My Products — Vendor Portal" description="View analytics for your claimed products." />
+      <SeoHead title="My Products — Vendor Portal" description="View analytics for your claimed products." robots="noindex, nofollow" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-6">
           <div>
