@@ -361,8 +361,8 @@ export default function ProductDetailPage() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Home", "item": window.location.origin },
-              ...((product.categories as any)?.name ? [{ "@type": "ListItem", "position": 2, "name": (product.categories as any).name, "item": `${window.location.origin}/category/${(product.categories as any).slug}` }] : []),
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reviewhunts.com" },
+              ...((product.categories as any)?.name ? [{ "@type": "ListItem", "position": 2, "name": (product.categories as any).name, "item": `https://reviewhunts.com/category/${(product.categories as any).slug}` }] : []),
               { "@type": "ListItem", "position": (product.categories as any)?.name ? 3 : 2, "name": product.name }
             ]
           },
