@@ -88,7 +88,16 @@ export default function AlternativesPage() {
               "name": faq.question,
               "acceptedAnswer": { "@type": "Answer", "text": faq.answer },
             })),
-          }] : [])
+          }] : []),
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reviewhunts.com" },
+              { "@type": "ListItem", "position": 2, "name": "Alternatives", "item": "https://reviewhunts.com/alternatives" },
+              { "@type": "ListItem", "position": 3, "name": page.title, "item": `https://reviewhunts.com/alternatives/${slug}` }
+            ]
+          }
         ]}
       />
       <main className="container py-10 max-w-5xl">
