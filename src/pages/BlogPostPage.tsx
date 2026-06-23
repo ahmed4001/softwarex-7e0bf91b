@@ -65,22 +65,33 @@ export default function BlogPostPage() {
         canonicalUrl={post.canonical_url || url}
         ogImage={post.og_image || post.featured_image || undefined}
         type="article"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: post.title,
-          description: post.seo_description || post.excerpt,
-          image: post.featured_image || "https://reviewhunts.com/og-image.png",
-          url,
-          datePublished: post.published_at,
-          dateModified: post.updated_at || post.published_at,
-          ...(post.reading_time && { timeRequired: `PT${post.reading_time}M` }),
-          ...(author && {
-            author: { "@type": "Person", name: (author as any).name || "Author" },
-          }),
-          publisher: { "@type": "Organization", name: "ReviewHunts" },
-          mainEntityOfPage: { "@type": "WebPage", "@id": url },
-        }}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: post.title,
+            description: post.seo_description || post.excerpt,
+            image: post.featured_image || "https://reviewhunts.com/og-image.png",
+            url,
+            datePublished: post.published_at,
+            dateModified: post.updated_at || post.published_at,
+            ...(post.reading_time && { timeRequired: `PT${post.reading_time}M` }),
+            ...(author && {
+              author: { "@type": "Person", name: (author as any).name || "Author" },
+            }),
+            publisher: { "@type": "Organization", name: "ReviewHunts" },
+            mainEntityOfPage: { "@type": "WebPage", "@id": url },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://reviewhunts.com" },
+              { "@type": "ListItem", position: 2, name: "Blog", item: "https://reviewhunts.com/blog" },
+              { "@type": "ListItem", position: 3, name: post.title, item: url },
+            ],
+          },
+        ]}
       />
 
       <div className="max-w-7xl mx-auto px-4 py-10">
