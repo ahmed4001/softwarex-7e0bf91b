@@ -120,7 +120,7 @@ export default function ChoosePlanPage() {
 
   return (
     <>
-      <SeoHead title="Choose Your Plan — ReviewHunts" description="Pick a plan to launch your product on ReviewHunts. Free, Featured, Promotion or Premium." />
+      <SeoHead title="Choose Your Plan — ReviewHunts" description="Pick a plan to launch your product on ReviewHunts. Free, Featured, Promotion or Premium." robots="noindex, nofollow" />
       <div className="py-6 relative">
         <div className="absolute inset-0 mesh-gradient opacity-20" />
         <div className="container max-w-6xl relative">
