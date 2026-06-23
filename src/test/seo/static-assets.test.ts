@@ -75,29 +75,31 @@ describe("SEO: robots.txt", () => {
 });
 
 describe("SEO: sitemap.xml", () => {
-  it("exists and is a well-formed urlset", () => {
+  it("exists and is a well-formed sitemap index pointing at child sitemaps", () => {
     expect(existsSync(resolve(root, "public/sitemap.xml"))).toBe(true);
     const xml = read("public/sitemap.xml");
     expect(xml).toMatch(/<\?xml\s+version=["']1\.0["']/);
-    expect(xml).toMatch(/<urlset\s+xmlns=/);
-    const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(urls.length, "has entries").toBeGreaterThan(0);
-    // All locs must be absolute https URLs.
-    for (const u of urls.slice(0, 50)) {
+    // Root is a sitemap index that fans out to per-section child sitemaps.
+    expect(xml).toMatch(/<sitemapindex\s+xmlns=/);
+    const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    expect(locs.length, "has child sitemap entries").toBeGreaterThan(0);
+    for (const u of locs) {
       expect(u).toMatch(/^https?:\/\//);
+      expect(u).toMatch(/sitemap-[\w-]+\.xml$/);
     }
   });
 
-  it("includes core static routes", () => {
-    const xml = read("public/sitemap.xml");
+  it("includes core static routes in sitemap-main.xml", () => {
+    const xml = read("public/sitemap-main.xml");
+    expect(xml).toMatch(/<urlset\s+xmlns=/);
     for (const path of ["/", "/categories", "/blog", "/pricing", "/stacks"]) {
       const re = new RegExp(`<loc>https?://[^<]*${path.replace(/\//g, "\\/")}</loc>`);
-      expect(xml, `sitemap includes ${path}`).toMatch(re);
+      expect(xml, `sitemap-main includes ${path}`).toMatch(re);
     }
   });
 
   it("does not contain stale /tech-stacks route", () => {
-    const xml = read("public/sitemap.xml");
+    const xml = read("public/sitemap-main.xml");
     expect(xml).not.toMatch(/<loc>[^<]*\/tech-stacks<\/loc>/);
   });
 });
