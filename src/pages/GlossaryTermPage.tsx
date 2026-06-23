@@ -38,16 +38,27 @@ export default function GlossaryTermPage() {
       <SeoHead
         title={`${term.term} — SaaS Glossary`}
         description={term.definition}
-        canonicalUrl={`${window.location.origin}/glossary/${slug}`}
+        canonicalUrl={`https://reviewhunts.com/glossary/${slug}`}
         keywords={`${term.term}, ${term.term} definition, ${term.category || "SaaS"} glossary`}
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "DefinedTerm",
-          "name": term.term,
-          "description": term.definition,
-          "url": `${window.location.origin}/glossary/${slug}`,
-          ...(term.category && { "inDefinedTermSet": { "@type": "DefinedTermSet", "name": `${term.category} Glossary` } })
-        }}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "DefinedTerm",
+            "name": term.term,
+            "description": term.definition,
+            "url": `https://reviewhunts.com/glossary/${slug}`,
+            ...(term.category && { "inDefinedTermSet": { "@type": "DefinedTermSet", "name": `${term.category} Glossary` } })
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reviewhunts.com" },
+              { "@type": "ListItem", "position": 2, "name": "Glossary", "item": "https://reviewhunts.com/glossary" },
+              { "@type": "ListItem", "position": 3, "name": term.term, "item": `https://reviewhunts.com/glossary/${slug}` }
+            ]
+          }
+        ]}
       />
       <main className="container py-10 max-w-3xl">
         <Link to="/glossary">

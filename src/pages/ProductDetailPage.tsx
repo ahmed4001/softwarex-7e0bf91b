@@ -317,7 +317,7 @@ export default function ProductDetailPage() {
         jsonLd={[
           {
             "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
+            "@type": ["Product", "SoftwareApplication"],
             "name": product.name,
             "description": product.tagline || product.description?.substring(0, 160),
             "url": `https://reviewhunts.com/product/${product.slug}`,
