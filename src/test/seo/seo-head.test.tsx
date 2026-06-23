@@ -131,10 +131,10 @@ describe("SeoHead — Product route (SoftwareApplication + BreadcrumbList + FAQP
 });
 
 describe("SeoHead — fallback canonical", () => {
-  it("derives a self-referencing canonical from window.location when not given", async () => {
+  it("derives a self-referencing canonical anchored to the production domain", async () => {
     const { canonicals } = await renderSeo(<SeoHead title="Some page" description="x" />);
     expect(canonicals).toHaveLength(1);
-    expect(canonicals[0].href).toMatch(/^http:\/\/localhost(:\d+)?\//);
+    expect(canonicals[0].href).toMatch(/^https:\/\/reviewhunts\.com\//);
   });
 });
 
